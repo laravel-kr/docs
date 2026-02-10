@@ -174,7 +174,7 @@ Inertia와 Vue / React를 사용하여 프론트엔드를 구축하고 싶다면
 <a name="bundling-assets"></a>
 ## 에셋 번들링(Bundling Assets)
 
-Blade와 Livewire를 사용하든 Vue / React와 Inertia를 사용하여 프론트엔드를 개발하든, 애플리케이션의 CSS를 프로덕션 준비 에셋으로 번들링해야 할 것입니다. 물론 Vue나 React로 애플리케이션의 프론트엔드를 구축하기로 선택한 경우, 컴포넌트를 브라우저 준비 자바스크립트 에셋으로 번들링해야 합니다.
+Blade와 Livewire를 사용하든 Vue / React와 Inertia를 사용하여 프론트엔드를 개발하든, 애플리케이션의 CSS를 프로덕션-준비(production-ready) 에셋으로 번들링해야 할 것입니다. 물론 Vue나 React로 애플리케이션의 프론트엔드를 구축하기로 선택한 경우, 컴포넌트를 브라우저 준비 자바스크립트 에셋으로 번들링해야 합니다.
 
 기본적으로 Laravel은 [Vite](https://vitejs.dev)를 사용하여 에셋을 번들링합니다. Vite는 로컬 개발 중에 매우 빠른 빌드 시간과 거의 즉각적인 핫 모듈 교체(HMR, Hot Module Replacement)를 제공합니다. [스타터 킷](/docs/{{version}}/starter-kits)을 사용하는 것을 포함한 모든 새로운 Laravel 애플리케이션에서, Laravel 애플리케이션과 함께 Vite를 즐겁게 사용할 수 있게 해주는 가벼운 Laravel Vite 플러그인을 로드하는 `vite.config.js` 파일을 찾을 수 있습니다.
 

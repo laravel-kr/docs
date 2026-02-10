@@ -5,6 +5,9 @@
 <a name="introduction"></a>
 ## 소개
 
+> [!WARNING]
+> Laravel Mix는 더 이상 적극적으로 유지보수되지 않는 레거시 패키지입니다. 현대적인 대안으로 [Vite](/docs/{{version}}/vite)를 사용할 수 있습니다.
+
 [Laravel Mix](https://github.com/laravel-mix/laravel-mix)는 [Laracasts](https://laracasts.com) 창시자인 Jeffrey Way가 개발한 패키지로, 일반적으로 사용되는 여러 CSS 및 JavaScript 전처리기를 사용하여 라라벨 애플리케이션의 [webpack](https://webpack.js.org) 빌드 단계를 정의할 수 있는 유연한 API를 제공합니다.
 
 다시 말해, Mix를 사용하면 애플리케이션의 CSS 및 JavaScript 파일을 손쉽게 컴파일하고 압축할 수 있습니다. 간단한 메서드 체이닝을 통해 에셋 파이프라인을 유연하게 정의할 수 있습니다. 예를 들어:

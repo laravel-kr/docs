@@ -112,7 +112,7 @@ class AppServiceProvider extends ServiceProvider
 <a name="class-based-features"></a>
 ### 클래스 기반 기능
 
-Pennant를 사용하면 클래스 기반 기능을 정의할 수도 있습니다. 클로저 기반 기능 정의와 달리, 클래스 기반 기능은 서비스 프로바이더에 등록할 필요가 없습니다. 클래스 기반 기능을 생성하려면 `pennant:feature` Artisan 명령어를 호출할 수 있습니다. 기본적으로 기능 클래스는 애플리케이션의 `app/Features` 디렉토리에 배치됩니다.
+Pennant를 사용하면 클래스 기반(class-based) 기능을 정의할 수도 있습니다. 클로저 기반(closure-based) 기능 정의와 달리, 클래스 기반 기능은 서비스 프로바이더에 등록할 필요가 없습니다. 클래스 기반 기능을 생성하려면 `pennant:feature` Artisan 명령어를 호출할 수 있습니다. 기본적으로, 기능 클래스는 애플리케이션의 `app/Features` 디렉토리에 배치됩니다.
 
 ```shell
 php artisan pennant:feature NewApi
@@ -144,7 +144,7 @@ class NewApi
 }
 ```
 
-클래스 기반 기능의 인스턴스를 수동으로 해결하려면 `Feature` 파사드에서 `instance` 메서드를 호출할 수 있습니다.
+클래스 기반(class-based) 기능의 인스턴스를 수동으로 해결하려면 `Feature` 파사드에서 `instance` 메서드를 호출할 수 있습니다.
 
 ```php
 use Illuminate\Support\Facades\Feature;
@@ -157,22 +157,18 @@ $instance = Feature::instance(NewApi::class);
 
 #### 저장되는 기능 이름 커스터마이징
 
-기본적으로 Pennant는 기능 클래스의 완전한 클래스 이름을 저장합니다. 저장되는 기능 이름을 애플리케이션의 내부 구조에서 분리하려면 기능 클래스에 `$name` 속성을 지정할 수 있습니다. 이 속성의 값이 클래스 이름 대신 저장됩니다.
+기본적으로 Pennant는 기능 클래스의 완전한 클래스 이름을 저장합니다. 저장되는 기능 이름을 애플리케이션의 내부 구조에서 분리하려면 기능 클래스에 `Name` 어트리뷰트를 추가할 수 있습니다. 이 어트리뷰트의 값이 클래스 이름 대신 저장됩니다.
 
 ```php
 <?php
 
 namespace App\Features;
 
+use Laravel\Pennant\Attributes\Name;
+
+#[Name('new-api')]
 class NewApi
 {
-    /**
-     * 기능의 저장된 이름.
-     *
-     * @var string
-     */
-    public $name = 'new-api';
-
     // ...
 }
 ```
@@ -240,7 +236,7 @@ Feature::someAreInactive(['new-api', 'site-redesign']);
 <a name="checking-class-based-features"></a>
 #### 클래스 기반 기능 확인하기
 
-클래스 기반 기능의 경우, 기능을 확인할 때 클래스 이름을 제공해야 합니다.
+클래스 기반(class-based) 기능의 경우, 기능을 확인할 때 클래스 이름을 제공해야 합니다.
 
 ```php
 <?php
@@ -523,7 +519,7 @@ return Feature::for($user)->active('new-api')
 
 ```php
 use App\Models\Team;
-use Carbon\Carbon;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Lottery;
 use Laravel\Pennant\Feature;
 
@@ -746,7 +742,7 @@ Feature::all();
 // ]
 ```
 
-그러나 클래스 기반 기능은 동적으로 등록되며 명시적으로 확인되기 전까지 Pennant에 알려지지 않습니다. 이는 현재 요청 중에 이미 확인되지 않은 경우 애플리케이션의 클래스 기반 기능이 `all` 메서드가 반환하는 결과에 나타나지 않을 수 있음을 의미합니다.
+그러나 클래스 기반(class-based) 기능은 동적으로 등록되며 명시적으로 확인되기 전까지 Pennant에 알려지지 않습니다. 이는 현재 요청 중에 이미 확인되지 않은 경우 애플리케이션의 클래스 기반 기능이 `all` 메서드가 반환하는 결과에 나타나지 않을 수 있음을 의미합니다.
 
 `all` 메서드를 사용할 때 기능 클래스가 항상 포함되도록 하려면 Pennant의 기능 검색 기능을 사용할 수 있습니다. 시작하려면 애플리케이션의 서비스 프로바이더 중 하나에서 `discover` 메서드를 호출합니다.
 
@@ -963,7 +959,7 @@ public function test_it_can_control_feature_values()
 }
 ```
 
-클래스 기반 기능에도 동일한 접근 방식을 사용할 수 있습니다.
+클래스 기반(class-based) 기능에도 동일한 접근 방식을 사용할 수 있습니다.
 
 ```php tab=Pest
 use Laravel\Pennant\Feature;
@@ -1159,7 +1155,7 @@ class AppServiceProvider extends ServiceProvider
 
 ### `Laravel\Pennant\Events\DynamicallyRegisteringFeatureClass`
 
-이 이벤트는 요청 중에 [클래스 기반 기능](#class-based-features)이 처음으로 동적으로 확인될 때 디스패치됩니다.
+이 이벤트는 요청 중에 [클래스 기반(class-based) 기능](#class-based-features)이 처음으로 동적으로 확인될 때 디스패치됩니다.
 
 ### `Laravel\Pennant\Events\UnexpectedNullScopeEncountered`
 

@@ -74,12 +74,6 @@ echo url()->current();
 
 // 쿼리 문자열을 포함한 현재 URL 가져오기...
 echo url()->full();
-
-// 이전 요청의 전체 URL 가져오기...
-echo url()->previous();
-
-// 이전 요청의 경로 가져오기...
-echo url()->previousPath();
 ```
 
 이러한 각 메서드는 `URL` [파사드(Facade)](/docs/{{version}}/facades)를 통해서도 접근할 수 있습니다.
@@ -88,6 +82,37 @@ echo url()->previousPath();
 use Illuminate\Support\Facades\URL;
 
 echo URL::current();
+```
+
+<a name="accessing-the-previous-url"></a>
+#### 이전 URL 접근하기
+
+사용자가 방문한 이전 URL을 알고 싶을 때가 있습니다. `url` 헬퍼의 `previous` 및 `previousPath` 메서드를 통해 이전 URL에 접근할 수 있습니다.
+
+```php
+// 이전 요청의 전체 URL 가져오기...
+echo url()->previous();
+
+// 이전 요청의 경로 가져오기...
+echo url()->previousPath();
+```
+
+또는 [세션](/docs/{{version}}/session)을 통해 이전 URL을 [플루언트 URI](#fluent-uri-objects) 인스턴스로 접근할 수 있습니다.
+
+```php
+use Illuminate\Http\Request;
+
+Route::post('/users', function (Request $request) {
+    $previousUri = $request->session()->previousUri();
+
+    // ...
+});
+```
+
+세션을 통해 이전에 방문한 URL의 라우트 이름을 가져올 수도 있습니다.
+
+```php
+$previousRoute = $request->session()->previousRoute();
 ```
 
 <a name="urls-for-named-routes"></a>
@@ -163,7 +188,7 @@ return URL::signedRoute('unsubscribe', ['user' => 1], absolute: false);
 use Illuminate\Support\Facades\URL;
 
 return URL::temporarySignedRoute(
-    'unsubscribe', now()->addMinutes(30), ['user' => 1]
+    'unsubscribe', now()->plus(minutes: 30), ['user' => 1]
 );
 ```
 
@@ -216,7 +241,7 @@ Route::post('/unsubscribe/{user}', function (Request $request) {
 ```php
 use Illuminate\Routing\Exceptions\InvalidSignatureException;
 
-->withExceptions(function (Exceptions $exceptions) {
+->withExceptions(function (Exceptions $exceptions): void {
     $exceptions->render(function (InvalidSignatureException $e) {
         return response()->view('errors.link-expired', status: 403);
     });
@@ -259,12 +284,15 @@ $uri = Uri::of('https://example.com/path');
 $uri = Uri::to('/dashboard');
 $uri = Uri::route('users.show', ['user' => 1]);
 $uri = Uri::signedRoute('users.show', ['user' => 1]);
-$uri = Uri::temporarySignedRoute('user.index', now()->addMinutes(5));
+$uri = Uri::temporarySignedRoute('user.index', now()->plus(minutes: 5));
 $uri = Uri::action([UserController::class, 'index']);
 $uri = Uri::action(InvokableController::class);
 
 // 현재 요청 URL에서 URI 인스턴스 생성...
 $uri = $request->uri();
+
+// 이전 요청 URL에서 URI 인스턴스 생성...
+$uri = $request->session()->previousUri();
 ```
 
 URI 인스턴스가 있으면 플루언트하게 수정할 수 있습니다.
@@ -328,7 +356,7 @@ class SetDefaultLocaleForUrls
 URL 기본값을 설정하면 Laravel의 암시적 모델 바인딩 처리에 방해가 될 수 있습니다. 따라서 URL 기본값을 설정하는 [미들웨어의 우선순위를 지정](/docs/{{version}}/middleware#sorting-middleware)하여 Laravel의 자체 `SubstituteBindings` 미들웨어보다 먼저 실행되도록 해야 합니다. 애플리케이션의 `bootstrap/app.php` 파일에서 `priority` 미들웨어 메서드를 사용하여 이를 수행할 수 있습니다.
 
 ```php
-->withMiddleware(function (Middleware $middleware) {
+->withMiddleware(function (Middleware $middleware): void {
     $middleware->prependToPriorityList(
         before: \Illuminate\Routing\Middleware\SubstituteBindings::class,
         prepend: \App\Http\Middleware\SetDefaultLocaleForUrls::class,

@@ -202,6 +202,7 @@ use App\Models\Passport\Client;
 use App\Models\Passport\DeviceCode;
 use App\Models\Passport\RefreshToken;
 use App\Models\Passport\Token;
+use Laravel\Passport\Passport;
 
 /**
  * Bootstrap any application services.
@@ -212,7 +213,7 @@ public function boot(): void
     Passport::useRefreshTokenModel(RefreshToken::class);
     Passport::useAuthCodeModel(AuthCode::class);
     Passport::useClientModel(Client::class);
-    Passport::useDeviceCodeModel(DeviceCode::class)
+    Passport::useDeviceCodeModel(DeviceCode::class);
 }
 ```
 
@@ -255,6 +256,7 @@ To get started, we need to instruct Passport how to return our "authorization" v
 All the authorization view's rendering logic may be customized using the appropriate methods available via the `Laravel\Passport\Passport` class. Typically, you should call this method from the `boot` method of your application's `App\Providers\AppServiceProvider` class:
 
 ```php
+use Inertia\Inertia;
 use Laravel\Passport\Passport;
 
 /**
@@ -264,15 +266,17 @@ public function boot(): void
 {
     // By providing a view name...
     Passport::authorizationView('auth.oauth.authorize');
-    
+
     // By providing a closure...
-    Passport::authorizationView(fn ($parameters) => Inertia::render('Auth/OAuth/Authorize', [
-        'request' => $parameters['request'],
-        'authToken' => $parameters['authToken'],
-        'client' => $parameters['client'],
-        'user' => $parameters['user'],
-        'scopes' => $parameters['scopes'],
-    ]));
+    Passport::authorizationView(
+        fn ($parameters) => Inertia::render('Auth/OAuth/Authorize', [
+            'request' => $parameters['request'],
+            'authToken' => $parameters['authToken'],
+            'client' => $parameters['client'],
+            'user' => $parameters['user'],
+            'scopes' => $parameters['scopes'],
+        ])
+    );
 }
 ```
 
@@ -381,7 +385,7 @@ class Client extends BaseClient
     /**
      * Determine if the client should skip the authorization prompt.
      *
-     * @param  \Laravel\Passport\Scope[]  $scopes 
+     * @param  \Laravel\Passport\Scope[]  $scopes
      */
     public function skipsAuthorization(Authenticatable $user, array $scopes): bool
     {
@@ -638,6 +642,7 @@ To get started, we need to instruct Passport how to return our "user code" and "
 All the authorization view's rendering logic may be customized using the appropriate methods available via the `Laravel\Passport\Passport` class. Typically, you should call this method from the `boot` method of your application's `App\Providers\AppServiceProvider` class.
 
 ```php
+use Inertia\Inertia;
 use Laravel\Passport\Passport;
 
 /**
@@ -648,17 +653,21 @@ public function boot(): void
     // By providing a view name...
     Passport::deviceUserCodeView('auth.oauth.device.user-code');
     Passport::deviceAuthorizationView('auth.oauth.device.authorize');
-    
-    // By providing a closure...
-    Passport::deviceUserCodeView(fn ($parameters) => Inertia::render('Auth/OAuth/Device/UserCode'));
 
-    Passport::deviceAuthorizationView(fn ($parameters) => Inertia::render('Auth/OAuth/Device/Authorize', [
-        'request' => $parameters['request'],
-        'authToken' => $parameters['authToken'],
-        'client' => $parameters['client'],
-        'user' => $parameters['user'],
-        'scopes' => $parameters['scopes'],
-    ]));
+    // By providing a closure...
+    Passport::deviceUserCodeView(
+        fn ($parameters) => Inertia::render('Auth/OAuth/Device/UserCode')
+    );
+
+    Passport::deviceAuthorizationView(
+        fn ($parameters) => Inertia::render('Auth/OAuth/Device/Authorize', [
+            'request' => $parameters['request'],
+            'authToken' => $parameters['authToken'],
+            'client' => $parameters['client'],
+            'user' => $parameters['user'],
+            'scopes' => $parameters['scopes'],
+        ])
+    );
 
     // ...
 }
@@ -713,7 +722,7 @@ return $response->json();
 
 This will return a JSON response containing `device_code`, `user_code`, `verification_uri`, `interval`, and `expires_in` attributes. The `expires_in` attribute contains the number of seconds until the device code expires. The `interval` attribute contains the number of seconds the consuming device should wait between requests when polling `/oauth/token` route to avoid rate limit errors.
 
-> [!NOTE]  
+> [!NOTE]
 > Remember, the `/oauth/device/code` route is already defined by Passport. You do not need to manually define this route.
 
 <a name="user-code"></a>
@@ -738,10 +747,10 @@ do {
     $response = Http::asForm()->post('https://passport-app.test/oauth/token', [
         'grant_type' => 'urn:ietf:params:oauth:grant-type:device_code',
         'client_id' => 'your-client-id',
-        'client_secret' => 'your-client-secret', // required for confidential clients only
+        'client_secret' => 'your-client-secret', // Required for confidential clients only...
         'device_code' => 'the-device-code',
     ]);
-    
+
     if ($response->json('error') === 'slow_down') {
         $interval += 5;
     }
@@ -792,7 +801,7 @@ use Illuminate\Support\Facades\Http;
 $response = Http::asForm()->post('https://passport-app.test/oauth/token', [
     'grant_type' => 'password',
     'client_id' => 'your-client-id',
-    'client_secret' => 'your-client-secret', // required for confidential clients only
+    'client_secret' => 'your-client-secret', // Required for confidential clients only...
     'username' => 'taylor@laravel.com',
     'password' => 'my-password',
     'scope' => 'user:read orders:create',
@@ -815,7 +824,7 @@ use Illuminate\Support\Facades\Http;
 $response = Http::asForm()->post('https://passport-app.test/oauth/token', [
     'grant_type' => 'password',
     'client_id' => 'your-client-id',
-    'client_secret' => 'your-client-secret', // required for confidential clients only
+    'client_secret' => 'your-client-secret', // Required for confidential clients only...
     'username' => 'taylor@laravel.com',
     'password' => 'my-password',
     'scope' => '*',
@@ -839,16 +848,18 @@ namespace App\Models;
 
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Laravel\Passport\Bridge\Client;
+use Laravel\Passport\Contracts\OAuthenticatable;
 use Laravel\Passport\HasApiTokens;
 
-class User extends Authenticatable
+class User extends Authenticatable implements OAuthenticatable
 {
     use HasApiTokens, Notifiable;
 
     /**
      * Find the user instance for the given username.
      */
-    public function findForPassport(string $username): User
+    public function findForPassport(string $username, Client $client): User
     {
         return $this->where('username', $username)->first();
     }
@@ -868,9 +879,10 @@ namespace App\Models;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\Hash;
+use Laravel\Passport\Contracts\OAuthenticatable;
 use Laravel\Passport\HasApiTokens;
 
-class User extends Authenticatable
+class User extends Authenticatable implements OAuthenticatable
 {
     use HasApiTokens, Notifiable;
 
@@ -958,7 +970,7 @@ To restrict access to the route to specific scopes, you may provide a list of th
 ```php
 Route::get('/orders', function (Request $request) {
     // Access token is valid, the client is resource owner, and has both "servers:read" and "servers:create" scopes...
-})->middleware(EnsureClientIsResourceOwner::using('servers:read', 'servers:create');
+})->middleware(EnsureClientIsResourceOwner::using('servers:read', 'servers:create'));
 ```
 
 <a name="retrieving-tokens"></a>
@@ -1127,9 +1139,9 @@ If a client does not request any specific scopes, you may configure your Passpor
 use Laravel\Passport\Passport;
 
 Passport::tokensCan([
-        'user:read' => 'Retrieve the user info',
-        'orders:create' => 'Place orders',
-        'orders:read:status' => 'Check order status',
+    'user:read' => 'Retrieve the user info',
+    'orders:create' => 'Place orders',
+    'orders:read:status' => 'Check order status',
 ]);
 
 Passport::defaultScopes([
@@ -1183,7 +1195,7 @@ use Laravel\Passport\Http\Middleware\CheckToken;
 
 Route::get('/orders', function () {
     // Access token has both "orders:read" and "orders:create" scopes...
-})->middleware(['auth:api', CheckToken::using('orders:read', 'orders:create');
+})->middleware(['auth:api', CheckToken::using('orders:read', 'orders:create')]);
 ```
 
 <a name="check-for-any-scopes"></a>
@@ -1196,7 +1208,7 @@ use Laravel\Passport\Http\Middleware\CheckTokenForAnyScope;
 
 Route::get('/orders', function () {
     // Access token has either "orders:read" or "orders:create" scope...
-})->middleware(['auth:api', CheckTokenForAnyScope::using('orders:read', 'orders:create');
+})->middleware(['auth:api', CheckTokenForAnyScope::using('orders:read', 'orders:create')]);
 ```
 
 <a name="checking-scopes-on-a-token-instance"></a>
@@ -1253,7 +1265,7 @@ Typically, if you want to consume your API from your JavaScript application, you
 ```php
 use Laravel\Passport\Http\Middleware\CreateFreshApiToken;
 
-->withMiddleware(function (Middleware $middleware) {
+->withMiddleware(function (Middleware $middleware): void {
     $middleware->web(append: [
         CreateFreshApiToken::class,
     ]);
@@ -1302,9 +1314,10 @@ Passport raises events when issuing access tokens and refresh tokens. You may [l
 
 <div class="overflow-auto">
 
-| Event Name |
-| --- |
-| `Laravel\Passport\Events\AccessTokenCreated` |
+| Event Name                                    |
+| --------------------------------------------- |
+| `Laravel\Passport\Events\AccessTokenCreated`  |
+| `Laravel\Passport\Events\AccessTokenRevoked`  |
 | `Laravel\Passport\Events\RefreshTokenCreated` |
 
 </div>

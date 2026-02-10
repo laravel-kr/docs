@@ -41,14 +41,14 @@ Fortify는 자체 사용자 인터페이스를 제공하지 않기 때문에, Fo
 
 **Laravel의 인증 기능을 사용하기 위해 반드시 Fortify를 사용할 필요는 없습니다.** [인증](/docs/{{version}}/authentication), [비밀번호 재설정](/docs/{{version}}/passwords), [이메일 인증](/docs/{{version}}/verification) 문서에서 제공하는 내용을 따라 Laravel의 인증 서비스와 직접 상호작용할 수 있습니다.
 
-Laravel을 처음 접하신다면 Laravel Fortify를 사용하기 전에 [애플리케이션 스타터 킷](/docs/{{version}}/starter-kits)을 먼저 살펴보시길 권장합니다. 스타터 킷은 [Tailwind CSS](https://tailwindcss.com)로 구축된 사용자 인터페이스를 포함한 인증 스캐폴딩을 애플리케이션에 제공합니다. 이를 통해 Laravel Fortify가 이러한 기능을 구현하기 전에 Laravel의 인증 기능을 학습하고 익숙해질 수 있습니다.
+Laravel을 처음 접하신다면 [애플리케이션 스타터 킷](/docs/{{version}}/starter-kits)을 먼저 살펴보시길 권장합니다. Laravel의 애플리케이션 스타터 킷은 내부적으로 Fortify를 사용하여 [Tailwind CSS](https://tailwindcss.com)로 구축된 사용자 인터페이스를 포함한 인증 스캐폴딩을 애플리케이션에 제공합니다. 이를 통해 Laravel의 인증 기능을 학습하고 익숙해질 수 있습니다.
 
 Laravel Fortify는 본질적으로 애플리케이션 스타터 킷의 라우트와 컨트롤러를 가져와서 사용자 인터페이스를 포함하지 않는 패키지로 제공합니다. 이를 통해 특정 프론트엔드 의견에 얽매이지 않으면서도 애플리케이션 인증 레이어의 백엔드 구현을 빠르게 스캐폴딩할 수 있습니다.
 
 <a name="when-should-i-use-fortify"></a>
 ### Fortify를 언제 사용해야 하나요?
 
-Laravel Fortify를 언제 사용하는 것이 적절한지 궁금할 수 있습니다. 먼저, Laravel의 [애플리케이션 스타터 킷](/docs/{{version}}/starter-kits) 중 하나를 사용하고 있다면 Laravel의 모든 애플리케이션 스타터 킷이 이미 완전한 인증 구현을 제공하므로 Laravel Fortify를 설치할 필요가 없습니다.
+Laravel Fortify를 언제 사용하는 것이 적절한지 궁금할 수 있습니다. 먼저, Laravel의 [애플리케이션 스타터 킷](/docs/{{version}}/starter-kits) 중 하나를 사용하고 있다면 Laravel의 모든 애플리케이션 스타터 킷이 Fortify를 사용하며 이미 완전한 인증 구현을 제공하므로 Laravel Fortify를 설치할 필요가 없습니다.
 
 애플리케이션 스타터 킷을 사용하지 않고 애플리케이션에 인증 기능이 필요한 경우 두 가지 옵션이 있습니다: 애플리케이션의 인증 기능을 직접 구현하거나 Laravel Fortify를 사용하여 이러한 기능의 백엔드 구현을 제공받는 것입니다.
 
@@ -244,7 +244,7 @@ public function register(): void
 ```
 
 <a name="two-factor-authentication"></a>
-## 2단계 인증(Two Factor Authentication)
+## 2단계 인증(Two-Factor Authentication)
 
 Fortify의 2단계 인증 기능이 활성화되면 사용자는 인증 과정 중에 6자리 숫자 토큰을 입력해야 합니다. 이 토큰은 Google Authenticator와 같은 TOTP 호환 모바일 인증 애플리케이션에서 검색할 수 있는 시간 기반 일회용 비밀번호(TOTP)를 사용하여 생성됩니다.
 

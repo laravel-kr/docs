@@ -98,7 +98,7 @@ APP_NAME="My Application"
 `.env` 파일에 나열된 모든 변수는 애플리케이션이 요청을 받을 때 `$_ENV` PHP 슈퍼 글로벌에 로드됩니다. 그러나 설정 파일에서 이 변수들의 값을 조회하려면 `env` 함수를 사용할 수 있습니다. 실제로 Laravel 설정 파일을 살펴보면, 많은 옵션이 이미 이 함수를 사용하고 있는 것을 확인할 수 있습니다.
 
 ```php
-'debug' => env('APP_DEBUG', false),
+'debug' => (bool) env('APP_DEBUG', false),
 ```
 
 `env` 함수에 전달되는 두 번째 값은 "기본값"입니다. 주어진 키에 대한 환경 변수가 존재하지 않으면 이 값이 반환됩니다.
@@ -157,6 +157,32 @@ php artisan env:encrypt --key=3UVsEgGVK36XN82KKeyLFMhvosbZN1aF
 ```shell
 php artisan env:encrypt --env=staging
 ```
+
+<a name="readable-variable-names"></a>
+#### 읽기 가능한 변수 이름
+
+환경 파일을 암호화할 때 `--readable` 옵션을 사용하면 변수 이름은 보이게 유지하면서 값만 암호화할 수 있습니다:
+
+```shell
+php artisan env:encrypt --readable
+```
+
+이렇게 하면 다음과 같은 형식의 암호화된 파일이 생성됩니다:
+
+```ini
+APP_NAME=eyJpdiI6...
+APP_ENV=eyJpdiI6...
+APP_KEY=eyJpdiI6...
+APP_DEBUG=eyJpdiI6...
+APP_URL=eyJpdiI6...
+```
+
+읽기 가능한 형식을 사용하면 민감한 데이터를 노출하지 않고도 어떤 환경 변수가 존재하는지 확인할 수 있습니다. 또한 파일을 복호화하지 않고도 어떤 변수가 추가, 제거 또는 이름이 변경되었는지 확인할 수 있어 풀 리퀘스트(Pull Request)를 검토하는 것이 훨씬 쉬워집니다.
+
+환경 파일을 복호화할 때 Laravel은 어떤 형식이 사용되었는지 자동으로 감지하므로, `env:decrypt` 명령어에 추가 옵션이 필요하지 않습니다.
+
+> [!NOTE]
+> `--readable` 옵션을 사용하면 원본 환경 파일의 주석과 빈 줄은 암호화된 출력에 포함되지 않습니다.
 
 <a name="decryption"></a>
 #### 복호화
@@ -225,6 +251,7 @@ Config::integer('config-key');
 Config::float('config-key');
 Config::boolean('config-key');
 Config::array('config-key');
+Config::collection('config-key');
 ```
 
 <a name="configuration-caching"></a>

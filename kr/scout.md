@@ -71,7 +71,7 @@ class Post extends Model
 <a name="queueing"></a>
 ### 큐 사용
 
-Scout를 사용하는 데 반드시 필요한 것은 아니지만, 라이브러리를 사용하기 전에 [큐 드라이버](/docs/{{version}}/queues)를 구성하는 것을 강력히 권장합니다. 큐 워커를 실행하면 Scout가 모델 정보를 검색 인덱스에 동기화하는 모든 작업을 큐에 넣을 수 있어 애플리케이션의 웹 인터페이스에서 훨씬 더 빠른 응답 시간을 제공합니다.
+`database` 또는 `collection` 엔진이 아닌 엔진을 사용하는 경우, 라이브러리를 사용하기 전에 [큐 드라이버](/docs/{{version}}/queues)를 구성하는 것을 강력히 권장합니다. 큐 워커를 실행하면 Scout가 모델 정보를 검색 인덱스에 동기화하는 모든 작업을 큐에 넣을 수 있어 애플리케이션의 웹 인터페이스에서 훨씬 더 빠른 응답 시간을 제공합니다.
 
 큐 드라이버를 구성한 후 `config/scout.php` 설정 파일에서 `queue` 옵션 값을 `true`로 설정하세요.
 
@@ -427,7 +427,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Laravel\Scout\Engines\Engine;
-use Laravel\Scout\EngineManager;
+use Laravel\Scout\Scout;
 use Laravel\Scout\Searchable;
 
 class User extends Model
@@ -439,7 +439,7 @@ class User extends Model
      */
     public function searchableUsing(): Engine
     {
-        return app(EngineManager::class)->engine('meilisearch');
+        return Scout::engine('meilisearch');
     }
 }
 ```
@@ -464,7 +464,7 @@ SCOUT_IDENTIFY=true
 > [!WARNING]
 > 데이터베이스 엔진은 현재 MySQL과 PostgreSQL을 지원합니다.
 
-애플리케이션이 소규모에서 중규모 데이터베이스와 상호 작용하거나 가벼운 워크로드를 가지고 있는 경우 Scout의 "데이터베이스" 엔진으로 시작하는 것이 더 편리할 수 있습니다. 데이터베이스 엔진은 기존 데이터베이스에서 결과를 필터링할 때 "where like" 절과 전체 텍스트 인덱스를 사용하여 쿼리에 대한 해당 검색 결과를 결정합니다.
+`database` 엔진은 Laravel Scout를 시작하는 가장 빠른 방법이며, 기존 데이터베이스에서 결과를 필터링할 때 MySQL / PostgreSQL 전체 텍스트 인덱스와 "where like" 절을 사용하여 쿼리에 대한 해당 검색 결과를 결정합니다.
 
 데이터베이스 엔진을 사용하려면 `SCOUT_DRIVER` 환경 변수 값을 `database`로 설정하거나 애플리케이션의 `scout` 설정 파일에서 `database` 드라이버를 직접 지정하면 됩니다.
 
@@ -522,7 +522,7 @@ SCOUT_DRIVER=collection
 
 언뜻 보면 "데이터베이스"와 "컬렉션" 엔진은 상당히 비슷합니다. 둘 다 데이터베이스와 직접 상호 작용하여 검색 결과를 검색합니다. 그러나 컬렉션 엔진은 일치하는 레코드를 찾기 위해 전체 텍스트 인덱스나 `LIKE` 절을 사용하지 않습니다. 대신 가능한 모든 레코드를 가져와서 Laravel의 `Str::is` 헬퍼를 사용하여 검색 문자열이 모델 속성 값 내에 존재하는지 확인합니다.
 
-컬렉션 엔진은 Laravel이 지원하는 모든 관계형 데이터베이스(SQLite 및 SQL Server 포함)에서 작동하므로 가장 이식성이 높은 검색 엔진입니다. 그러나 Scout의 데이터베이스 엔진보다 효율성이 떨어집니다.
+컬렉션 엔진은 Laravel이 지원하는 모든 관계형 데이터베이스(SQLite 및 SQL Server 포함)에서 작동하므로 가장 이식성이 높은 검색 엔진입니다. 그러나 Scout의 데이터베이스 엔진보다 훨씬 효율성이 떨어집니다.
 
 <a name="indexing"></a>
 ## 인덱싱
@@ -534,6 +534,12 @@ SCOUT_DRIVER=collection
 
 ```shell
 php artisan scout:import "App\Models\Post"
+```
+
+`scout:queue-import` 명령을 사용하여 [큐 작업](/docs/{{version}}/queues)을 통해 기존의 모든 레코드를 가져올 수도 있습니다.
+
+```shell
+php artisan scout:queue-import "App\Models\Post" --chunk=500
 ```
 
 `flush` 명령은 검색 인덱스에서 모델의 모든 레코드를 제거하는 데 사용할 수 있습니다.
@@ -650,6 +656,21 @@ use Illuminate\Database\Eloquent\Collection;
 public function makeSearchableUsing(Collection $models): Collection
 {
     return $models->load('author');
+}
+```
+
+<a name="conditionally-updating-the-search-index"></a>
+#### 검색 인덱스 조건부 업데이트
+
+기본적으로 Scout는 어떤 속성이 수정되었는지와 관계없이 업데이트된 모델을 다시 인덱싱합니다. 이 동작을 커스터마이징하려면 모델에 `searchIndexShouldBeUpdated` 메서드를 정의할 수 있습니다.
+
+```php
+/**
+ * 검색 인덱스를 업데이트해야 하는지 결정합니다.
+ */
+public function searchIndexShouldBeUpdated(): bool
+{
+    return $this->wasRecentlyCreated || $this->wasChanged(['title', 'body']);
 }
 ```
 

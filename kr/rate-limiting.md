@@ -22,7 +22,7 @@ Laravel은 애플리케이션의 [캐시](cache)와 함께 사용하여 특정 �
 ```php
 'default' => env('CACHE_STORE', 'database'),
 
-'limiter' => 'redis',
+'limiter' => 'redis', // [tl! add]
 ```
 
 <a name="basic-usage"></a>
@@ -44,7 +44,7 @@ $executed = RateLimiter::attempt(
 );
 
 if (! $executed) {
-  return 'Too many messages sent!';
+    return 'Too many messages sent!';
 }
 ```
 

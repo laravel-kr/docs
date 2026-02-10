@@ -98,6 +98,30 @@ return User::findOrFail($id)->toResource();
 
 `toResource` 메서드를 호출하면 Laravel은 모델의 네임스페이스에서 가장 가까운 `Http\Resources` 네임스페이스 내에서 모델 이름과 일치하고 선택적으로 `Resource` 접미사가 붙은 리소스를 찾으려고 시도합니다.
 
+리소스 클래스가 이 명명 규칙을 따르지 않거나 다른 네임스페이스에 위치해 있는 경우, `UseResource` 속성을 사용하여 모델의 기본 리소스를 지정할 수 있습니다.
+
+```php
+<?php
+
+namespace App\Models;
+
+use App\Http\Resources\CustomUserResource;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Attributes\UseResource;
+
+#[UseResource(CustomUserResource::class)]
+class User extends Model
+{
+    // ...
+}
+```
+
+또는 `toResource` 메서드에 리소스 클래스를 전달하여 지정할 수도 있습니다.
+
+```php
+return User::findOrFail($id)->toResource(CustomUserResource::class);
+```
+
 <a name="resource-collections"></a>
 ### 리소스 컬렉션(Resource Collections)
 
@@ -119,6 +143,30 @@ return User::all()->toResourceCollection();
 ```
 
 `toResourceCollection` 메서드를 호출하면 Laravel은 모델의 네임스페이스에서 가장 가까운 `Http\Resources` 네임스페이스 내에서 모델 이름과 일치하고 `Collection` 접미사가 붙은 리소스 컬렉션을 찾으려고 시도합니다.
+
+리소스 컬렉션 클래스가 이 명명 규칙을 따르지 않거나 다른 네임스페이스에 위치해 있는 경우, `UseResourceCollection` 속성을 사용하여 모델의 기본 리소스 컬렉션을 지정할 수 있습니다.
+
+```php
+<?php
+
+namespace App\Models;
+
+use App\Http\Resources\CustomUserCollection;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Attributes\UseResourceCollection;
+
+#[UseResourceCollection(CustomUserCollection::class)]
+class User extends Model
+{
+    // ...
+}
+```
+
+또는 `toResourceCollection` 메서드에 리소스 컬렉션 클래스를 전달하여 지정할 수도 있습니다.
+
+```php
+return User::all()->toResourceCollection(CustomUserCollection::class);
+```
 
 <a name="custom-resource-collections"></a>
 #### 사용자 정의 리소스 컬렉션(Custom Resource Collections)
@@ -557,8 +605,8 @@ return User::paginate()->toResourceCollection();
  * 리소스의 페이지네이션 정보를 사용자 정의합니다.
  *
  * @param  \Illuminate\Http\Request  $request
- * @param  array $paginated
- * @param  array $default
+ * @param  array  $paginated
+ * @param  array  $default
  * @return array
  */
 public function paginationInformation($request, $paginated, $default)

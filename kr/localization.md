@@ -90,7 +90,17 @@ if (App::isLocale('en')) {
 <a name="pluralization-language"></a>
 ### 복수형 언어
 
+<style>
+.code-list-no-flex-break code {
+    display: contents !important;
+}
+</style>
+
+<div class="code-list-no-flex-break">
+
 Eloquent 및 프레임워크의 다른 부분에서 단수 문자열을 복수 문자열로 변환하는 데 사용되는 Laravel의 "복수화 도구(pluralizer)"에 영어 이외의 언어를 사용하도록 지시할 수 있습니다. 이는 애플리케이션의 서비스 프로바이더 중 하나의 `boot` 메서드 내에서 `useLanguage` 메서드를 호출하여 수행할 수 있습니다. 복수화 도구가 현재 지원하는 언어는 `french`, `norwegian-bokmal`, `portuguese`, `spanish`, `turkish`입니다.
+
+</div>
 
 ```php
 use Illuminate\Support\Pluralizer;
@@ -207,7 +217,7 @@ echo __('messages.welcome', ['name' => 'dayle']);
 <a name="object-replacement-formatting"></a>
 #### 객체 치환 포맷팅
 
-번역 플레이스홀더로 객체를 제공하려고 하면, 객체의 `__toString` 메서드가 호출됩니다. [`__toString`](https://www.php.net/manual/en/language.oop5.magic.php#object.tostring) 메서드는 PHP의 내장 "매직 메서드" 중 하나입니다. 그러나 때로는 상호작용하는 클래스가 서드파티 라이브러리에 속하는 경우처럼 주어진 클래스의 `__toString` 메서드를 제어할 수 없는 경우가 있습니다.
+번역 플레이스홀더로 객체를 제공하려고 하면, 객체의 `__toString` 메서드가 호출됩니다. [__toString](https://www.php.net/manual/en/language.oop5.magic.php#object.tostring) 메서드는 PHP의 내장 "매직 메서드" 중 하나입니다. 그러나 때로는 상호작용하는 클래스가 서드파티 라이브러리에 속하는 경우처럼 주어진 클래스의 `__toString` 메서드를 제어할 수 없는 경우가 있습니다.
 
 이러한 경우, Laravel은 특정 유형의 객체에 대한 사용자 정의 포맷팅 핸들러를 등록할 수 있게 해줍니다. 이를 수행하려면 번역기의 `stringable` 메서드를 호출해야 합니다. `stringable` 메서드는 포맷팅을 담당할 객체 유형을 타입힌트해야 하는 클로저를 받습니다. 일반적으로, `stringable` 메서드는 애플리케이션의 `AppServiceProvider` 클래스의 `boot` 메서드 내에서 호출되어야 합니다.
 

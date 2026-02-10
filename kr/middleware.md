@@ -123,7 +123,7 @@ class AfterMiddleware
 ```php
 use App\Http\Middleware\EnsureTokenIsValid;
 
-->withMiddleware(function (Middleware $middleware) {
+->withMiddleware(function (Middleware $middleware): void {
      $middleware->append(EnsureTokenIsValid::class);
 })
 ```
@@ -136,7 +136,7 @@ use App\Http\Middleware\EnsureTokenIsValid;
 Laravel의 글로벌 미들웨어 스택을 수동으로 관리하려면, Laravel의 기본 글로벌 미들웨어 스택을 `use` 메서드에 제공할 수 있습니다. 그런 다음 필요에 따라 기본 미들웨어 스택을 조정할 수 있습니다:
 
 ```php
-->withMiddleware(function (Middleware $middleware) {
+->withMiddleware(function (Middleware $middleware): void {
     $middleware->use([
         \Illuminate\Foundation\Http\Middleware\InvokeDeferredCallbacks::class,
         // \Illuminate\Http\Middleware\TrustHosts::class,
@@ -213,7 +213,7 @@ Route::withoutMiddleware([EnsureTokenIsValid::class])->group(function () {
 use App\Http\Middleware\First;
 use App\Http\Middleware\Second;
 
-->withMiddleware(function (Middleware $middleware) {
+->withMiddleware(function (Middleware $middleware): void {
     $middleware->appendToGroup('group-name', [
         First::class,
         Second::class,
@@ -245,21 +245,21 @@ Laravel에는 웹 및 API 라우트에 적용할 수 있는 일반적인 미들�
 
 <div class="overflow-auto">
 
-| `web` 미들웨어 그룹 |
-| --- |
-| `Illuminate\Cookie\Middleware\EncryptCookies` |
+| `web` 미들웨어 그룹                                       |
+| --------------------------------------------------------- |
+| `Illuminate\Cookie\Middleware\EncryptCookies`             |
 | `Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse` |
-| `Illuminate\Session\Middleware\StartSession` |
-| `Illuminate\View\Middleware\ShareErrorsFromSession` |
+| `Illuminate\Session\Middleware\StartSession`              |
+| `Illuminate\View\Middleware\ShareErrorsFromSession`       |
 | `Illuminate\Foundation\Http\Middleware\ValidateCsrfToken` |
-| `Illuminate\Routing\Middleware\SubstituteBindings` |
+| `Illuminate\Routing\Middleware\SubstituteBindings`        |
 
 </div>
 
 <div class="overflow-auto">
 
-| `api` 미들웨어 그룹 |
-| --- |
+| `api` 미들웨어 그룹                                |
+| -------------------------------------------------- |
 | `Illuminate\Routing\Middleware\SubstituteBindings` |
 
 </div>
@@ -270,7 +270,7 @@ Laravel에는 웹 및 API 라우트에 적용할 수 있는 일반적인 미들�
 use App\Http\Middleware\EnsureTokenIsValid;
 use App\Http\Middleware\EnsureUserIsSubscribed;
 
-->withMiddleware(function (Middleware $middleware) {
+->withMiddleware(function (Middleware $middleware): void {
     $middleware->web(append: [
         EnsureUserIsSubscribed::class,
     ]);
@@ -306,7 +306,7 @@ $middleware->web(remove: [
 Laravel의 기본 `web` 및 `api` 미들웨어 그룹 내의 모든 미들웨어를 수동으로 관리하려면, 그룹을 완전히 재정의할 수 있습니다. 아래 예제는 기본 미들웨어와 함께 `web` 및 `api` 미들웨어 그룹을 정의하여 필요에 따라 사용자 정의할 수 있도록 합니다:
 
 ```php
-->withMiddleware(function (Middleware $middleware) {
+->withMiddleware(function (Middleware $middleware): void {
     $middleware->group('web', [
         \Illuminate\Cookie\Middleware\EncryptCookies::class,
         \Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse::class,
@@ -336,7 +336,7 @@ Laravel의 기본 `web` 및 `api` 미들웨어 그룹 내의 모든 미들웨어
 ```php
 use App\Http\Middleware\EnsureUserIsSubscribed;
 
-->withMiddleware(function (Middleware $middleware) {
+->withMiddleware(function (Middleware $middleware): void {
     $middleware->alias([
         'subscribed' => EnsureUserIsSubscribed::class
     ]);
@@ -355,20 +355,20 @@ Route::get('/profile', function () {
 
 <div class="overflow-auto">
 
-| 별칭 | 미들웨어 |
-| --- | --- |
-| `auth` | `Illuminate\Auth\Middleware\Authenticate` |
-| `auth.basic` | `Illuminate\Auth\Middleware\AuthenticateWithBasicAuth` |
-| `auth.session` | `Illuminate\Session\Middleware\AuthenticateSession` |
-| `cache.headers` | `Illuminate\Http\Middleware\SetCacheHeaders` |
-| `can` | `Illuminate\Auth\Middleware\Authorize` |
-| `guest` | `Illuminate\Auth\Middleware\RedirectIfAuthenticated` |
-| `password.confirm` | `Illuminate\Auth\Middleware\RequirePassword` |
-| `precognitive` | `Illuminate\Foundation\Http\Middleware\HandlePrecognitiveRequests` |
-| `signed` | `Illuminate\Routing\Middleware\ValidateSignature` |
-| `subscribed` | `\Spark\Http\Middleware\VerifyBillableIsSubscribed` |
-| `throttle` | `Illuminate\Routing\Middleware\ThrottleRequests` 또는 `Illuminate\Routing\Middleware\ThrottleRequestsWithRedis` |
-| `verified` | `Illuminate\Auth\Middleware\EnsureEmailIsVerified` |
+| 별칭               | 미들웨어                                                                                                        |
+| ------------------ | ------------------------------------------------------------------------------------------------------------- |
+| `auth`             | `Illuminate\Auth\Middleware\Authenticate`                                                                     |
+| `auth.basic`       | `Illuminate\Auth\Middleware\AuthenticateWithBasicAuth`                                                        |
+| `auth.session`     | `Illuminate\Session\Middleware\AuthenticateSession`                                                           |
+| `cache.headers`    | `Illuminate\Http\Middleware\SetCacheHeaders`                                                                  |
+| `can`              | `Illuminate\Auth\Middleware\Authorize`                                                                        |
+| `guest`            | `Illuminate\Auth\Middleware\RedirectIfAuthenticated`                                                          |
+| `password.confirm` | `Illuminate\Auth\Middleware\RequirePassword`                                                                  |
+| `precognitive`     | `Illuminate\Foundation\Http\Middleware\HandlePrecognitiveRequests`                                            |
+| `signed`           | `Illuminate\Routing\Middleware\ValidateSignature`                                                             |
+| `subscribed`       | `\Spark\Http\Middleware\VerifyBillableIsSubscribed`                                                           |
+| `throttle`         | `Illuminate\Routing\Middleware\ThrottleRequests` 또는 `Illuminate\Routing\Middleware\ThrottleRequestsWithRedis` |
+| `verified`         | `Illuminate\Auth\Middleware\EnsureEmailIsVerified`                                                            |
 
 </div>
 
@@ -378,7 +378,7 @@ Route::get('/profile', function () {
 드물지만, 미들웨어가 특정 순서로 실행되어야 하지만 라우트에 할당될 때 순서를 제어할 수 없는 경우가 있습니다. 이러한 상황에서는 애플리케이션의 `bootstrap/app.php` 파일에서 `priority` 메서드를 사용하여 미들웨어 우선순위를 지정할 수 있습니다:
 
 ```php
-->withMiddleware(function (Middleware $middleware) {
+->withMiddleware(function (Middleware $middleware): void {
     $middleware->priority([
         \Illuminate\Foundation\Http\Middleware\HandlePrecognitiveRequests::class,
         \Illuminate\Cookie\Middleware\EncryptCookies::class,
@@ -451,7 +451,7 @@ Route::put('/post/{id}', function (string $id) {
 <a name="terminable-middleware"></a>
 ## 종료 가능한 미들웨어(Terminable Middleware)
 
-때때로 미들웨어가 HTTP 응답이 브라우저로 전송된 후에 작업을 수행해야 할 수 있습니다. 미들웨어에 `terminate` 메서드를 정의하고 웹 서버가 FastCGI를 사용하는 경우, 응답이 브라우저로 전송된 후 `terminate` 메서드가 자동으로 호출됩니다:
+때때로 미들웨어가 HTTP 응답이 브라우저로 전송된 후에 작업을 수행해야 할 수 있습니다. 미들웨어에 `terminate` 메서드를 정의하고 웹 서버가 [FastCGI](https://www.php.net/manual/en/install.fpm.php)를 사용하는 경우, 응답이 브라우저로 전송된 후 `terminate` 메서드가 자동으로 호출됩니다:
 
 ```php
 <?php

@@ -522,6 +522,15 @@ For convenience, if you want to verify that a column is `=` to a given value, yo
 $users = DB::table('users')->where('votes', 100)->get();
 ```
 
+You may also provide an associative array to the `where` method to quickly query against multiple columns:
+
+```php
+$users = DB::table('users')->where([
+    'first_name' => 'Jane',
+    'last_name' => 'Doe',
+])->get();
+```
+
 As previously mentioned, you may use any operator that is supported by your database system:
 
 ```php
@@ -656,7 +665,7 @@ WHERE published = true AND (
 The `whereNone` method may be used to retrieve records where none of the given columns match a given constraint:
 
 ```php
-$posts = DB::table('albums')
+$albums = DB::table('albums')
     ->where('published', true)
     ->whereNone([
         'title',
@@ -687,25 +696,49 @@ Laravel also supports querying JSON column types on databases that provide suppo
 $users = DB::table('users')
     ->where('preferences->dining->meal', 'salad')
     ->get();
+
+$users = DB::table('users')
+    ->whereIn('preferences->dining->meal', ['pasta', 'salad', 'sandwiches'])
+    ->get();
 ```
 
-You may use `whereJsonContains` to query JSON arrays:
+You may use the `whereJsonContains` and `whereJsonDoesntContain` methods to query JSON arrays:
 
 ```php
 $users = DB::table('users')
     ->whereJsonContains('options->languages', 'en')
     ->get();
+
+$users = DB::table('users')
+    ->whereJsonDoesntContain('options->languages', 'en')
+    ->get();
 ```
 
-If your application uses the MariaDB, MySQL, or PostgreSQL databases, you may pass an array of values to the `whereJsonContains` method:
+If your application uses the MariaDB, MySQL, or PostgreSQL databases, you may pass an array of values to the `whereJsonContains` and `whereJsonDoesntContain` methods:
 
 ```php
 $users = DB::table('users')
     ->whereJsonContains('options->languages', ['en', 'de'])
     ->get();
+
+$users = DB::table('users')
+    ->whereJsonDoesntContain('options->languages', ['en', 'de'])
+    ->get();
 ```
 
-You may use `whereJsonLength` method to query JSON arrays by their length:
+In addition, you may use the `whereJsonContainsKey` or `whereJsonDoesntContainKey` methods to retrieve the results that include or do not include a JSON key:
+
+```php
+$users = DB::table('users')
+    ->whereJsonContainsKey('preferences->dietary_requirements')
+    ->get();
+
+$users = DB::table('users')
+    ->whereJsonDoesntContainKey('preferences->dietary_requirements')
+    ->get();
+```
+
+Finally, you may use `whereJsonLength` method to query JSON arrays by their length:
 
 ```php
 $users = DB::table('users')
@@ -790,7 +823,7 @@ You may also provide a query object as the `whereIn` method's second argument:
 ```php
 $activeUsers = DB::table('users')->select('id')->where('is_active', 1);
 
-$users = DB::table('comments')
+$comments = DB::table('comments')
     ->whereIn('user_id', $activeUsers)
     ->get();
 ```
@@ -843,6 +876,24 @@ The `whereNotBetweenColumns` method verifies that a column's value lies outside 
 ```php
 $patients = DB::table('patients')
     ->whereNotBetweenColumns('weight', ['minimum_allowed_weight', 'maximum_allowed_weight'])
+    ->get();
+```
+
+**whereValueBetween / whereValueNotBetween / orWhereValueBetween / orWhereValueNotBetween**
+
+The `whereValueBetween` method verifies that a given value is between the values of two columns of the same type in the same table row:
+
+```php
+$patients = DB::table('products')
+    ->whereValueBetween(100, ['min_price', 'max_price'])
+    ->get();
+```
+
+The `whereValueNotBetween` method verifies that a value lies outside the values of two columns in the same table row:
+
+```php
+$patients = DB::table('products')
+    ->whereValueNotBetween(100, ['min_price', 'max_price'])
     ->get();
 ```
 
@@ -1122,6 +1173,23 @@ $users = DB::table('users')
     ->get();
 ```
 
+The sort direction is optional, and is ascending by default. If you want to sort in descending order, you can specify the second parameter for the `orderBy` method, or just use `orderByDesc`:
+
+```php
+$users = DB::table('users')
+    ->orderByDesc('verified_at')
+    ->get();
+```
+
+Finally, using the `->` operator, the results can be sorted by a value within a JSON column:
+
+```php
+$corporations = DB::table('corporations')
+    ->where('country', 'US')
+    ->orderBy('location->state')
+    ->get();
+```
+
 <a name="latest-oldest"></a>
 #### The `latest` and `oldest` Methods
 
@@ -1163,6 +1231,14 @@ $query = DB::table('users')->orderBy('name');
 $usersOrderedByEmail = $query->reorder('email', 'desc')->get();
 ```
 
+For convenience, you may use the `reorderDesc` method to reorder the query results in descending order:
+
+```php
+$query = DB::table('users')->orderBy('name');
+
+$usersOrderedByEmail = $query->reorderDesc('email')->get();
+```
+
 <a name="grouping"></a>
 ### Grouping
 
@@ -1202,16 +1278,7 @@ To build more advanced `having` statements, see the [havingRaw](#raw-methods) me
 <a name="limit-and-offset"></a>
 ### Limit and Offset
 
-<a name="skip-take"></a>
-#### The `skip` and `take` Methods
-
-You may use the `skip` and `take` methods to limit the number of results returned from the query or to skip a given number of results in the query:
-
-```php
-$users = DB::table('users')->skip(10)->take(5)->get();
-```
-
-Alternatively, you may use the `limit` and `offset` methods. These methods are functionally equivalent to the `take` and `skip` methods, respectively:
+You may use the `limit` and `offset` methods to limit the number of results returned from the query or to skip a given number of results in the query:
 
 ```php
 $users = DB::table('users')
@@ -1288,7 +1355,7 @@ DB::table('pruned_users')->insertUsing([
     'id', 'name', 'email', 'email_verified_at'
 ], DB::table('users')->select(
     'id', 'name', 'email', 'email_verified_at'
-)->where('updated_at', '<=', now()->subMonth()));
+)->where('updated_at', '<=', now()->minus(months: 1)));
 ```
 
 <a name="auto-incrementing-ids"></a>
@@ -1575,7 +1642,7 @@ class Paginate
     public function __construct(
         private string $sortBy = 'timestamp',
         private string $sortDirection = 'desc',
-        private string $perPage = 25,
+        private int $perPage = 25,
     ) {
         //
     }

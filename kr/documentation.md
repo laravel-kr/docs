@@ -5,6 +5,7 @@
 - ## 시작하기
     - [설치](/docs/{{version}}/installation)
     - [설정](/docs/{{version}}/configuration)
+    - [에이전틱 개발(Agentic Development)](/docs/{{version}}/ai)
     - [디렉토리 구조](/docs/{{version}}/structure)
     - [프론트엔드](/docs/{{version}}/frontend)
     - [스타터 킷](/docs/{{version}}/starter-kits)
@@ -73,6 +74,10 @@
     - [API 리소스](/docs/{{version}}/eloquent-resources)
     - [직렬화(Serialization)](/docs/{{version}}/eloquent-serialization)
     - [팩토리(Factories)](/docs/{{version}}/eloquent-factories)
+- ## AI
+    - [AI SDK](/docs/{{version}}/ai-sdk)
+    - [MCP](/docs/{{version}}/mcp)
+    - [Boost](/docs/{{version}}/boost)
 - ## 테스팅
     - [시작하기](/docs/{{version}}/testing)
     - [HTTP 테스트](/docs/{{version}}/http-tests)

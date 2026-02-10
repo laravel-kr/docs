@@ -3,11 +3,10 @@
 - [소개](#introduction)
 - [실시간 유효성 검사](#live-validation)
     - [Vue 사용하기](#using-vue)
-    - [Vue와 Inertia 사용하기](#using-vue-and-inertia)
     - [React 사용하기](#using-react)
-    - [React와 Inertia 사용하기](#using-react-and-inertia)
     - [Alpine과 Blade 사용하기](#using-alpine)
     - [Axios 설정하기](#configuring-axios)
+- [배열 유효성 검사](#validating-arrays)
 - [유효성 검사 규칙 커스터마이징](#customizing-validation-rules)
 - [파일 업로드 처리하기](#handling-file-uploads)
 - [부수 효과 관리하기](#managing-side-effects)
@@ -16,9 +15,12 @@
 <a name="introduction"></a>
 ## 소개
 
-Laravel Precognition을 사용하면 미래의 HTTP 요청 결과를 미리 예측할 수 있습니다. Precognition의 주요 사용 사례 중 하나는 백엔드의 유효성 검사 규칙을 프론트엔드 JavaScript 애플리케이션에서 중복 작성하지 않고도 "실시간" 유효성 검사를 제공하는 것입니다. Precognition은 Laravel의 Inertia 기반 [스타터 킷(Starter Kits)](/docs/{{version}}/starter-kits)과 특히 잘 어울립니다.
+Laravel Precognition을 사용하면 미래의 HTTP 요청 결과를 미리 예측할 수 있습니다. Precognition의 주요 사용 사례 중 하나는 백엔드의 유효성 검사 규칙을 프론트엔드 JavaScript 애플리케이션에서 중복 작성하지 않고도 "실시간" 유효성 검사를 제공하는 것입니다.
 
 Laravel이 "사전 인지 요청(Precognitive Request)"을 받으면, 라우트의 모든 미들웨어(Middleware)를 실행하고 라우트의 컨트롤러 의존성을 해결하며, [폼 리퀘스트(Form Request)](/docs/{{version}}/validation#form-request-validation) 유효성 검사를 포함하여 모든 처리를 수행합니다. 하지만 실제로 라우트의 컨트롤러 메서드는 실행하지 않습니다.
+
+> [!NOTE]
+> Inertia 2.3부터 Precognition 지원이 내장되어 있습니다. 자세한 내용은 [Inertia Forms 문서](https://inertiajs.com/docs/v2/the-basics/forms)를 참조하세요. 이전 Inertia 버전에서는 Precognition 0.x가 필요합니다.
 
 <a name="live-validation"></a>
 ## 실시간 유효성 검사
@@ -187,38 +189,6 @@ const submit = () => form.submit()
 </button>
 ```
 
-<a name="using-vue-and-inertia"></a>
-### Vue와 Inertia 사용하기
-
-> [!NOTE]
-> Vue와 Inertia로 Laravel 애플리케이션을 개발할 때 빠르게 시작하고 싶다면, [스타터 킷(Starter Kits)](/docs/{{version}}/starter-kits) 중 하나를 사용하는 것을 고려해 보세요. Laravel의 스타터 킷은 새 Laravel 애플리케이션을 위한 백엔드 및 프론트엔드 인증 스캐폴딩을 제공합니다.
-
-Vue와 Inertia에서 Precognition을 사용하기 전에, [Vue에서 Precognition 사용하기](#using-vue)에 대한 일반 문서를 먼저 확인하세요. Vue와 Inertia를 함께 사용할 때는 NPM을 통해 Inertia 호환 Precognition 라이브러리를 설치해야 합니다.
-
-```shell
-npm install laravel-precognition-vue-inertia
-```
-
-설치가 완료되면, Precognition의 `useForm` 함수는 위에서 설명한 유효성 검사 기능이 추가된 Inertia [폼 헬퍼(Form Helper)](https://inertiajs.com/forms#form-helper)를 반환합니다.
-
-폼 헬퍼의 `submit` 메서드가 간소화되어 HTTP 메서드나 URL을 지정할 필요가 없습니다. 대신, Inertia의 [방문 옵션(Visit Options)](https://inertiajs.com/manual-visits)을 첫 번째이자 유일한 인수로 전달할 수 있습니다. 또한, 위의 Vue 예제와 달리 `submit` 메서드는 프로미스(Promise)를 반환하지 않습니다. 대신, `submit` 메서드에 전달된 방문 옵션에서 Inertia가 지원하는 [이벤트 콜백(Event Callbacks)](https://inertiajs.com/manual-visits#event-callbacks)을 제공할 수 있습니다.
-
-```vue
-<script setup>
-import { useForm } from 'laravel-precognition-vue-inertia';
-
-const form = useForm('post', '/users', {
-    name: '',
-    email: '',
-});
-
-const submit = () => form.submit({
-    preserveScroll: true,
-    onSuccess: () => form.reset(),
-});
-</script>
-```
-
 <a name="using-react"></a>
 ### React 사용하기
 
@@ -330,7 +300,7 @@ Precognition으로 폼 입력의 일부만 유효성 검사하는 경우, 수동
     id="avatar"
     type="file"
     onChange={(e) => {
-        form.setData('avatar', e.target.value);
+        form.setData('avatar', e.target.files[0]);
 
         form.forgetError('avatar');
     }}
@@ -376,40 +346,6 @@ const submit = (e) => {
 <button disabled={form.processing}>
     Submit
 </button>
-```
-
-<a name="using-react-and-inertia"></a>
-### React와 Inertia 사용하기
-
-> [!NOTE]
-> React와 Inertia로 Laravel 애플리케이션을 개발할 때 빠르게 시작하고 싶다면, [스타터 킷(Starter Kits)](/docs/{{version}}/starter-kits) 중 하나를 사용하는 것을 고려해 보세요. Laravel의 스타터 킷은 새 Laravel 애플리케이션을 위한 백엔드 및 프론트엔드 인증 스캐폴딩을 제공합니다.
-
-React와 Inertia에서 Precognition을 사용하기 전에, [React에서 Precognition 사용하기](#using-react)에 대한 일반 문서를 먼저 확인하세요. React와 Inertia를 함께 사용할 때는 NPM을 통해 Inertia 호환 Precognition 라이브러리를 설치해야 합니다.
-
-```shell
-npm install laravel-precognition-react-inertia
-```
-
-설치가 완료되면, Precognition의 `useForm` 함수는 위에서 설명한 유효성 검사 기능이 추가된 Inertia [폼 헬퍼(Form Helper)](https://inertiajs.com/forms#form-helper)를 반환합니다.
-
-폼 헬퍼의 `submit` 메서드가 간소화되어 HTTP 메서드나 URL을 지정할 필요가 없습니다. 대신, Inertia의 [방문 옵션(Visit Options)](https://inertiajs.com/manual-visits)을 첫 번째이자 유일한 인수로 전달할 수 있습니다. 또한, 위의 React 예제와 달리 `submit` 메서드는 프로미스(Promise)를 반환하지 않습니다. 대신, `submit` 메서드에 전달된 방문 옵션에서 Inertia가 지원하는 [이벤트 콜백(Event Callbacks)](https://inertiajs.com/manual-visits#event-callbacks)을 제공할 수 있습니다.
-
-```js
-import { useForm } from 'laravel-precognition-react-inertia';
-
-const form = useForm('post', '/users', {
-    name: '',
-    email: '',
-});
-
-const submit = (e) => {
-    e.preventDefault();
-
-    form.submit({
-        preserveScroll: true,
-        onSuccess: () => form.reset(),
-    });
-};
 ```
 
 <a name="using-alpine"></a>
@@ -616,8 +552,21 @@ window.axios.defaults.headers.common['Authorization'] = authToken;
 client.use(window.axios)
 ```
 
-> [!WARNING]
-> Inertia 버전의 Precognition 라이브러리는 유효성 검사 요청에만 설정된 Axios 인스턴스를 사용합니다. 폼 제출은 항상 Inertia에서 전송됩니다.
+<a name="validating-arrays"></a>
+## 배열 유효성 검사
+
+와일드카드를 사용하여 배열이나 중첩된 객체 내의 필드를 유효성 검사할 수 있습니다. 각 `*`는 단일 경로 세그먼트에 매칭됩니다.
+
+```js
+// 배열 내 모든 사용자의 이메일을 유효성 검사...
+form.validate('users.*.email');
+
+// 프로필 객체의 모든 필드를 유효성 검사...
+form.validate('profile.*');
+
+// 모든 사용자의 모든 필드를 유효성 검사...
+form.validate('users.*.*');
+```
 
 <a name="customizing-validation-rules"></a>
 ## 유효성 검사 규칙 커스터마이징

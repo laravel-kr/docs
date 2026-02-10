@@ -35,7 +35,7 @@ Laravel은 Frank de Jonge가 만든 훌륭한 [Flysystem](https://github.com/the
 
 Laravel의 파일시스템 설정 파일은 `config/filesystems.php`에 위치합니다. 이 파일에서 모든 파일시스템 "디스크"를 설정할 수 있습니다. 각 디스크는 특정 스토리지 드라이버와 스토리지 위치를 나타냅니다. 지원되는 각 드라이버에 대한 예제 설정이 설정 파일에 포함되어 있으므로 스토리지 기본 설정과 자격 증명을 반영하도록 설정을 수정할 수 있습니다.
 
-`local` 드라이버는 Laravel 애플리케이션이 실행되는 서버에 로컬로 저장된 파일과 상호 작용하며, `s3` 드라이버는 Amazon의 S3 클라우드 스토리지 서비스에 쓰기 위해 사용됩니다.
+`local` 드라이버는 Laravel 애플리케이션이 실행되는 서버에 로컬로 저장된 파일과 상호 작용하며, `sftp` 스토리지 드라이버는 SSH 키 기반 FTP에 사용됩니다. `s3` 드라이버는 Amazon의 S3 클라우드 스토리지 서비스에 쓰기 위해 사용됩니다.
 
 > [!NOTE]
 > 원하는 만큼 많은 디스크를 설정할 수 있으며 동일한 드라이버를 사용하는 여러 디스크를 가질 수도 있습니다.
@@ -156,7 +156,7 @@ Laravel의 Flysystem 통합은 SFTP와 훌륭하게 작동합니다. 그러나 �
     'username' => env('SFTP_USERNAME'),
     'password' => env('SFTP_PASSWORD'),
 
-    // 암호화 비밀번호가 있는 SSH 키 기반 인증 설정...
+    // 암호화 비밀번호가 있는 SSH 키-기반 인증 설정...
     'privateKey' => env('SFTP_PRIVATE_KEY'),
     'passphrase' => env('SFTP_PASSPHRASE'),
 
@@ -213,25 +213,13 @@ composer require league/flysystem-read-only "^3.0"
 <a name="amazon-s3-compatible-filesystems"></a>
 ### Amazon S3 호환 파일시스템
 
-기본적으로 애플리케이션의 `filesystems` 설정 파일에는 `s3` 디스크에 대한 디스크 설정이 포함되어 있습니다. [Amazon S3](https://aws.amazon.com/s3/)와 상호 작용하는 데 이 디스크를 사용하는 것 외에도 [MinIO](https://github.com/minio/minio), [DigitalOcean Spaces](https://www.digitalocean.com/products/spaces/), [Vultr Object Storage](https://www.vultr.com/products/object-storage/), [Cloudflare R2](https://www.cloudflare.com/developer-platform/products/r2/), [Hetzner Cloud Storage](https://www.hetzner.com/storage/object-storage/)와 같은 S3 호환 파일 스토리지 서비스와 상호 작용하는 데 사용할 수 있습니다.
+기본적으로 애플리케이션의 `filesystems` 설정 파일에는 `s3` 디스크에 대한 디스크 설정이 포함되어 있습니다. [Amazon S3](https://aws.amazon.com/s3/)와 상호 작용하는 데 이 디스크를 사용하는 것 외에도 [RustFS](https://github.com/rustfs/rustfs), [DigitalOcean Spaces](https://www.digitalocean.com/products/spaces/), [Vultr Object Storage](https://www.vultr.com/products/object-storage/), [Cloudflare R2](https://www.cloudflare.com/developer-platform/products/r2/), [Hetzner Cloud Storage](https://www.hetzner.com/storage/object-storage/)와 같은 S3 호환 파일 스토리지 서비스와 상호 작용하는 데 사용할 수 있습니다.
 
 일반적으로 사용하려는 서비스의 자격 증명과 일치하도록 디스크의 자격 증명을 업데이트한 후에는 `endpoint` 설정 옵션 값만 업데이트하면 됩니다. 이 옵션의 값은 일반적으로 `AWS_ENDPOINT` 환경 변수를 통해 정의됩니다.
 
 ```php
-'endpoint' => env('AWS_ENDPOINT', 'https://minio:9000'),
+'endpoint' => env('AWS_ENDPOINT', 'https://rustfs:9000'),
 ```
-
-<a name="minio"></a>
-#### MinIO
-
-MinIO를 사용할 때 Laravel의 Flysystem 통합이 올바른 URL을 생성하려면 `AWS_URL` 환경 변수를 정의하여 애플리케이션의 로컬 URL과 일치하고 URL 경로에 버킷 이름을 포함해야 합니다.
-
-```ini
-AWS_URL=http://localhost:9000/local
-```
-
-> [!WARNING]
-> `endpoint`가 클라이언트에서 접근할 수 없는 경우 MinIO를 사용할 때 `temporaryUrl` 메서드를 통한 임시 스토리지 URL 생성이 작동하지 않을 수 있습니다.
 
 <a name="obtaining-disk-instances"></a>
 ## 디스크 인스턴스 획득
@@ -348,7 +336,7 @@ $url = Storage::url('file.jpg');
 use Illuminate\Support\Facades\Storage;
 
 $url = Storage::temporaryUrl(
-    'file.jpg', now()->addMinutes(5)
+    'file.jpg', now()->plus(minutes: 5)
 );
 ```
 
@@ -374,7 +362,7 @@ $url = Storage::temporaryUrl(
 ```php
 $url = Storage::temporaryUrl(
     'file.jpg',
-    now()->addMinutes(5),
+    now()->plus(minutes: 5),
     [
         'ResponseContentType' => 'application/octet-stream',
         'ResponseContentDisposition' => 'attachment; filename=file2.jpg',
@@ -429,7 +417,7 @@ class AppServiceProvider extends ServiceProvider
 use Illuminate\Support\Facades\Storage;
 
 ['url' => $url, 'headers' => $headers] = Storage::temporaryUploadUrl(
-    'file.jpg', now()->addMinutes(5)
+    'file.jpg', now()->plus(minutes: 5)
 );
 ```
 
@@ -730,7 +718,7 @@ Storage::disk('s3')->delete('path/file.jpg');
 <a name="get-all-files-within-a-directory"></a>
 #### 디렉토리 내 모든 파일 가져오기
 
-`files` 메서드는 주어진 디렉토리에 있는 모든 파일의 배열을 반환합니다. 모든 하위 디렉토리를 포함하여 주어진 디렉토리 내의 모든 파일 목록을 조회하려면 `allFiles` 메서드를 사용할 수 있습니다.
+`files` 메서드는 주어진 디렉토리 내의 모든 파일 배열을 반환합니다. 하위 디렉토리를 포함하여 주어진 디렉토리 내의 모든 파일 목록을 조회하려면 `allFiles` 메서드를 사용할 수 있습니다.
 
 ```php
 use Illuminate\Support\Facades\Storage;
@@ -743,7 +731,7 @@ $files = Storage::allFiles($directory);
 <a name="get-all-directories-within-a-directory"></a>
 #### 디렉토리 내 모든 디렉토리 가져오기
 
-`directories` 메서드는 주어진 디렉토리 내의 모든 디렉토리 배열을 반환합니다. 또한 주어진 디렉토리와 모든 하위 디렉토리 내의 모든 디렉토리 목록을 가져오기 위해 `allDirectories` 메서드를 사용할 수 있습니다.
+`directories` 메서드는 주어진 디렉토리 내의 모든 디렉토리 배열을 반환합니다. 하위 디렉토리를 포함하여 주어진 디렉토리 내의 모든 디렉토리 목록을 조회하려면 `allDirectories` 메서드를 사용할 수 있습니다.
 
 ```php
 $directories = Storage::directories($directory);

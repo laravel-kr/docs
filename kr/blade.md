@@ -138,7 +138,7 @@ Hello, {!! $name !!}.
 Hello, @{{ name }}.
 ```
 
-이 예제에서 `@` 기호는 블레이드에 의해 제거됩니다. 그러나 `{{ name }}` 표현식은 블레이드 엔진에 의해 영향을 받지 않고 그대로 유지되어 자바스크립트 프레임워크에서 렌더링될 수 있습니다.
+이 예제에서 `@` 기호는 블레이드에 의해 제거됩니다. 그러나 `{{ name }}` 표현식은 블레이드 엔진에 의해 그대로 유지되어 자바스크립트 프레임워크에서 렌더링될 수 있습니다.
 
 `@` 기호는 블레이드 지시어를 이스케이프하는 데도 사용할 수 있습니다.
 
@@ -161,7 +161,7 @@ Hello, @{{ name }}.
 </script>
 ```
 
-그러나 수동으로 `json_encode`를 호출하는 대신 `Illuminate\Support\Js::from` 메서드 지시어를 사용할 수 있습니다. `from` 메서드는 PHP의 `json_encode` 함수와 동일한 인수를 받지만, 결과 JSON이 HTML 따옴표 내에 포함되도록 적절하게 이스케이프되도록 합니다. `from` 메서드는 주어진 객체나 배열을 유효한 자바스크립트 객체로 변환하는 `JSON.parse` 자바스크립트 문을 문자열로 반환합니다.
+그러나 수동으로 `json_encode`를 호출하는 대신 `Illuminate\Support\Js::from` 메서드를 사용할 수 있습니다. `from` 메서드는 PHP의 `json_encode` 함수와 동일한 인수를 받지만, 결과 JSON이 HTML 따옴표 내에 포함되도록 적절하게 이스케이프됩니다. `from` 메서드는 주어진 객체나 배열을 유효한 자바스크립트 객체로 변환하는 `JSON.parse` 자바스크립트 문을 문자열로 반환합니다.
 
 ```blade
 <script>
@@ -319,6 +319,17 @@ Hello, @{{ name }}.
         {{ $value }}
     </div>
 @endsession
+```
+
+<a name="context-directives"></a>
+#### 컨텍스트 지시어(Context Directives)
+
+`@context` 지시어는 [컨텍스트(Context)](/docs/{{version}}/context) 값이 존재하는지 확인하는 데 사용할 수 있습니다. 컨텍스트 값이 존재하면 `@context`와 `@endcontext` 지시어 내의 템플릿 내용이 평가됩니다. `@context` 지시어의 내용 내에서 `$value` 변수를 출력하여 컨텍스트 값을 표시할 수 있습니다.
+
+```blade
+@context('canonical')
+    <link href="{{ $value }}" rel="canonical">
+@endcontext
 ```
 
 <a name="switch-statements"></a>
@@ -581,6 +592,12 @@ Switch 문은 `@switch`, `@case`, `@break`, `@default`, `@endswitch` 지시어�
 @includeFirst(['custom.admin', 'admin'], ['status' => 'complete'])
 ```
 
+부모 뷰의 변수를 상속하지 않고 뷰를 포함하려면 `@includeIsolated` 지시어를 사용할 수 있습니다. 포함된 뷰는 명시적으로 전달한 변수에만 접근할 수 있습니다.
+
+```blade
+@includeIsolated('view.name', ['user' => $user])
+```
+
 > [!WARNING]
 > 블레이드 뷰에서 `__DIR__`과 `__FILE__` 상수를 사용하지 않아야 합니다. 이들은 캐시된, 컴파일된 뷰의 위치를 참조하게 됩니다.
 
@@ -629,6 +646,20 @@ Switch 문은 `@switch`, `@case`, `@break`, `@default`, `@endswitch` 지시어�
 @endPushOnce
 ```
 
+두 개의 별도 블레이드 템플릿에서 중복된 콘텐츠를 푸시하는 경우, `@pushOnce` 지시어의 두 번째 인수로 고유 식별자를 제공하여 콘텐츠가 한 번만 렌더링되도록 해야 합니다.
+
+```blade
+<!-- pie-chart.blade.php -->
+@pushOnce('scripts', 'chart.js')
+    <script src="/chart.js"></script>
+@endPushOnce
+
+<!-- line-chart.blade.php -->
+@pushOnce('scripts', 'chart.js')
+    <script src="/chart.js"></script>
+@endPushOnce
+```
+
 <a name="raw-php"></a>
 ### 순수 PHP
 
@@ -662,6 +693,7 @@ Switch 문은 `@switch`, `@case`, `@break`, `@default`, `@endswitch` 지시어�
 
 ```blade
 @use(function App\Helpers\format_currency)
+@use(const App\Constants\MAX_ATTEMPTS)
 ```
 
 클래스 import와 마찬가지로 함수와 상수에 대해서도 별칭이 지원됩니다.
@@ -690,9 +722,9 @@ function과 const 수정자 모두에서 그룹화된 import도 지원되어, �
 <a name="components"></a>
 ## 컴포넌트
 
-컴포넌트와 슬롯은 섹션, 레이아웃, include와 유사한 이점을 제공하지만, 일부 사람들은 컴포넌트와 슬롯의 멘탈 모델이 더 이해하기 쉽다고 느낄 수 있습니다. 컴포넌트를 작성하는 두 가지 접근 방식이 있습니다: 클래스 기반 컴포넌트와 익명 컴포넌트.
+컴포넌트와 슬롯은 섹션, 레이아웃, include와 유사한 이점을 제공하지만, 일부 사람들은 컴포넌트와 슬롯의 멘탈 모델이 더 이해하기 쉽다고 느낄 수 있습니다. 컴포넌트를 작성하는 두 가지 접근 방식이 있습니다: 클래스 기반(class-based) 컴포넌트와 익명 컴포넌트.
 
-클래스 기반 컴포넌트를 만들려면 `make:component` Artisan 명령을 사용할 수 있습니다. 컴포넌트 사용 방법을 설명하기 위해 간단한 `Alert` 컴포넌트를 만들어 보겠습니다. `make:component` 명령은 컴포넌트를 `app/View/Components` 디렉토리에 배치합니다.
+클래스 기반(class-based) 컴포넌트를 만들려면 `make:component` Artisan 명령을 사용할 수 있습니다. 컴포넌트 사용 방법을 설명하기 위해 간단한 `Alert` 컴포넌트를 만들어 보겠습니다. `make:component` 명령은 컴포넌트를 `app/View/Components` 디렉토리에 배치합니다.
 
 ```shell
 php artisan make:component Alert
@@ -707,14 +739,6 @@ php artisan make:component Forms/Input
 ```
 
 위 명령은 `app/View/Components/Forms` 디렉토리에 `Input` 컴포넌트를 생성하고 뷰는 `resources/views/components/forms` 디렉토리에 배치됩니다.
-
-익명 컴포넌트(블레이드 템플릿만 있고 클래스가 없는 컴포넌트)를 만들려면 `make:component` 명령을 호출할 때 `--view` 플래그를 사용할 수 있습니다.
-
-```shell
-php artisan make:component forms.input --view
-```
-
-위 명령은 `resources/views/components/forms/input.blade.php`에 블레이드 파일을 생성하며, `<x-forms.input />`을 통해 컴포넌트로 렌더링할 수 있습니다.
 
 <a name="manually-registering-package-components"></a>
 #### 패키지 컴포넌트 수동 등록
@@ -1203,6 +1227,7 @@ class Alert extends Component
 
 - `data`
 - `render`
+- `resolve`
 - `resolveView`
 - `shouldRender`
 - `view`
@@ -1441,6 +1466,14 @@ public function boot(): void
 <x-inputs.button/>
 ```
 
+Artisan을 통해 익명 컴포넌트를 만들려면 `make:component` 명령을 호출할 때 `--view` 플래그를 사용할 수 있습니다.
+
+```shell
+php artisan make:component forms.input --view
+```
+
+위 명령은 `resources/views/components/forms/input.blade.php`에 블레이드 파일을 생성하며, `<x-forms.input />`을 통해 컴포넌트로 렌더링할 수 있습니다.
+
 <a name="anonymous-index-components"></a>
 ### 익명 인덱스 컴포넌트
 
@@ -1561,7 +1594,7 @@ public function boot(): void
 Blade::anonymousComponentPath(__DIR__.'/../components', 'dashboard');
 ```
 
-접두사가 제공되면 해당 "네임스페이스" 내의 컴포넌트는 컴포넌트가 렌더링될 때 컴포넌트 이름에 컴포넌트의 네임스페이스를 접두사로 붙여 렌더링될 수 있습니다.
+접두사가 제공되면 해당 "네임스페이스" 내의 컴포넌트는 컴포넌트가 렌더링될 때 컴포넌트 이름 앞에 컴포넌트의 네임스페이스를 붙여 렌더링할 수 있습니다.
 
 ```blade
 <x-dashboard::panel />
@@ -1826,6 +1859,16 @@ HTML 폼은 `PUT`, `PATCH`, `DELETE` 요청을 할 수 없으므로 이러한 HT
 @prepend('scripts')
     This will be first...
 @endprepend
+```
+
+`@hasstack` 지시어를 사용하여 스택이 비어 있는지 확인할 수 있습니다.
+
+```blade
+@hasstack('list')
+    <ul>
+        @stack('list')
+    </ul>
+@endif
 ```
 
 <a name="service-injection"></a>

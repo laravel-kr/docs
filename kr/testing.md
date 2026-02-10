@@ -7,6 +7,7 @@
     - [테스트 병렬 실행하기](#running-tests-in-parallel)
     - [테스트 커버리지 리포트](#reporting-test-coverage)
     - [테스트 프로파일링](#profiling-tests)
+- [설정 캐싱](#configuration-caching)
 
 <a name="introduction"></a>
 ## 소개
@@ -220,4 +221,35 @@ Artisan 테스트 러너에는 애플리케이션에서 가장 느린 테스트�
 
 ```shell
 php artisan test --profile
+```
+
+<a name="configuration-caching"></a>
+## 설정 캐싱
+
+테스트를 실행할 때 Laravel은 각 개별 테스트 메서드마다 애플리케이션을 부팅합니다. 캐시된 설정 파일이 없으면 테스트 시작 시 애플리케이션의 각 설정 파일을 로드해야 합니다. 설정을 한 번 빌드하고 단일 실행의 모든 테스트에서 재사용하려면 `Illuminate\Foundation\Testing\WithCachedConfig` 트레이트를 사용할 수 있습니다.
+
+```php tab=Pest
+<?php
+
+use Illuminate\Foundation\Testing\WithCachedConfig;
+
+pest()->use(WithCachedConfig::class);
+
+// ...
+```
+
+```php tab=PHPUnit
+<?php
+
+namespace Tests\Feature;
+
+use Illuminate\Foundation\Testing\WithCachedConfig;
+use Tests\TestCase;
+
+class ConfigTest extends TestCase
+{
+    use WithCachedConfig;
+
+    // ...
+}
 ```

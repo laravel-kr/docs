@@ -1,8 +1,9 @@
 # 비밀번호 재설정
 
 - [소개](#introduction)
+    - [설정](#configuration)
+    - [드라이버 사전 요구 사항](#driver-prerequisites)
     - [모델 준비](#model-preparation)
-    - [데이터베이스 준비](#database-preparation)
     - [신뢰할 수 있는 호스트 설정](#configuring-trusted-hosts)
 - [라우팅](#routing)
     - [비밀번호 재설정 링크 요청](#requesting-the-password-reset-link)
@@ -18,17 +19,53 @@
 > [!NOTE]
 > 빠르게 시작하고 싶으신가요? 새로운 Laravel 애플리케이션에 Laravel [애플리케이션 스타터 킷](/docs/{{version}}/starter-kits)을 설치하세요. Laravel의 스타터 킷은 잊어버린 비밀번호 재설정을 포함한 전체 인증 시스템의 스캐폴딩을 처리해 줍니다.
 
+<a name="configuration"></a>
+### 설정
+
+애플리케이션의 비밀번호 재설정 설정 파일은 `config/auth.php`에 저장되어 있습니다. 이 파일에서 사용 가능한 옵션을 반드시 검토하세요. 기본적으로 Laravel은 `database` 비밀번호 재설정 드라이버를 사용하도록 설정되어 있습니다.
+
+비밀번호 재설정 `driver` 설정 옵션은 비밀번호 재설정 데이터가 저장되는 위치를 정의합니다. Laravel에는 두 가지 드라이버가 포함되어 있습니다.
+
+<div class="content-list" markdown="1">
+
+- `database` - 비밀번호 재설정 데이터가 관계형 데이터베이스에 저장됩니다.
+- `cache` - 비밀번호 재설정 데이터가 캐시 기반 저장소 중 하나에 저장됩니다.
+
+</div>
+
+<a name="driver-prerequisites"></a>
+### 드라이버 사전 요구 사항
+
+<a name="database"></a>
+#### 데이터베이스(Database)
+
+기본 `database` 드라이버를 사용할 때, 애플리케이션의 비밀번호 재설정 토큰을 저장할 테이블을 생성해야 합니다. 일반적으로 이것은 Laravel의 기본 `0001_01_01_000000_create_users_table.php` 데이터베이스 마이그레이션에 포함되어 있습니다.
+
+<a name="cache"></a>
+#### 캐시(Cache)
+
+전용 데이터베이스 테이블이 필요 없는 비밀번호 재설정을 처리하기 위한 캐시 드라이버도 사용할 수 있습니다. 항목은 사용자의 이메일 주소로 키가 지정되므로, 애플리케이션의 다른 곳에서 이메일 주소를 캐시 키로 사용하지 않도록 주의하세요.
+
+```php
+'passwords' => [
+    'users' => [
+        'driver' => 'cache',
+        'provider' => 'users',
+        'store' => 'passwords', // 선택 사항...
+        'expire' => 60,
+        'throttle' => 60,
+    ],
+],
+```
+
+`artisan cache:clear` 호출로 비밀번호 재설정 데이터가 삭제되는 것을 방지하려면, `store` 설정 키를 사용하여 별도의 캐시 저장소를 선택적으로 지정할 수 있습니다. 이 값은 `config/cache.php` 설정 파일에 설정된 저장소와 일치해야 합니다.
+
 <a name="model-preparation"></a>
 ### 모델 준비
 
 Laravel의 비밀번호 재설정 기능을 사용하기 전에, 애플리케이션의 `App\Models\User` 모델은 `Illuminate\Notifications\Notifiable` 트레이트를 사용해야 합니다. 일반적으로 이 트레이트는 새로운 Laravel 애플리케이션과 함께 생성되는 기본 `App\Models\User` 모델에 이미 포함되어 있습니다.
 
 다음으로, `App\Models\User` 모델이 `Illuminate\Contracts\Auth\CanResetPassword` 컨트랙트(Contract)를 구현하는지 확인하세요. 프레임워크에 포함된 `App\Models\User` 모델은 이미 이 인터페이스를 구현하고 있으며, 인터페이스 구현에 필요한 메서드를 포함하는 `Illuminate\Auth\Passwords\CanResetPassword` 트레이트를 사용합니다.
-
-<a name="database-preparation"></a>
-### 데이터베이스 준비
-
-애플리케이션의 비밀번호 재설정 토큰을 저장할 테이블을 생성해야 합니다. 일반적으로 이것은 Laravel의 기본 `0001_01_01_000000_create_users_table.php` 데이터베이스 마이그레이션에 포함되어 있습니다.
 
 <a name="configuring-trusted-hosts"></a>
 ### 신뢰할 수 있는 호스트 설정
@@ -160,7 +197,7 @@ Route::post('/reset-password', function (Request $request) {
 <a name="deleting-expired-tokens"></a>
 ## 만료된 토큰 삭제
 
-만료된 비밀번호 재설정 토큰은 여전히 데이터베이스에 남아 있습니다. 그러나 `auth:clear-resets` Artisan 명령어를 사용하여 이러한 레코드를 쉽게 삭제할 수 있습니다.
+`database` 드라이버를 사용하는 경우, 만료된 비밀번호 재설정 토큰은 여전히 데이터베이스에 남아 있습니다. 그러나 `auth:clear-resets` Artisan 명령어를 사용하여 이러한 레코드를 쉽게 삭제할 수 있습니다.
 
 ```shell
 php artisan auth:clear-resets
@@ -180,7 +217,7 @@ Schedule::command('auth:clear-resets')->everyFifteenMinutes();
 <a name="reset-link-customization"></a>
 #### 재설정 링크 커스터마이징
 
-`ResetPassword` 알림 클래스에서 제공하는 `createUrlUsing` 메서드를 사용하여 비밀번호 재설정 링크 URL을 커스터마이징할 수 있습니다. 이 메서드는 알림을 받는 사용자 인스턴스와 비밀번호 재설정 링크 토큰을 받는 클로저를 허용합니다. 일반적으로 `App\Providers\AppServiceProvider` 서비스 프로바이더의 `boot` 메서드에서 이 메서드를 호출해야 합니다.
+`ResetPassword` 알림 클래스에서 제공하는 `createUrlUsing` 메서드를 사용하여 비밀번호 재설정 링크 URL을 커스터마이징할 수 있습니다. 이 메서드는 알림을 받는 사용자 인스턴스와 비밀번호 재설정 링크 토큰을 받는 클로저를 허용합니다. 일반적으로 애플리케이션의 `AppServiceProvider`의 `boot` 메서드에서 이 메서드를 호출해야 합니다.
 
 ```php
 use App\Models\User;

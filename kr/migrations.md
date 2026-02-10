@@ -140,7 +140,7 @@ public function up(): void
 때때로 마이그레이션이 아직 활성화되지 않은 기능을 지원하기 위한 것일 수 있으며, 아직 실행하고 싶지 않을 수 있습니다. 이 경우 마이그레이션에 `shouldRun` 메서드를 정의할 수 있습니다. `shouldRun` 메서드가 `false`를 반환하면 마이그레이션이 건너뛰어집니다.
 
 ```php
-use App\Models\Flights;
+use App\Models\Flight;
 use Laravel\Pennant\Feature;
 
 /**
@@ -148,7 +148,7 @@ use Laravel\Pennant\Feature;
  */
 public function shouldRun(): bool
 {
-    return Feature::active(Flights::class);
+    return Feature::active(Flight::class);
 }
 ```
 
@@ -161,7 +161,7 @@ public function shouldRun(): bool
 php artisan migrate
 ```
 
-지금까지 실행된 마이그레이션을 확인하려면 `migrate:status` Artisan 명령을 사용할 수 있습니다.
+이미 실행된 마이그레이션과 아직 보류 중인 마이그레이션을 확인하려면 `migrate:status` Artisan 명령을 사용할 수 있습니다.
 
 ```shell
 php artisan migrate:status
@@ -173,6 +173,7 @@ php artisan migrate:status
 php artisan migrate --pretend
 ```
 
+<a name="isolating-migration-execution"></a>
 #### 마이그레이션 실행 격리
 
 여러 서버에 애플리케이션을 배포하고 배포 프로세스의 일부로 마이그레이션을 실행하는 경우, 두 서버가 동시에 데이터베이스를 마이그레이션하려고 하는 것을 원하지 않을 것입니다. 이를 피하려면 `migrate` 명령을 호출할 때 `isolated` 옵션을 사용할 수 있습니다.
@@ -552,6 +553,7 @@ Schema::table('users', function (Blueprint $table) {
 
 </div>
 
+<a name="relationship-method-list"></a>
 #### 관계(Relationship) 타입
 
 <div class="collection-method-list" markdown="1">
@@ -684,6 +686,14 @@ $table->double('amount');
 
 ```php
 $table->enum('difficulty', ['easy', 'hard']);
+```
+
+물론 허용되는 값의 배열을 수동으로 정의하는 대신 `Enum::cases()` 메서드를 사용할 수도 있습니다.
+
+```php
+use App\Enums\Difficulty;
+
+$table->enum('difficulty', Difficulty::cases());
 ```
 
 <a name="column-method-float"></a>
@@ -1136,7 +1146,7 @@ $table->ulidMorphs('taggable');
 
 `uuidMorphs` 메서드는 `{column}_id` `CHAR(36)` 동등 컬럼과 `{column}_type` `VARCHAR` 동등 컬럼을 추가하는 편의 메서드입니다.
 
-이 메서드는 UUID 식별자를 사용하는 다형성 [Eloquent 관계](/docs/{{version}}/eloquent-relationships)에 필요한 컬럼을 정의할 때 사용됩니다. 다음 예제에서는 `taggable_id`와 `taggable_type` 컬럼이 생성됩니다.
+이 메서드는 UUID 식별자를 사용하는 [다형성 Eloquent 관계](/docs/{{version}}/eloquent-relationships#polymorphic-relationships)에 필요한 컬럼을 정의할 때 사용됩니다. 다음 예제에서는 `taggable_id`와 `taggable_type` 컬럼이 생성됩니다.
 
 ```php
 $table->uuidMorphs('taggable');
@@ -1206,7 +1216,9 @@ Schema::table('users', function (Blueprint $table) {
 | `->default($value)`                 | 컬럼에 "기본" 값을 지정합니다.                                                                 |
 | `->first()`                         | 컬럼을 테이블에서 "첫 번째"로 배치합니다 (MariaDB / MySQL).                                    |
 | `->from($integer)`                  | 자동 증가 필드의 시작 값을 설정합니다 (MariaDB / MySQL / PostgreSQL).                          |
+| `->instant()`                       | 인스턴트 작업을 사용하여 컬럼을 추가하거나 수정합니다 (MySQL).                                  |
 | `->invisible()`                     | 컬럼을 `SELECT *` 쿼리에서 "보이지 않게" 만듭니다 (MariaDB / MySQL).                           |
+| `->lock($mode)`                     | 컬럼 작업에 대한 잠금 모드를 지정합니다 (MySQL).                                               |
 | `->nullable($value = true)`         | `NULL` 값을 컬럼에 삽입할 수 있도록 허용합니다.                                                |
 | `->storedAs($expression)`           | 저장된 생성 컬럼을 만듭니다 (MariaDB / MySQL / PostgreSQL / SQLite).                           |
 | `->unsigned()`                      | `INTEGER` 컬럼을 `UNSIGNED`로 설정합니다 (MariaDB / MySQL).                                    |
@@ -1261,6 +1273,36 @@ $table->after('password', function (Blueprint $table) {
     $table->string('address_line2');
     $table->string('city');
 });
+```
+
+<a name="instant-column-operations"></a>
+#### 인스턴트 컬럼 작업
+
+MySQL을 사용할 때, 컬럼 정의에 `instant` 수정자를 체이닝하여 MySQL의 "인스턴트(instant)" 알고리즘을 사용하여 컬럼을 추가하거나 수정해야 함을 나타낼 수 있습니다. 이 알고리즘은 전체 테이블 재구축 없이 특정 스키마 변경을 수행할 수 있어 테이블 크기에 관계없이 거의 즉각적으로 처리됩니다.
+
+```php
+$table->string('name')->nullable()->instant();
+```
+
+인스턴트 컬럼 추가는 테이블 끝에만 컬럼을 추가할 수 있으므로, `instant` 수정자는 `after` 또는 `first` 수정자와 결합할 수 없습니다. 또한 이 알고리즘은 모든 컬럼 타입이나 작업을 지원하지 않습니다. 요청한 작업이 호환되지 않으면 MySQL이 오류를 발생시킵니다.
+
+어떤 작업이 인스턴트 컬럼 수정과 호환되는지 확인하려면 [MySQL 문서](https://dev.mysql.com/doc/refman/8.0/en/innodb-online-ddl-operations.html)를 참조하세요.
+
+<a name="ddl-locking"></a>
+#### DDL 잠금
+
+MySQL을 사용할 때, 스키마 작업 중 테이블 잠금을 제어하기 위해 컬럼, 인덱스 또는 외래 키 정의에 `lock` 수정자를 체이닝할 수 있습니다. MySQL은 여러 잠금 모드를 지원합니다: `none`은 동시 읽기와 쓰기를 허용하고, `shared`는 동시 읽기를 허용하지만 쓰기를 차단하며, `exclusive`는 모든 동시 접근을 차단하고, `default`는 MySQL이 가장 적절한 모드를 선택하도록 합니다.
+
+```php
+$table->string('name')->lock('none');
+
+$table->index('email')->lock('shared');
+```
+
+요청한 잠금 모드가 작업과 호환되지 않으면 MySQL이 오류를 발생시킵니다. `lock` 수정자는 `instant` 수정자와 결합하여 스키마 변경을 더욱 최적화할 수 있습니다.
+
+```php
+$table->string('name')->instant()->lock('none');
 ```
 
 <a name="modifying-columns"></a>
@@ -1393,6 +1435,17 @@ Laravel의 스키마 빌더 블루프린트 클래스는 Laravel이 지원하는
 | `$table->spatialIndex('location');`              | 공간 인덱스를 추가합니다 (SQLite 제외).                        |
 
 </div>
+
+<a name="online-index-creation"></a>
+#### 온라인 인덱스 생성
+
+기본적으로 대용량 테이블에 인덱스를 생성하면 인덱스가 구축되는 동안 테이블이 잠기고 읽기나 쓰기가 차단될 수 있습니다. PostgreSQL 또는 SQL Server를 사용할 때, 인덱스 정의에 `online` 메서드를 체이닝하여 테이블을 잠그지 않고 인덱스를 생성할 수 있으며, 인덱스 생성 중에도 애플리케이션이 데이터를 계속 읽고 쓸 수 있습니다.
+
+```php
+$table->string('email')->unique()->online();
+```
+
+PostgreSQL을 사용할 때, 이 옵션은 인덱스 생성 문에 `CONCURRENTLY` 옵션을 추가합니다. SQL Server를 사용할 때, 이 옵션은 `WITH (online = on)` 옵션을 추가합니다.
 
 <a name="renaming-indexes"></a>
 ### 인덱스 이름 변경하기

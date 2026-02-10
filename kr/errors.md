@@ -39,7 +39,7 @@ Laravel에서 예외 보고는 예외를 로깅하거나 [Sentry](https://github
 ```php
 use App\Exceptions\InvalidOrderException;
 
-->withExceptions(function (Exceptions $exceptions) {
+->withExceptions(function (Exceptions $exceptions): void {
     $exceptions->report(function (InvalidOrderException $e) {
         // ...
     });
@@ -51,7 +51,7 @@ use App\Exceptions\InvalidOrderException;
 ```php
 use App\Exceptions\InvalidOrderException;
 
-->withExceptions(function (Exceptions $exceptions) {
+->withExceptions(function (Exceptions $exceptions): void {
     $exceptions->report(function (InvalidOrderException $e) {
         // ...
     })->stop();
@@ -71,7 +71,7 @@ use App\Exceptions\InvalidOrderException;
 가능한 경우, Laravel은 자동으로 현재 사용자의 ID를 모든 예외의 로그 메시지에 컨텍스트 데이터로 추가합니다. 애플리케이션의 `bootstrap/app.php` 파일에서 `context` 예외 메서드를 사용하여 고유한 글로벌 컨텍스트 데이터를 정의할 수 있습니다. 이 정보는 애플리케이션에서 작성하는 모든 예외의 로그 메시지에 포함됩니다.
 
 ```php
-->withExceptions(function (Exceptions $exceptions) {
+->withExceptions(function (Exceptions $exceptions): void {
     $exceptions->context(fn () => [
         'foo' => 'bar',
     ]);
@@ -132,7 +132,7 @@ public function isValid(string $value): bool
 예외의 단일 인스턴스가 한 번만 보고되도록 하려면, 애플리케이션의 `bootstrap/app.php` 파일에서 `dontReportDuplicates` 예외 메서드를 호출할 수 있습니다.
 
 ```php
-->withExceptions(function (Exceptions $exceptions) {
+->withExceptions(function (Exceptions $exceptions): void {
     $exceptions->dontReportDuplicates();
 })
 ```
@@ -167,7 +167,7 @@ report($caught); // 무시됨
 use PDOException;
 use Psr\Log\LogLevel;
 
-->withExceptions(function (Exceptions $exceptions) {
+->withExceptions(function (Exceptions $exceptions): void {
     $exceptions->level(PDOException::class, LogLevel::CRITICAL);
 })
 ```
@@ -180,7 +180,7 @@ use Psr\Log\LogLevel;
 ```php
 use App\Exceptions\InvalidOrderException;
 
-->withExceptions(function (Exceptions $exceptions) {
+->withExceptions(function (Exceptions $exceptions): void {
     $exceptions->dontReport([
         InvalidOrderException::class,
     ]);
@@ -203,12 +203,26 @@ class PodcastProcessingException extends Exception implements ShouldntReport
 }
 ```
 
+특정 타입의 예외가 무시되는 시점을 더 세밀하게 제어해야 하는 경우, `dontReportWhen` 메서드에 클로저를 제공할 수 있습니다.
+
+```php
+use App\Exceptions\InvalidOrderException;
+use Throwable;
+
+->withExceptions(function (Exceptions $exceptions): void {
+    $exceptions->dontReportWhen(function (Throwable $e) {
+        return $e instanceof PodcastProcessingException &&
+               $e->reason() === 'Subscription expired';
+    });
+})
+```
+
 내부적으로 Laravel은 이미 404 HTTP 에러 또는 유효하지 않은 CSRF 토큰으로 인해 생성된 419 HTTP 응답과 같은 일부 타입의 에러를 무시합니다. Laravel에게 특정 타입의 예외 무시를 중단하도록 지시하려면, 애플리케이션의 `bootstrap/app.php` 파일에서 `stopIgnoring` 예외 메서드를 사용할 수 있습니다.
 
 ```php
 use Symfony\Component\HttpKernel\Exception\HttpException;
 
-->withExceptions(function (Exceptions $exceptions) {
+->withExceptions(function (Exceptions $exceptions): void {
     $exceptions->stopIgnoring(HttpException::class);
 })
 ```
@@ -224,7 +238,7 @@ use Symfony\Component\HttpKernel\Exception\HttpException;
 use App\Exceptions\InvalidOrderException;
 use Illuminate\Http\Request;
 
-->withExceptions(function (Exceptions $exceptions) {
+->withExceptions(function (Exceptions $exceptions): void {
     $exceptions->render(function (InvalidOrderException $e, Request $request) {
         return response()->view('errors.invalid-order', status: 500);
     });
@@ -237,7 +251,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
-->withExceptions(function (Exceptions $exceptions) {
+->withExceptions(function (Exceptions $exceptions): void {
     $exceptions->render(function (NotFoundHttpException $e, Request $request) {
         if ($request->is('api/*')) {
             return response()->json([
@@ -257,7 +271,7 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Illuminate\Http\Request;
 use Throwable;
 
-->withExceptions(function (Exceptions $exceptions) {
+->withExceptions(function (Exceptions $exceptions): void {
     $exceptions->shouldRenderJsonWhen(function (Request $request, Throwable $e) {
         if ($request->is('admin/*')) {
             return true;
@@ -276,7 +290,7 @@ use Throwable;
 ```php
 use Symfony\Component\HttpFoundation\Response;
 
-->withExceptions(function (Exceptions $exceptions) {
+->withExceptions(function (Exceptions $exceptions): void {
     $exceptions->respond(function (Response $response) {
         if ($response->getStatusCode() === 419) {
             return back()->with([
@@ -373,7 +387,7 @@ public function report(): bool
 use Illuminate\Support\Lottery;
 use Throwable;
 
-->withExceptions(function (Exceptions $exceptions) {
+->withExceptions(function (Exceptions $exceptions): void {
     $exceptions->throttle(function (Throwable $e) {
         return Lottery::odds(1, 1000);
     });
@@ -387,7 +401,7 @@ use App\Exceptions\ApiMonitoringException;
 use Illuminate\Support\Lottery;
 use Throwable;
 
-->withExceptions(function (Exceptions $exceptions) {
+->withExceptions(function (Exceptions $exceptions): void {
     $exceptions->throttle(function (Throwable $e) {
         if ($e instanceof ApiMonitoringException) {
             return Lottery::odds(1, 1000);
@@ -403,7 +417,7 @@ use Illuminate\Broadcasting\BroadcastException;
 use Illuminate\Cache\RateLimiting\Limit;
 use Throwable;
 
-->withExceptions(function (Exceptions $exceptions) {
+->withExceptions(function (Exceptions $exceptions): void {
     $exceptions->throttle(function (Throwable $e) {
         if ($e instanceof BroadcastException) {
             return Limit::perMinute(300);
@@ -419,7 +433,7 @@ use Illuminate\Broadcasting\BroadcastException;
 use Illuminate\Cache\RateLimiting\Limit;
 use Throwable;
 
-->withExceptions(function (Exceptions $exceptions) {
+->withExceptions(function (Exceptions $exceptions): void {
     $exceptions->throttle(function (Throwable $e) {
         if ($e instanceof BroadcastException) {
             return Limit::perMinute(300)->by($e->getMessage());
@@ -437,7 +451,7 @@ use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Support\Lottery;
 use Throwable;
 
-->withExceptions(function (Exceptions $exceptions) {
+->withExceptions(function (Exceptions $exceptions): void {
     $exceptions->throttle(function (Throwable $e) {
         return match (true) {
             $e instanceof BroadcastException => Limit::perMinute(300),

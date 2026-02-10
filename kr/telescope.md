@@ -249,6 +249,7 @@ public function register(): void
 Telescope를 사용하면 "태그"로 항목을 검색할 수 있습니다. 태그는 종종 Telescope가 자동으로 항목에 추가하는 Eloquent 모델 클래스명 또는 인증된 사용자 ID입니다. 때때로 항목에 자신만의 커스텀 태그를 첨부하고 싶을 수 있습니다. 이를 위해 `Telescope::tag` 메서드를 사용할 수 있습니다. `tag` 메서드는 태그 배열을 반환해야 하는 클로저를 받습니다. 클로저가 반환한 태그는 Telescope가 자동으로 항목에 첨부하는 태그와 병합됩니다. 일반적으로 `App\Providers\TelescopeServiceProvider` 클래스의 `register` 메서드 내에서 `tag` 메서드를 호출해야 합니다.
 
 ```php
+use Laravel\Telescope\EntryType;
 use Laravel\Telescope\IncomingEntry;
 use Laravel\Telescope\Telescope;
 
@@ -260,7 +261,7 @@ public function register(): void
     $this->hideSensitiveRequestDetails();
 
     Telescope::tag(function (IncomingEntry $entry) {
-        return $entry->type === 'request'
+        return $entry->type === EntryType::REQUEST
             ? ['status:'.$entry->content['response_status']]
             : [];
     });

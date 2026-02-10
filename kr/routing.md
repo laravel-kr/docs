@@ -462,7 +462,7 @@ Route::get('/user/{id}/profile', function (string $id) {
 
 $url = route('profile', ['id' => 1, 'photos' => 'yes']);
 
-// /user/1/profile?photos=yes
+// http://example.com/user/1/profile?photos=yes
 ```
 
 > [!NOTE]
@@ -851,7 +851,7 @@ use Illuminate\Support\Facades\RateLimiter;
 /**
  * 애플리케이션 서비스를 부트스트랩합니다.
  */
-protected function boot(): void
+public function boot(): void
 {
     RateLimiter::for('api', function (Request $request) {
         return Limit::perMinute(60)->by($request->user()?->id ?: $request->ip());
@@ -869,7 +869,7 @@ use Illuminate\Support\Facades\RateLimiter;
 /**
  * 애플리케이션 서비스를 부트스트랩합니다.
  */
-protected function boot(): void
+public function boot(): void
 {
     RateLimiter::for('global', function (Request $request) {
         return Limit::perMinute(1000);
@@ -893,7 +893,7 @@ RateLimiter::for('global', function (Request $request) {
 RateLimiter::for('uploads', function (Request $request) {
     return $request->user()->vipCustomer()
         ? Limit::none()
-        : Limit::perMinute(100);
+        : Limit::perHour(10);
 });
 ```
 
@@ -945,6 +945,29 @@ RateLimiter::for('uploads', function (Request $request) {
 });
 ```
 
+<a name="response-base-rate-limiting"></a>
+#### 응답 기반 속도 제한(Response-Based Rate Limiting)
+
+들어오는 요청에 대한 속도 제한 외에도, Laravel은 `after` 메소드를 사용하여 응답을 기반으로 속도를 제한할 수 있습니다. 이는 유효성 검사 오류, 404 응답 또는 기타 특정 HTTP 상태 코드와 같은 특정 응답만 속도 제한에 포함하려는 경우에 유용합니다.
+
+`after` 메소드는 응답을 받아 해당 응답이 속도 제한에 포함되어야 하면 `true`를, 무시되어야 하면 `false`를 반환하는 클로저를 받습니다. 이는 연속적인 404 응답을 제한하여 열거 공격(enumeration attacks)을 방지하거나, 유효성 검사에 실패한 요청이 속도 제한을 소모하지 않도록 하여 성공적인 작업만 스로틀링하는 엔드포인트에 특히 유용합니다.
+
+```php
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\RateLimiter;
+use Symfony\Component\HttpFoundation\Response;
+
+RateLimiter::for('resource-not-found', function (Request $request) {
+    return Limit::perMinute(10)
+        ->by($request->user()?->id ?: $request->ip())
+        ->after(function (Response $response) {
+            // 열거를 방지하기 위해 404 응답만 속도 제한에 포함...
+            return $response->status() === 404;
+        });
+});
+```
+
 <a name="attaching-rate-limiters-to-routes"></a>
 ### 라우트에 속도 제한자 연결(Attaching Rate Limiters to Routes)
 
@@ -968,7 +991,7 @@ Route::middleware(['throttle:uploads'])->group(function () {
 기본적으로 `throttle` 미들웨어는 `Illuminate\Routing\Middleware\ThrottleRequests` 클래스에 매핑됩니다. 그러나 애플리케이션의 캐시 드라이버로 Redis를 사용하는 경우, Redis를 사용하여 속도 제한을 관리하도록 Laravel에 지시할 수 있습니다. 그렇게 하려면 애플리케이션의 `bootstrap/app.php` 파일에서 `throttleWithRedis` 메소드를 사용해야 합니다. 이 메소드는 `throttle` 미들웨어를 `Illuminate\Routing\Middleware\ThrottleRequestsWithRedis` 미들웨어 클래스에 매핑합니다:
 
 ```php
-->withMiddleware(function (Middleware $middleware) {
+->withMiddleware(function (Middleware $middleware): void {
     $middleware->throttleWithRedis();
     // ...
 })

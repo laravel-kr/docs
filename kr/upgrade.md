@@ -30,6 +30,7 @@
 - [동시성(Concurrency) 결과 인덱스 매핑](#concurrency-result-index-mapping)
 - [컨테이너(Container) 클래스 의존성 해결](#container-class-dependency-resolution)
 - [이미지 유효성 검사에서 SVG 제외](#image-validation)
+- [로컬 파일시스템 디스크 기본 루트 경로](#local-filesystem-disk-default-root-path)
 - [다중 스키마 데이터베이스 검사](#multi-schema-database-inspecting)
 - [중첩 배열 요청(Request) 병합](#nested-array-request-merging)
 
@@ -63,7 +64,7 @@
 
 **영향 가능성: 낮음**
 
-[Carbon 2.x](https://carbon.nesbot.com/docs/)에 대한 지원이 제거되었습니다. 모든 Laravel 12 애플리케이션은 이제 [Carbon 3.x](https://carbon.nesbot.com/docs/#api-carbon-3)를 필요로 합니다.
+Carbon 2.x에 대한 지원이 제거되었습니다. 모든 Laravel 12 애플리케이션은 이제 [Carbon 3.x](https://carbon.nesbot.com/guide/getting-started/migration.html)를 필요로 합니다.
 
 <a name="updating-the-laravel-installer"></a>
 ### Laravel 인스톨러 업데이트
@@ -160,10 +161,10 @@ $example->date === null;
 $tables = Schema::getTables();
 
 // 'main' 스키마의 모든 테이블...
-$table = Schema::getTables(schema: 'main');
+$tables = Schema::getTables(schema: 'main');
 
 // 'main'과 'blog' 스키마의 모든 테이블...
-$table = Schema::getTables(schema: ['main', 'blog']);
+$tables = Schema::getTables(schema: ['main', 'blog']);
 ```
 
 `Schema::getTableListing()` 메서드는 이제 기본적으로 스키마가 포함된 테이블 이름을 반환합니다. `schemaQualified` 인수를 전달하여 원하는 대로 동작을 변경할 수 있습니다.
@@ -172,21 +173,59 @@ $table = Schema::getTables(schema: ['main', 'blog']);
 $tables = Schema::getTableListing();
 // ['main.migrations', 'main.users', 'blog.posts']
 
-$table = Schema::getTableListing(schema: 'main');
+$tables = Schema::getTableListing(schema: 'main');
 // ['main.migrations', 'main.users']
 
-$table = Schema::getTableListing(schema: 'main', schemaQualified: false);
+$tables = Schema::getTableListing(schema: 'main', schemaQualified: false);
 // ['migrations', 'users']
 ```
 
 `db:table` 및 `db:show` 명령은 이제 PostgreSQL 및 SQL Server와 마찬가지로 MySQL, MariaDB, SQLite에서도 모든 스키마의 결과를 출력합니다.
 
-<a name="updated-blueprint-constructor-signature"></a>
-#### `Blueprint` 생성자 시그니처 변경
+<a name="database-constructor-signature-changes"></a>
+#### 데이터베이스 생성자 시그니처 변경
 
 **영향 가능성: 매우 낮음**
 
-`Illuminate\Database\Schema\Blueprint` 클래스의 생성자는 이제 첫 번째 인수로 `Illuminate\Database\Connection` 인스턴스를 예상합니다.
+Laravel 12에서는 여러 저수준 데이터베이스 클래스가 이제 생성자를 통해 `Illuminate\Database\Connection` 인스턴스를 제공받아야 합니다.
+
+**이러한 변경 사항은 주로 데이터베이스 패키지 관리자에게 해당됩니다. 이러한 변경 사항이 일반적인 애플리케이션 개발에 영향을 줄 가능성은 극히 낮습니다.**
+
+`Illuminate\Database\Schema\Blueprint`
+
+`Illuminate\Database\Schema\Blueprint` 클래스의 생성자는 이제 첫 번째 인수로 `Connection` 인스턴스를 예상합니다. 이는 주로 `Blueprint` 인스턴스를 수동으로 인스턴스화하는 애플리케이션이나 패키지에 영향을 줍니다.
+
+`Illuminate\Database\Grammar`
+
+`Illuminate\Database\Grammar` 클래스의 생성자도 이제 `Connection` 인스턴스를 필요로 합니다. 이전 버전에서는 `setConnection()` 메서드를 사용하여 생성 후에 연결을 할당했습니다. 이 메서드는 Laravel 12에서 제거되었습니다.
+
+```php
+// Laravel <= 11.x
+$grammar = new MySqlGrammar;
+$grammar->setConnection($connection);
+
+// Laravel >= 12.x
+$grammar = new MySqlGrammar($connection);
+````
+
+또한 다음 API가 제거되거나 더 이상 사용되지 않습니다(deprecated).
+
+<div class="content-list" markdown="1">
+
+- `Blueprint::getPrefix()` 메서드는 더 이상 사용되지 않습니다(deprecated).
+- `Connection::withTablePrefix()` 메서드가 제거되었습니다.
+- `Grammar::getTablePrefix()` 및 `setTablePrefix()` 메서드는 더 이상 사용되지 않습니다(deprecated).
+- `Grammar::setConnection()` 메서드가 제거되었습니다.
+
+</div>
+
+테이블 접두사를 다룰 때는 이제 데이터베이스 연결에서 직접 가져와야 합니다.
+
+```php
+$prefix = $connection->getTablePrefix();
+```
+
+커스텀 데이터베이스 드라이버, 스키마 빌더 또는 Grammar 구현을 관리하고 있다면, 생성자를 검토하고 `Connection` 인스턴스가 제공되는지 확인해야 합니다.
 
 <a name="eloquent"></a>
 ### Eloquent
@@ -221,11 +260,23 @@ $request->mergeIfMissing([
 ]);
 ```
 
+<a name="storage"></a>
+### 스토리지(Storage)
+
+<a name="local-filesystem-disk-default-root-path"></a>
+#### 로컬 파일시스템 디스크 기본 루트 경로
+
+**영향 가능성: 낮음**
+
+애플리케이션의 파일시스템 설정에서 `local` 디스크를 명시적으로 정의하지 않은 경우, Laravel은 이제 로컬 디스크의 루트를 `storage/app/private`로 기본 설정합니다. 이전 릴리스에서는 `storage/app`이 기본값이었습니다. 결과적으로 별도로 설정하지 않는 한 `Storage::disk('local')` 호출은 `storage/app/private`에서 읽고 쓰게 됩니다. 이전 동작을 복원하려면 `local` 디스크를 수동으로 정의하고 원하는 루트 경로를 설정하면 됩니다.
+
 <a name="validation"></a>
 ### 유효성 검사(Validation)
 
 <a name="image-validation"></a>
 #### 이미지 유효성 검사에서 SVG 제외
+
+**영향 가능성: 낮음**
 
 `image` 유효성 검사 규칙은 더 이상 기본적으로 SVG 이미지를 허용하지 않습니다. `image` 규칙을 사용할 때 SVG를 허용하려면, 명시적으로 허용해야 합니다.
 

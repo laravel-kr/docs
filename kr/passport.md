@@ -202,6 +202,7 @@ use App\Models\Passport\Client;
 use App\Models\Passport\DeviceCode;
 use App\Models\Passport\RefreshToken;
 use App\Models\Passport\Token;
+use Laravel\Passport\Passport;
 
 /**
  * 애플리케이션 서비스를 부트스트랩합니다.
@@ -212,7 +213,7 @@ public function boot(): void
     Passport::useRefreshTokenModel(RefreshToken::class);
     Passport::useAuthCodeModel(AuthCode::class);
     Passport::useClientModel(Client::class);
-    Passport::useDeviceCodeModel(DeviceCode::class)
+    Passport::useDeviceCodeModel(DeviceCode::class);
 }
 ```
 
@@ -255,6 +256,7 @@ Route::group([
 모든 인가 뷰의 렌더링 로직은 `Laravel\Passport\Passport` 클래스에서 사용 가능한 적절한 메서드를 사용하여 커스터마이징할 수 있습니다. 일반적으로 이 메서드는 애플리케이션의 `App\Providers\AppServiceProvider` 클래스의 `boot` 메서드에서 호출해야 합니다.
 
 ```php
+use Inertia\Inertia;
 use Laravel\Passport\Passport;
 
 /**
@@ -266,13 +268,15 @@ public function boot(): void
     Passport::authorizationView('auth.oauth.authorize');
 
     // 클로저를 제공하여...
-    Passport::authorizationView(fn ($parameters) => Inertia::render('Auth/OAuth/Authorize', [
-        'request' => $parameters['request'],
-        'authToken' => $parameters['authToken'],
-        'client' => $parameters['client'],
-        'user' => $parameters['user'],
-        'scopes' => $parameters['scopes'],
-    ]));
+    Passport::authorizationView(
+        fn ($parameters) => Inertia::render('Auth/OAuth/Authorize', [
+            'request' => $parameters['request'],
+            'authToken' => $parameters['authToken'],
+            'client' => $parameters['client'],
+            'user' => $parameters['user'],
+            'scopes' => $parameters['scopes'],
+        ])
+    );
 }
 ```
 
@@ -468,7 +472,7 @@ $response = Http::asForm()->post('https://passport-app.test/oauth/token', [
     'grant_type' => 'refresh_token',
     'refresh_token' => 'the-refresh-token',
     'client_id' => 'your-client-id',
-    'client_secret' => 'your-client-secret', // 기밀 클라이언트에만 필요...
+    'client_secret' => 'your-client-secret', // 기밀 클라이언트에만 필요......
     'scope' => 'user:read orders:create',
 ]);
 
@@ -638,6 +642,7 @@ OAuth2 디바이스 인가 그랜트는 TV나 게임 콘솔과 같이 브라우�
 모든 인가 뷰의 렌더링 로직은 `Laravel\Passport\Passport` 클래스에서 사용 가능한 적절한 메서드를 사용하여 커스터마이징할 수 있습니다. 일반적으로 이 메서드는 애플리케이션의 `App\Providers\AppServiceProvider` 클래스의 `boot` 메서드에서 호출해야 합니다.
 
 ```php
+use Inertia\Inertia;
 use Laravel\Passport\Passport;
 
 /**
@@ -650,15 +655,19 @@ public function boot(): void
     Passport::deviceAuthorizationView('auth.oauth.device.authorize');
 
     // 클로저를 제공하여...
-    Passport::deviceUserCodeView(fn ($parameters) => Inertia::render('Auth/OAuth/Device/UserCode'));
+    Passport::deviceUserCodeView(
+        fn ($parameters) => Inertia::render('Auth/OAuth/Device/UserCode')
+    );
 
-    Passport::deviceAuthorizationView(fn ($parameters) => Inertia::render('Auth/OAuth/Device/Authorize', [
-        'request' => $parameters['request'],
-        'authToken' => $parameters['authToken'],
-        'client' => $parameters['client'],
-        'user' => $parameters['user'],
-        'scopes' => $parameters['scopes'],
-    ]));
+    Passport::deviceAuthorizationView(
+        fn ($parameters) => Inertia::render('Auth/OAuth/Device/Authorize', [
+            'request' => $parameters['request'],
+            'authToken' => $parameters['authToken'],
+            'client' => $parameters['client'],
+            'user' => $parameters['user'],
+            'scopes' => $parameters['scopes'],
+        ])
+    );
 
     // ...
 }
@@ -738,7 +747,7 @@ do {
     $response = Http::asForm()->post('https://passport-app.test/oauth/token', [
         'grant_type' => 'urn:ietf:params:oauth:grant-type:device_code',
         'client_id' => 'your-client-id',
-        'client_secret' => 'your-client-secret', // 기밀 클라이언트에만 필요
+        'client_secret' => 'your-client-secret', // 기밀 클라이언트에만 필요...
         'device_code' => 'the-device-code',
     ]);
 
@@ -792,7 +801,7 @@ use Illuminate\Support\Facades\Http;
 $response = Http::asForm()->post('https://passport-app.test/oauth/token', [
     'grant_type' => 'password',
     'client_id' => 'your-client-id',
-    'client_secret' => 'your-client-secret', // 기밀 클라이언트에만 필요
+    'client_secret' => 'your-client-secret', // 기밀 클라이언트에만 필요...
     'username' => 'taylor@laravel.com',
     'password' => 'my-password',
     'scope' => 'user:read orders:create',
@@ -815,7 +824,7 @@ use Illuminate\Support\Facades\Http;
 $response = Http::asForm()->post('https://passport-app.test/oauth/token', [
     'grant_type' => 'password',
     'client_id' => 'your-client-id',
-    'client_secret' => 'your-client-secret', // 기밀 클라이언트에만 필요
+    'client_secret' => 'your-client-secret', // 기밀 클라이언트에만 필요...
     'username' => 'taylor@laravel.com',
     'password' => 'my-password',
     'scope' => '*',
@@ -839,16 +848,18 @@ namespace App\Models;
 
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Laravel\Passport\Bridge\Client;
+use Laravel\Passport\Contracts\OAuthenticatable;
 use Laravel\Passport\HasApiTokens;
 
-class User extends Authenticatable
+class User extends Authenticatable implements OAuthenticatable
 {
     use HasApiTokens, Notifiable;
 
     /**
      * 주어진 사용자명으로 사용자 인스턴스를 찾습니다.
      */
-    public function findForPassport(string $username): User
+    public function findForPassport(string $username, Client $client): User
     {
         return $this->where('username', $username)->first();
     }
@@ -868,9 +879,10 @@ namespace App\Models;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\Hash;
+use Laravel\Passport\Contracts\OAuthenticatable;
 use Laravel\Passport\HasApiTokens;
 
-class User extends Authenticatable
+class User extends Authenticatable implements OAuthenticatable
 {
     use HasApiTokens, Notifiable;
 
@@ -958,7 +970,7 @@ Route::get('/orders', function (Request $request) {
 ```php
 Route::get('/orders', function (Request $request) {
     // 액세스 토큰이 유효하고, 클라이언트가 리소스 소유자이며, "servers:read"와 "servers:create" 스코프를 모두 가지고 있습니다...
-})->middleware(EnsureClientIsResourceOwner::using('servers:read', 'servers:create');
+})->middleware(EnsureClientIsResourceOwner::using('servers:read', 'servers:create'));
 ```
 
 <a name="retrieving-tokens"></a>
@@ -1127,9 +1139,9 @@ public function boot(): void
 use Laravel\Passport\Passport;
 
 Passport::tokensCan([
-        'user:read' => 'Retrieve the user info',
-        'orders:create' => 'Place orders',
-        'orders:read:status' => 'Check order status',
+    'user:read' => 'Retrieve the user info',
+    'orders:create' => 'Place orders',
+    'orders:read:status' => 'Check order status',
 ]);
 
 Passport::defaultScopes([
@@ -1183,7 +1195,7 @@ use Laravel\Passport\Http\Middleware\CheckToken;
 
 Route::get('/orders', function () {
     // 액세스 토큰이 "orders:read"와 "orders:create" 스코프를 모두 가지고 있습니다...
-})->middleware(['auth:api', CheckToken::using('orders:read', 'orders:create');
+})->middleware(['auth:api', CheckToken::using('orders:read', 'orders:create')]);
 ```
 
 <a name="check-for-any-scopes"></a>
@@ -1196,7 +1208,7 @@ use Laravel\Passport\Http\Middleware\CheckTokenForAnyScope;
 
 Route::get('/orders', function () {
     // 액세스 토큰이 "orders:read" 또는 "orders:create" 스코프를 가지고 있습니다...
-})->middleware(['auth:api', CheckTokenForAnyScope::using('orders:read', 'orders:create');
+})->middleware(['auth:api', CheckTokenForAnyScope::using('orders:read', 'orders:create')]);
 ```
 
 <a name="checking-scopes-on-a-token-instance"></a>
@@ -1253,7 +1265,7 @@ API를 구축할 때 JavaScript 애플리케이션에서 자체 API를 사용할
 ```php
 use Laravel\Passport\Http\Middleware\CreateFreshApiToken;
 
-->withMiddleware(function (Middleware $middleware) {
+->withMiddleware(function (Middleware $middleware): void {
     $middleware->web(append: [
         CreateFreshApiToken::class,
     ]);
@@ -1302,9 +1314,10 @@ Passport는 액세스 토큰과 리프레시 토큰을 발급할 때 이벤트�
 
 <div class="overflow-auto">
 
-| 이벤트 이름 |
-| --- |
-| `Laravel\Passport\Events\AccessTokenCreated` |
+| 이벤트 이름                                    |
+| --------------------------------------------- |
+| `Laravel\Passport\Events\AccessTokenCreated`  |
+| `Laravel\Passport\Events\AccessTokenRevoked`  |
 | `Laravel\Passport\Events\RefreshTokenCreated` |
 
 </div>

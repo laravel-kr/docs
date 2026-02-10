@@ -43,17 +43,18 @@ return $result->output();
 ```php
 $result = Process::run('ls -la');
 
+$result->command();
 $result->successful();
 $result->failed();
-$result->exitCode();
 $result->output();
 $result->errorOutput();
+$result->exitCode();
 ```
 
 <a name="throwing-exceptions"></a>
 #### 예외 던지기
 
-프로세스 결과가 있고 종료 코드가 0보다 클 경우(즉, 실패를 나타내는 경우) `Illuminate\Process\Exceptions\ProcessFailedException` 인스턴스를 던지고 싶다면, `throw` 및 `throwIf` 메서드를 사용할 수 있습니다. 프로세스가 실패하지 않은 경우 프로세스 결과 인스턴스가 반환됩니다.
+프로세스 결과가 있고 종료 코드가 0보다 클 경우(즉, 실패를 나타내는 경우) `Illuminate\Process\Exceptions\ProcessFailedException` 인스턴스를 던지고 싶다면, `throw` 및 `throwIf` 메서드를 사용할 수 있습니다. 프로세스가 실패하지 않은 경우 `ProcessResult` 인스턴스가 반환됩니다.
 
 ```php
 $result = Process::run('ls -la')->throw();
@@ -132,6 +133,9 @@ $result = Process::forever()
 ```php
 Process::forever()->tty()->run('vim');
 ```
+
+> [!WARNING]
+> TTY 모드는 Windows에서 지원되지 않습니다.
 
 <a name="process-output"></a>
 ### 프로세스 출력
@@ -219,7 +223,7 @@ Laravel은 또한 `as` 메서드를 통해 파이프라인 내의 각 프로세�
 $result = Process::pipe(function (Pipe $pipe) {
     $pipe->as('first')->command('cat example.txt');
     $pipe->as('second')->command('grep -i "laravel"');
-})->start(function (string $type, string $output, string $key) {
+}, function (string $type, string $output, string $key) {
     // ...
 });
 ```
@@ -239,7 +243,7 @@ while ($process->running()) {
 $result = $process->wait();
 ```
 
-눈치채셨겠지만, `wait` 메서드를 호출하여 프로세스 실행이 완료될 때까지 기다리고 프로세스 결과 인스턴스를 검색할 수 있습니다.
+눈치채셨겠지만, `wait` 메서드를 호출하여 프로세스 실행이 완료될 때까지 기다리고 `ProcessResult` 인스턴스를 검색할 수 있습니다.
 
 ```php
 $process = Process::timeout(120)->start('bash import.sh');
@@ -345,7 +349,7 @@ while ($pool->running()->isNotEmpty()) {
 $results = $pool->wait();
 ```
 
-보시다시피, `wait` 메서드를 통해 모든 풀 프로세스가 실행을 완료하고 그 결과를 해결할 때까지 기다릴 수 있습니다. `wait` 메서드는 풀의 각 프로세스에 대한 프로세스 결과 인스턴스에 키로 접근할 수 있는 배열 접근 가능 객체를 반환합니다.
+보시다시피, `wait` 메서드를 통해 모든 풀 프로세스가 실행을 완료하고 그 결과를 해결할 때까지 기다릴 수 있습니다. `wait` 메서드는 풀의 각 프로세스에 대한 `ProcessResult` 인스턴스에 키로 접근할 수 있는 배열 접근 가능 객체를 반환합니다.
 
 ```php
 $results = $pool->wait();
@@ -425,8 +429,8 @@ Route::get('/import', function () {
 ```php tab=Pest
 <?php
 
-use Illuminate\Process\PendingProcess;
 use Illuminate\Contracts\Process\ProcessResult;
+use Illuminate\Process\PendingProcess;
 use Illuminate\Support\Facades\Process;
 
 test('process is invoked', function () {
@@ -450,8 +454,8 @@ test('process is invoked', function () {
 
 namespace Tests\Feature;
 
-use Illuminate\Process\PendingProcess;
 use Illuminate\Contracts\Process\ProcessResult;
+use Illuminate\Process\PendingProcess;
 use Illuminate\Support\Facades\Process;
 use Tests\TestCase;
 
@@ -623,7 +627,7 @@ use Illuminate\Support\Facades\Process;
 Process::assertRanTimes('ls -la', times: 3);
 ```
 
-`assertRanTimes` 메서드도 프로세스 인스턴스와 프로세스 결과를 받는 클로저를 허용하여, 프로세스의 구성된 옵션을 검사할 수 있습니다. 이 클로저가 `true`를 반환하고 프로세스가 지정된 횟수만큼 호출되었다면 assertion이 "통과"합니다.
+`assertRanTimes` 메서드도 `PendingProcess`와 `ProcessResult` 인스턴스를 받는 클로저를 허용하여, 프로세스의 구성된 옵션을 검사할 수 있습니다. 이 클로저가 `true`를 반환하고 프로세스가 지정된 횟수만큼 호출되었다면 assertion이 "통과"합니다.
 
 ```php
 Process::assertRanTimes(function (PendingProcess $process, ProcessResult $result) {

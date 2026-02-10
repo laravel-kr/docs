@@ -11,6 +11,8 @@
     - [Guzzle 미들웨어](#guzzle-middleware)
     - [Guzzle 옵션](#guzzle-options)
 - [동시 요청](#concurrent-requests)
+    - [요청 풀링](#request-pooling)
+    - [요청 배치](#request-batching)
 - [매크로](#macros)
 - [테스팅](#testing)
     - [응답 페이크](#faking-responses)
@@ -87,7 +89,7 @@ HTTP 클라이언트는 [URI 템플릿 명세](https://www.rfc-editor.org/rfc/rf
 Http::withUrlParameters([
     'endpoint' => 'https://laravel.com',
     'page' => 'docs',
-    'version' => '11.x',
+    'version' => '12.x',
     'topic' => 'validation',
 ])->get('{+endpoint}/{page}/{version}/{topic}');
 ```
@@ -133,7 +135,7 @@ $response = Http::get('http://example.com/users', [
 Http::retry(3, 100)->withQueryParameters([
     'name' => 'Taylor',
     'page' => 1,
-])->get('http://example.com/users')
+])->get('http://example.com/users');
 ```
 
 <a name="sending-form-url-encoded-requests"></a>
@@ -395,18 +397,24 @@ return Http::post(/* ... */)->throw(function (Response $response, RequestExcepti
 })->json();
 ```
 
-기본적으로 `RequestException` 메시지는 로깅하거나 보고할 때 120자로 잘립니다. 이 동작을 커스터마이즈하거나 비활성화하려면 `bootstrap/app.php` 파일에서 애플리케이션의 예외 처리 동작을 구성할 때 `truncateRequestExceptionsAt` 및 `dontTruncateRequestExceptions` 메서드를 활용할 수 있습니다.
+기본적으로 `RequestException` 메시지는 로깅하거나 보고할 때 120자로 잘립니다. 이 동작을 커스터마이즈하거나 비활성화하려면 `bootstrap/app.php` 파일에서 애플리케이션의 등록된 동작을 구성할 때 `truncateAt` 및 `dontTruncate` 메서드를 활용할 수 있습니다.
 
 ```php
-use Illuminate\Foundation\Configuration\Exceptions;
+use Illuminate\Http\Client\RequestException;
 
-->withExceptions(function (Exceptions $exceptions) {
+->registered(function (): void {
     // 요청 예외 메시지를 240자로 자르기...
-    $exceptions->truncateRequestExceptionsAt(240);
+    RequestException::truncateAt(240);
 
     // 요청 예외 메시지 자르기 비활성화...
-    $exceptions->dontTruncateRequestExceptions();
+    RequestException::dontTruncate();
 })
+```
+
+또는, `truncateExceptionsAt` 메서드를 사용하여 요청별로 예외 잘림 동작을 커스터마이즈할 수 있습니다.
+
+```php
+return Http::truncateExceptionsAt(240)->post(/* ... */);
 ```
 
 <a name="guzzle-middleware"></a>
@@ -494,6 +502,9 @@ public function boot(): void
 
 때로는 여러 HTTP 요청을 동시에 보내고 싶을 수 있습니다. 즉, 요청을 순차적으로 보내는 대신 여러 요청을 동시에 발송하고 싶을 수 있습니다. 이는 느린 HTTP API와 상호 작용할 때 상당한 성능 향상을 가져올 수 있습니다.
 
+<a name="request-pooling"></a>
+### 요청 풀링
+
 `pool` 메서드를 사용하여 이를 달성할 수 있습니다. `pool` 메서드는 `Illuminate\Http\Client\Pool` 인스턴스를 받는 클로저를 받아서 요청 풀에 요청을 쉽게 추가하여 발송할 수 있습니다.
 
 ```php
@@ -526,6 +537,14 @@ $responses = Http::pool(fn (Pool $pool) => [
 return $responses['first']->ok();
 ```
 
+요청 풀의 최대 동시성은 `pool` 메서드에 `concurrency` 인수를 제공하여 제어할 수 있습니다. 이 값은 요청 풀을 처리하는 동안 동시에 전송 중인 HTTP 요청의 최대 수를 결정합니다.
+
+```php
+$responses = Http::pool(fn (Pool $pool) => [
+    // ...
+], concurrency: 5);
+```
+
 <a name="customizing-concurrent-requests"></a>
 #### 동시 요청 커스터마이징
 
@@ -544,6 +563,97 @@ $responses = Http::pool(fn (Pool $pool) => [
     $pool->withHeaders($headers)->get('http://laravel.test/test'),
     $pool->withHeaders($headers)->get('http://laravel.test/test'),
 ]);
+```
+
+<a name="request-batching"></a>
+### 요청 배치
+
+Laravel에서 동시 요청을 다루는 또 다른 방법은 `batch` 메서드를 사용하는 것입니다. `pool` 메서드와 마찬가지로 `Illuminate\Http\Client\Batch` 인스턴스를 받는 클로저를 받아서 요청 풀에 요청을 쉽게 추가할 수 있지만, 완료 콜백도 정의할 수 있습니다.
+
+```php
+use Illuminate\Http\Client\Batch;
+use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Http\Client\RequestException;
+use Illuminate\Http\Client\Response;
+use Illuminate\Support\Facades\Http;
+
+$responses = Http::batch(fn (Batch $batch) => [
+    $batch->get('http://localhost/first'),
+    $batch->get('http://localhost/second'),
+    $batch->get('http://localhost/third'),
+])->before(function (Batch $batch) {
+    // 배치가 생성되었지만 아직 요청이 초기화되지 않았습니다...
+})->progress(function (Batch $batch, int|string $key, Response $response) {
+    // 개별 요청이 성공적으로 완료되었습니다...
+})->then(function (Batch $batch, array $results) {
+    // 모든 요청이 성공적으로 완료되었습니다...
+})->catch(function (Batch $batch, int|string $key, Response|RequestException|ConnectionException $response) {
+    // 배치 요청 실패가 감지되었습니다...
+})->finally(function (Batch $batch, array $results) {
+    // 배치 실행이 완료되었습니다...
+})->send();
+```
+
+`pool` 메서드와 마찬가지로, `as` 메서드를 사용하여 요청에 이름을 지정할 수 있습니다.
+
+```php
+$responses = Http::batch(fn (Batch $batch) => [
+    $batch->as('first')->get('http://localhost/first'),
+    $batch->as('second')->get('http://localhost/second'),
+    $batch->as('third')->get('http://localhost/third'),
+])->send();
+```
+
+`send` 메서드를 호출하여 `batch`가 시작된 후에는 새 요청을 추가할 수 없습니다. 추가를 시도하면 `Illuminate\Http\Client\BatchInProgressException` 예외가 발생합니다.
+
+요청 배치의 최대 동시성은 `concurrency` 메서드를 통해 제어할 수 있습니다. 이 값은 요청 배치를 처리하는 동안 동시에 전송 중인 HTTP 요청의 최대 수를 결정합니다.
+
+```php
+$responses = Http::batch(fn (Batch $batch) => [
+    // ...
+])->concurrency(5)->send();
+```
+
+<a name="inspecting-batches"></a>
+#### 배치 검사
+
+배치 완료 콜백에 제공되는 `Illuminate\Http\Client\Batch` 인스턴스에는 주어진 요청 배치와 상호 작용하고 검사하는 데 도움이 되는 다양한 속성과 메서드가 있습니다.
+
+```php
+// 배치에 할당된 요청 수...
+$batch->totalRequests;
+
+// 아직 처리되지 않은 요청 수...
+$batch->pendingRequests;
+
+// 실패한 요청 수...
+$batch->failedRequests;
+
+// 지금까지 처리된 요청 수...
+$batch->processedRequests();
+
+// 배치 실행이 완료되었는지 나타냅니다...
+$batch->finished();
+
+// 배치에 요청 실패가 있는지 나타냅니다...
+$batch->hasFailures();
+```
+<a name="deferring-batches"></a>
+#### 배치 지연
+
+`defer` 메서드가 호출되면 요청 배치가 즉시 실행되지 않습니다. 대신 Laravel은 현재 애플리케이션 요청의 HTTP 응답이 사용자에게 전송된 후에 배치를 실행하여, 애플리케이션이 빠르고 반응성 있게 느껴지도록 합니다.
+
+```php
+use Illuminate\Http\Client\Batch;
+use Illuminate\Support\Facades\Http;
+
+$responses = Http::batch(fn (Batch $batch) => [
+    $batch->get('http://localhost/first'),
+    $batch->get('http://localhost/second'),
+    $batch->get('http://localhost/third'),
+])->then(function (Batch $batch, array $results) {
+    // 모든 요청이 성공적으로 완료되었습니다...
+})->defer();
 ```
 
 <a name="macros"></a>
@@ -594,7 +704,7 @@ $response = Http::post(/* ... */);
 <a name="faking-specific-urls"></a>
 #### 특정 URL 페이크
 
-또는 `fake` 메서드에 배열을 전달할 수 있습니다. 배열의 키는 페이크하려는 URL 패턴과 관련 응답을 나타내야 합니다. `*` 문자는 와일드카드 문자로 사용될 수 있습니다. 페이크되지 않은 URL에 대한 요청은 실제로 실행됩니다. `Http` 파사드의 `response` 메서드를 사용하여 이러한 엔드포인트에 대한 스텁/페이크 응답을 구성할 수 있습니다.
+또는 `fake` 메서드에 배열을 전달할 수 있습니다. 배열의 키는 페이크하려는 URL 패턴과 관련 응답을 나타내야 합니다. `*` 문자는 와일드카드 문자로 사용될 수 있습니다. `Http` 파사드의 `response` 메서드를 사용하여 이러한 엔드포인트에 대한 스텁/페이크 응답을 구성할 수 있습니다.
 
 ```php
 Http::fake([
@@ -606,7 +716,7 @@ Http::fake([
 ]);
 ```
 
-일치하지 않는 모든 URL을 스텁하는 폴백 URL 패턴을 지정하려면 단일 `*` 문자를 사용할 수 있습니다.
+페이크되지 않은 URL에 대한 요청은 실제로 실행됩니다. 일치하지 않는 모든 URL을 스텁하는 폴백 URL 패턴을 지정하려면 단일 `*` 문자를 사용할 수 있습니다.
 
 ```php
 Http::fake([
@@ -642,9 +752,11 @@ Http::fake([
 `Illuminate\Http\Client\RequestException`이 발생하는 경우 애플리케이션의 동작을 테스트하려면 `failedRequest` 메서드를 사용할 수 있습니다.
 
 ```php
-Http::fake([
-    'github.com/*' => Http::failedRequest(['code' => 'not_found'], 404),
-]);
+$this->mock(GithubService::class);
+    ->shouldReceive('getUser')
+    ->andThrow(
+        Http::failedRequest(['code' => 'not_found'], 404)
+    );
 ```
 
 <a name="faking-response-sequences"></a>
@@ -693,27 +805,6 @@ use Illuminate\Http\Client\Request;
 Http::fake(function (Request $request) {
     return Http::response('Hello World', 200);
 });
-```
-
-<a name="preventing-stray-requests"></a>
-### 누락된 요청 방지
-
-개별 테스트 또는 전체 테스트 스위트에서 HTTP 클라이언트를 통해 전송되는 모든 요청이 페이크되었는지 확인하려면 `preventStrayRequests` 메서드를 호출할 수 있습니다. 이 메서드를 호출한 후 해당 페이크 응답이 없는 요청은 실제 HTTP 요청을 보내는 대신 예외를 발생시킵니다.
-
-```php
-use Illuminate\Support\Facades\Http;
-
-Http::preventStrayRequests();
-
-Http::fake([
-    'github.com/*' => Http::response('ok'),
-]);
-
-// "ok" 응답이 반환됩니다...
-Http::get('https://github.com/laravel/framework');
-
-// 예외가 발생합니다...
-Http::get('https://laravel.com');
 ```
 
 <a name="inspecting-requests"></a>
@@ -817,6 +908,45 @@ $recorded = Http::recorded(function (Request $request, Response $response) {
 });
 ```
 
+<a name="preventing-stray-requests"></a>
+### 누락된 요청 방지
+
+개별 테스트 또는 전체 테스트 스위트에서 HTTP 클라이언트를 통해 전송되는 모든 요청이 페이크되었는지 확인하려면 `preventStrayRequests` 메서드를 호출할 수 있습니다. 이 메서드를 호출한 후 해당 페이크 응답이 없는 요청은 실제 HTTP 요청을 보내는 대신 예외를 발생시킵니다.
+
+```php
+use Illuminate\Support\Facades\Http;
+
+Http::preventStrayRequests();
+
+Http::fake([
+    'github.com/*' => Http::response('ok'),
+]);
+
+// "ok" 응답이 반환됩니다...
+Http::get('https://github.com/laravel/framework');
+
+// 예외가 발생합니다...
+Http::get('https://laravel.com');
+```
+
+때로는 대부분의 누락된 요청을 방지하면서도 특정 요청은 실행을 허용하고 싶을 수 있습니다. 이를 위해 `allowStrayRequests` 메서드에 URL 패턴 배열을 전달할 수 있습니다. 주어진 패턴과 일치하는 요청은 허용되고, 다른 모든 요청은 계속 예외를 발생시킵니다.
+
+```php
+use Illuminate\Support\Facades\Http;
+
+Http::preventStrayRequests();
+
+Http::allowStrayRequests([
+    'http://127.0.0.1:5000/*',
+]);
+
+// 이 요청은 실행됩니다...
+Http::get('http://127.0.0.1:5000/generate');
+
+// 예외가 발생합니다...
+Http::get('https://laravel.com');
+```
+
 <a name="events"></a>
 ## 이벤트
 
@@ -830,7 +960,7 @@ use Illuminate\Http\Client\Events\RequestSending;
 class LogRequest
 {
     /**
-     * 주어진 이벤트를 처리합니다.
+     * 이벤트를 처리합니다.
      */
     public function handle(RequestSending $event): void
     {

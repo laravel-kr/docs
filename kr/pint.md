@@ -35,6 +35,18 @@ composer require laravel/pint --dev
 ./vendor/bin/pint
 ```
 
+Pint를 병렬 모드(실험적)로 실행하여 성능을 향상시키려면 `--parallel` 옵션을 사용할 수 있습니다.
+
+```shell
+./vendor/bin/pint --parallel
+```
+
+병렬 모드에서는 `--max-processes` 옵션을 통해 실행할 최대 프로세스 수를 지정할 수도 있습니다. 이 옵션을 제공하지 않으면 Pint는 머신에서 사용 가능한 모든 코어를 사용합니다.
+
+```shell
+./vendor/bin/pint --parallel --max-processes=4
+```
+
 특정 파일이나 디렉토리에서만 Pint를 실행할 수도 있습니다.
 
 ```shell
@@ -188,21 +200,17 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ matrix.php }}
-          extensions: json, dom, curl, libxml, mbstring
-          coverage: none
-
-      - name: Install Pint
-        run: composer global require laravel/pint
+          tools: pint
 
       - name: Run Pint
         run: pint
 
       - name: Commit linted files
-        uses: stefanzweifel/git-auto-commit-action@v5
+        uses: stefanzweifel/git-auto-commit-action@v6
 ```

@@ -9,6 +9,7 @@
     - [플래시 데이터](#flash-data)
     - [데이터 삭제하기](#deleting-data)
     - [세션 ID 재생성하기](#regenerating-the-session-id)
+- [세션 캐시](#session-cache)
 - [세션 블로킹](#session-blocking)
 - [커스텀 세션 드라이버 추가하기](#adding-custom-session-drivers)
     - [드라이버 구현하기](#implementing-the-driver)
@@ -276,6 +277,25 @@ $request->session()->regenerate();
 ```php
 $request->session()->invalidate();
 ```
+
+<a name="session-cache"></a>
+## 세션 캐시(Session Cache)
+
+Laravel의 세션 캐시는 개별 사용자 세션에 범위가 지정된 데이터를 캐시하는 편리한 방법을 제공합니다. 전역 애플리케이션 캐시와 달리, 세션 캐시 데이터는 세션별로 자동으로 격리되며 세션이 만료되거나 삭제될 때 정리됩니다. 세션 캐시는 `get`, `put`, `remember`, `forget` 등 익숙한 모든 [Laravel 캐시 메서드](/docs/{{version}}/cache)를 지원하지만, 현재 세션으로 범위가 지정됩니다.
+
+세션 캐시는 동일한 세션 내에서 여러 요청에 걸쳐 유지하고 싶지만 영구적으로 저장할 필요가 없는 임시적인 사용자별 데이터를 저장하는 데 적합합니다. 여기에는 폼 데이터, 임시 계산, API 응답 또는 특정 사용자의 세션에 연결되어야 하는 기타 일시적 데이터가 포함됩니다.
+
+세션의 `cache` 메서드를 통해 세션 캐시에 접근할 수 있습니다.
+
+```php
+$discount = $request->session()->cache()->get('discount');
+
+$request->session()->cache()->put(
+    'discount', 10, now()->plus(minutes: 5)
+);
+```
+
+Laravel의 캐시 메서드에 대한 자세한 내용은 [캐시 문서](/docs/{{version}}/cache)를 참조하세요.
 
 <a name="session-blocking"></a>
 ## 세션 블로킹(Session Blocking)

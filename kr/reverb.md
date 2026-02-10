@@ -18,6 +18,7 @@
     - [포트](#ports)
     - [프로세스 관리](#process-management)
     - [스케일링](#scaling)
+- [이벤트](#events)
 
 <a name="introduction"></a>
 ## 소개
@@ -198,7 +199,7 @@ use Laravel\Reverb\Pulse\Recorders\ReverbMessages;
 WebSocket 서버의 장시간 실행 특성으로 인해 Reverb 서버가 서버에서 사용 가능한 리소스에 대해 최적의 연결 수를 효과적으로 처리할 수 있도록 서버 및 호스팅 환경에 일부 최적화를 수행해야 할 수 있습니다.
 
 > [!NOTE]
-> 사이트가 [Laravel Forge](https://forge.laravel.com)에 의해 관리되는 경우, "Application" 패널에서 직접 Reverb에 대해 서버를 자동으로 최적화할 수 있습니다. Reverb 통합을 활성화하면 Forge는 필요한 확장 프로그램을 설치하고 허용되는 연결 수를 늘리는 등 서버가 프로덕션에 준비되도록 합니다.
+> [Laravel Cloud](https://cloud.laravel.com)는 Laravel Reverb 클러스터로 구동되는 완전 관리형 WebSocket 인프라를 제공하여, 인프라를 관리하지 않고도 Reverb가 활성화된 애플리케이션을 확장하고 배포할 수 있습니다.
 
 <a name="open-files"></a>
 ### 열린 파일
@@ -316,3 +317,30 @@ REVERB_SCALING_ENABLED=true
 다음으로, 모든 Reverb 서버가 통신할 전용 중앙 Redis 서버가 있어야 합니다. Reverb는 [애플리케이션에 구성된 기본 Redis 연결](/docs/{{version}}/redis#configuration)을 사용하여 모든 Reverb 서버에 메시지를 게시합니다.
 
 Reverb의 스케일링 옵션을 활성화하고 Redis 서버를 구성한 후에는 Redis 서버와 통신할 수 있는 여러 서버에서 `reverb:start` 명령어를 호출하기만 하면 됩니다. 이러한 Reverb 서버는 서버 간에 들어오는 요청을 균등하게 분산하는 로드 밸런서 뒤에 배치되어야 합니다.
+
+<a name="events"></a>
+## 이벤트
+
+Reverb는 연결 및 메시지 처리 수명 주기 동안 내부 이벤트를 디스패치합니다. 이러한 [이벤트를 수신](/docs/{{version}}/events)하여 연결이 관리되거나 메시지가 교환될 때 작업을 수행할 수 있습니다.
+
+Reverb에서 디스패치되는 이벤트는 다음과 같습니다.
+
+#### `Laravel\Reverb\Events\ChannelCreated`
+
+채널이 생성될 때 디스패치됩니다. 일반적으로 첫 번째 연결이 특정 채널을 구독할 때 발생합니다. 이벤트는 `Laravel\Reverb\Protocols\Pusher\Channel` 인스턴스를 수신합니다.
+
+#### `Laravel\Reverb\Events\ChannelRemoved`
+
+채널이 제거될 때 디스패치됩니다. 일반적으로 마지막 연결이 채널에서 구독을 해제할 때 발생합니다. 이벤트는 `Laravel\Reverb\Protocols\Pusher\Channel` 인스턴스를 수신합니다.
+
+#### `Laravel\Reverb\Events\ConnectionPruned`
+
+서버에 의해 오래된 연결이 정리될 때 디스패치됩니다. 이벤트는 `Laravel\Reverb\Contracts\Connection` 인스턴스를 수신합니다.
+
+#### `Laravel\Reverb\Events\MessageReceived`
+
+클라이언트 연결로부터 메시지가 수신될 때 디스패치됩니다. 이벤트는 `Laravel\Reverb\Contracts\Connection` 인스턴스와 원시 문자열 `$message`를 수신합니다.
+
+#### `Laravel\Reverb\Events\MessageSent`
+
+클라이언트 연결로 메시지가 전송될 때 디스패치됩니다. 이벤트는 `Laravel\Reverb\Contracts\Connection` 인스턴스와 원시 문자열 `$message`를 수신합니다.

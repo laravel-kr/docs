@@ -38,21 +38,6 @@
 
 Laravel은 공식 플러그인과 Blade 디렉티브를 제공하여 개발 및 프로덕션 환경에서 에셋을 로드할 수 있도록 Vite와 원활하게 통합됩니다.
 
-> [!NOTE]
-> Laravel Mix를 사용하고 계신가요? Vite는 새로운 Laravel 설치에서 Laravel Mix를 대체했습니다. Mix 문서는 [Laravel Mix](https://laravel-mix.com/) 웹사이트를 참조하세요. Vite로 전환하려면 [마이그레이션 가이드](https://github.com/laravel/vite-plugin/blob/main/UPGRADE.md#migrating-from-laravel-mix-to-vite)를 참조하세요.
-
-<a name="vite-or-mix"></a>
-#### Vite와 Laravel Mix 중 선택하기
-
-Vite로 전환하기 전, 새로운 Laravel 애플리케이션은 에셋을 번들링할 때 [webpack](https://webpack.js.org/)을 기반으로 하는 [Mix](https://laravel-mix.com/)를 사용했습니다. Vite는 풍부한 JavaScript 애플리케이션을 빌드할 때 더 빠르고 생산적인 경험을 제공하는 데 중점을 둡니다. [Inertia](https://inertiajs.com)와 같은 도구를 사용하여 개발된 것을 포함한 싱글 페이지 애플리케이션(SPA)을 개발하는 경우, Vite가 완벽하게 적합할 것입니다.
-
-Vite는 [Livewire](https://livewire.laravel.com)를 사용하는 것을 포함한 JavaScript "스프링클"이 있는 전통적인 서버 사이드 렌더링 애플리케이션에서도 잘 작동합니다. 그러나 JavaScript 애플리케이션에서 직접 참조되지 않는 임의의 에셋을 빌드에 복사하는 기능과 같이 Laravel Mix가 지원하는 일부 기능이 부족합니다.
-
-<a name="migrating-back-to-mix"></a>
-#### Mix로 다시 마이그레이션하기
-
-Vite 스캐폴딩을 사용하여 새로운 Laravel 애플리케이션을 시작했지만 Laravel Mix와 webpack으로 돌아가야 하나요? 문제없습니다. [Vite에서 Mix로 마이그레이션하는 공식 가이드](https://github.com/laravel/vite-plugin/blob/main/UPGRADE.md#migrating-from-vite-to-laravel-mix)를 참조하세요.
-
 <a name="installation"></a>
 ## 설치 및 설정
 

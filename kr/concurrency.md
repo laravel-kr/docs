@@ -7,33 +7,7 @@
 <a name="introduction"></a>
 ## 소개
 
-> [!WARNING]
-> Laravel의 `Concurrency` 파사드는 현재 커뮤니티 피드백을 수집하는 동안 베타 버전입니다.
-
 때때로 서로 의존하지 않는 여러 개의 느린 작업을 실행해야 할 수 있습니다. 많은 경우 작업을 동시에 실행함으로써 상당한 성능 향상을 실현할 수 있습니다. Laravel의 `Concurrency` 파사드(Facade)는 클로저(Closure)를 동시에 실행하기 위한 간단하고 편리한 API를 제공합니다.
-
-<a name="concurrency-compatibility"></a>
-#### 동시성 호환성
-
-Laravel 10.x 애플리케이션에서 Laravel 11.x로 업그레이드한 경우, 애플리케이션의 `config/app.php` 설정 파일 내 `providers` 배열에 `ConcurrencyServiceProvider`를 추가해야 할 수 있습니다:
-
-```php
-'providers' => ServiceProvider::defaultProviders()->merge([
-    /*
-     * Package Service Providers...
-     */
-    Illuminate\Concurrency\ConcurrencyServiceProvider::class, // [tl! add]
-
-    /*
-     * Application Service Providers...
-     */
-    App\Providers\AppServiceProvider::class,
-    App\Providers\AuthServiceProvider::class,
-    // App\Providers\BroadcastServiceProvider::class,
-    App\Providers\EventServiceProvider::class,
-    App\Providers\RouteServiceProvider::class,
-])->toArray(),
-```
 
 <a name="how-it-works"></a>
 #### 동작 원리

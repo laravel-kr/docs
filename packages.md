@@ -6,14 +6,15 @@
 - [Service Providers](#service-providers)
 - [Resources](#resources)
     - [Configuration](#configuration)
-    - [Migrations](#migrations)
     - [Routes](#routes)
+    - [Migrations](#migrations)
     - [Language Files](#language-files)
     - [Views](#views)
     - [View Components](#view-components)
     - ["About" Artisan Command](#about-artisan-command)
 - [Commands](#commands)
     - [Optimize Commands](#optimize-commands)
+    - [Reload Commands](#reload-commands)
 - [Public Assets](#public-assets)
 - [Publishing File Groups](#publishing-file-groups)
 
@@ -123,7 +124,7 @@ The `mergeConfigFrom` method accepts the path to your package's configuration fi
 
 ```php
 /**
- * Register any application services.
+ * Register any package services.
  */
 public function register(): void
 {
@@ -339,7 +340,7 @@ Laravel's built-in `about` Artisan command provides a synopsis of the applicatio
 use Illuminate\Foundation\Console\AboutCommand;
 
 /**
- * Bootstrap any application services.
+ * Bootstrap any package services.
  */
 public function boot(): void
 {
@@ -390,6 +391,23 @@ public function boot(): void
 }
 ```
 
+<a name="reload-commands"></a>
+### Reload Commands
+
+Laravel's [reload command](/docs/{{version}}/deployment#reloading-services) terminates any running services so they can be automatically restarted by a system process monitor. Using the `reloads` method, you may register your package's own Artisan commands that should be invoked when the `reload` command is executed:
+
+```php
+/**
+ * Bootstrap any package services.
+ */
+public function boot(): void
+{
+    if ($this->app->runningInConsole()) {
+        $this->reloads('package:reload');
+    }
+}
+```
+
 <a name="public-assets"></a>
 ## Public Assets
 
@@ -407,7 +425,7 @@ public function boot(): void
 }
 ```
 
-Now, when your package's users execute the `vendor:publish` command, your assets will be copied to the specified publish location. Since users will typically need to overwrite the assets every time the package is updated, you may use the `--force` flag:
+Now, when your package's users execute the `vendor:publish` command, your assets will be copied to the specified publish location. Since users will typically need to overwrite the assets every time the package is updated, they may use the `--force` flag:
 
 ```shell
 php artisan vendor:publish --tag=public --force

@@ -522,6 +522,15 @@ $users = DB::table('users')
 $users = DB::table('users')->where('votes', 100)->get();
 ```
 
+`where` 메서드에 연관 배열을 제공하여 여러 컬럼에 대해 빠르게 쿼리할 수도 있습니다.
+
+```php
+$users = DB::table('users')->where([
+    'first_name' => 'Jane',
+    'last_name' => 'Doe',
+])->get();
+```
+
 앞서 언급했듯이 데이터베이스 시스템에서 지원하는 모든 연산자를 사용할 수 있습니다.
 
 ```php
@@ -656,7 +665,7 @@ WHERE published = true AND (
 `whereNone` 메서드를 사용하여 주어진 컬럼 중 어느 것도 주어진 제약 조건과 일치하지 않는 레코드를 조회할 수 있습니다.
 
 ```php
-$posts = DB::table('albums')
+$albums = DB::table('albums')
     ->where('published', true)
     ->whereNone([
         'title',
@@ -687,25 +696,49 @@ Laravel은 JSON 컬럼 타입을 지원하는 데이터베이스에서 JSON 컬�
 $users = DB::table('users')
     ->where('preferences->dining->meal', 'salad')
     ->get();
+
+$users = DB::table('users')
+    ->whereIn('preferences->dining->meal', ['pasta', 'salad', 'sandwiches'])
+    ->get();
 ```
 
-`whereJsonContains`를 사용하여 JSON 배열을 쿼리할 수 있습니다.
+`whereJsonContains`와 `whereJsonDoesntContain` 메서드를 사용하여 JSON 배열을 쿼리할 수 있습니다.
 
 ```php
 $users = DB::table('users')
     ->whereJsonContains('options->languages', 'en')
     ->get();
+
+$users = DB::table('users')
+    ->whereJsonDoesntContain('options->languages', 'en')
+    ->get();
 ```
 
-애플리케이션이 MariaDB, MySQL 또는 PostgreSQL 데이터베이스를 사용하는 경우 `whereJsonContains` 메서드에 값 배열을 전달할 수 있습니다.
+애플리케이션이 MariaDB, MySQL 또는 PostgreSQL 데이터베이스를 사용하는 경우 `whereJsonContains`와 `whereJsonDoesntContain` 메서드에 값 배열을 전달할 수 있습니다.
 
 ```php
 $users = DB::table('users')
     ->whereJsonContains('options->languages', ['en', 'de'])
     ->get();
+
+$users = DB::table('users')
+    ->whereJsonDoesntContain('options->languages', ['en', 'de'])
+    ->get();
 ```
 
-`whereJsonLength` 메서드를 사용하여 JSON 배열을 길이로 쿼리할 수 있습니다.
+또한 `whereJsonContainsKey` 또는 `whereJsonDoesntContainKey` 메서드를 사용하여 JSON 키가 포함되거나 포함되지 않은 결과를 조회할 수 있습니다.
+
+```php
+$users = DB::table('users')
+    ->whereJsonContainsKey('preferences->dietary_requirements')
+    ->get();
+
+$users = DB::table('users')
+    ->whereJsonDoesntContainKey('preferences->dietary_requirements')
+    ->get();
+```
+
+마지막으로, `whereJsonLength` 메서드를 사용하여 JSON 배열을 길이로 쿼리할 수 있습니다.
 
 ```php
 $users = DB::table('users')
@@ -790,7 +823,7 @@ $users = DB::table('users')
 ```php
 $activeUsers = DB::table('users')->select('id')->where('is_active', 1);
 
-$users = DB::table('comments')
+$comments = DB::table('comments')
     ->whereIn('user_id', $activeUsers)
     ->get();
 ```
@@ -843,6 +876,24 @@ $patients = DB::table('patients')
 ```php
 $patients = DB::table('patients')
     ->whereNotBetweenColumns('weight', ['minimum_allowed_weight', 'maximum_allowed_weight'])
+    ->get();
+```
+
+**whereValueBetween / whereValueNotBetween / orWhereValueBetween / orWhereValueNotBetween**
+
+`whereValueBetween` 메서드는 주어진 값이 동일한 테이블 행에 있는 두 컬럼의 값 사이에 있는지 확인합니다.
+
+```php
+$patients = DB::table('products')
+    ->whereValueBetween(100, ['min_price', 'max_price'])
+    ->get();
+```
+
+`whereValueNotBetween` 메서드는 값이 동일한 테이블 행에 있는 두 컬럼의 값 범위 밖에 있는지 확인합니다.
+
+```php
+$patients = DB::table('products')
+    ->whereValueNotBetween(100, ['min_price', 'max_price'])
     ->get();
 ```
 
@@ -1122,6 +1173,23 @@ $users = DB::table('users')
     ->get();
 ```
 
+정렬 방향은 선택사항이며 기본적으로 오름차순입니다. 내림차순으로 정렬하려면 `orderBy` 메서드의 두 번째 매개변수를 지정하거나 `orderByDesc`를 사용하면 됩니다.
+
+```php
+$users = DB::table('users')
+    ->orderByDesc('verified_at')
+    ->get();
+```
+
+마지막으로, `->` 연산자를 사용하여 JSON 컬럼 내의 값으로 결과를 정렬할 수 있습니다.
+
+```php
+$corporations = DB::table('corporations')
+    ->where('country', 'US')
+    ->orderBy('location->state')
+    ->get();
+```
+
 <a name="latest-oldest"></a>
 #### `latest`와 `oldest` 메서드
 
@@ -1163,6 +1231,14 @@ $query = DB::table('users')->orderBy('name');
 $usersOrderedByEmail = $query->reorder('email', 'desc')->get();
 ```
 
+편의상 `reorderDesc` 메서드를 사용하여 쿼리 결과를 내림차순으로 재정렬할 수 있습니다.
+
+```php
+$query = DB::table('users')->orderBy('name');
+
+$usersOrderedByEmail = $query->reorderDesc('email')->get();
+```
+
 <a name="grouping"></a>
 ### 그룹화
 
@@ -1202,16 +1278,7 @@ $users = DB::table('users')
 <a name="limit-and-offset"></a>
 ### Limit 및 Offset
 
-<a name="skip-take"></a>
-#### `skip`과 `take` 메서드
-
-`skip`과 `take` 메서드를 사용하여 쿼리에서 반환되는 결과 수를 제한하거나 쿼리에서 주어진 수의 결과를 건너뛸 수 있습니다.
-
-```php
-$users = DB::table('users')->skip(10)->take(5)->get();
-```
-
-또는 `limit`과 `offset` 메서드를 사용할 수 있습니다. 이 메서드들은 각각 `take`와 `skip` 메서드와 기능적으로 동일합니다.
+`limit`과 `offset` 메서드를 사용하여 쿼리에서 반환되는 결과 수를 제한하거나 쿼리에서 주어진 수의 결과를 건너뛸 수 있습니다.
 
 ```php
 $users = DB::table('users')
@@ -1288,7 +1355,7 @@ DB::table('pruned_users')->insertUsing([
     'id', 'name', 'email', 'email_verified_at'
 ], DB::table('users')->select(
     'id', 'name', 'email', 'email_verified_at'
-)->where('updated_at', '<=', now()->subMonth()));
+)->where('updated_at', '<=', now()->minus(months: 1)));
 ```
 
 <a name="auto-incrementing-ids"></a>
@@ -1575,7 +1642,7 @@ class Paginate
     public function __construct(
         private string $sortBy = 'timestamp',
         private string $sortDirection = 'desc',
-        private string $perPage = 25,
+        private int $perPage = 25,
     ) {
         //
     }

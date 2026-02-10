@@ -13,14 +13,14 @@
 <a name="introduction"></a>
 ## 소개
 
-[Redis](https://redis.io)는 오픈 소스이며 고급 키-값 저장소입니다. 키가 [문자열(strings)](https://redis.io/docs/data-types/strings/), [해시(hashes)](https://redis.io/docs/data-types/hashes/), [리스트(lists)](https://redis.io/docs/data-types/lists/), [셋(sets)](https://redis.io/docs/data-types/sets/), [정렬된 셋(sorted sets)](https://redis.io/docs/data-types/sorted-sets/)을 포함할 수 있기 때문에 데이터 구조 서버라고도 불립니다.
+[Redis](https://redis.io)는 오픈 소스이며 고급 키-값 저장소입니다. 키가 [문자열(strings)](https://redis.io/docs/latest/develop/data-types/strings/), [해시(hashes)](https://redis.io/docs/latest/develop/data-types/hashes/), [리스트(lists)](https://redis.io/docs/latest/develop/data-types/lists/), [셋(sets)](https://redis.io/docs/latest/develop/data-types/sets/), [정렬된 셋(sorted sets)](https://redis.io/docs/latest/develop/data-types/sorted-sets/)을 포함할 수 있기 때문에 데이터 구조 서버라고도 불립니다.
 
 Laravel에서 Redis를 사용하기 전에, PECL을 통해 [PhpRedis](https://github.com/phpredis/phpredis) PHP 확장을 설치하고 사용하는 것을 권장합니다. 이 확장은 "사용자 영역" PHP 패키지에 비해 설치가 더 복잡하지만, Redis를 많이 사용하는 애플리케이션에서 더 나은 성능을 제공할 수 있습니다. [Laravel Sail](/docs/{{version}}/sail)을 사용하고 있다면, 이 확장은 이미 애플리케이션의 Docker 컨테이너에 설치되어 있습니다.
 
 PhpRedis 확장을 설치할 수 없는 경우, Composer를 통해 `predis/predis` 패키지를 설치할 수 있습니다. Predis는 전적으로 PHP로 작성된 Redis 클라이언트이며 추가 확장이 필요하지 않습니다.
 
 ```shell
-composer require predis/predis:^2.0
+composer require predis/predis
 ```
 
 <a name="configuration"></a>
@@ -207,6 +207,26 @@ Laravel은 Predis를 사용할 때 클라이언트 측 샤딩(sharding)도 지�
         // 'auth' => ['username', 'secret'],
         // 'stream' => ['verify_peer' => false],
     ],
+],
+```
+
+<a name="retry-and-backoff-configuration"></a>
+#### 재시도 및 백오프 설정
+
+`retry_interval`, `max_retries`, `backoff_algorithm`, `backoff_base`, `backoff_cap` 옵션은 PhpRedis 클라이언트가 Redis 서버에 재연결을 시도하는 방식을 설정하는 데 사용할 수 있습니다. 지원되는 백오프 알고리즘은 `default`, `decorrelated_jitter`, `equal_jitter`, `exponential`, `uniform`, `constant`입니다.
+
+```php
+'default' => [
+    'url' => env('REDIS_URL'),
+    'host' => env('REDIS_HOST', '127.0.0.1'),
+    'username' => env('REDIS_USERNAME'),
+    'password' => env('REDIS_PASSWORD'),
+    'port' => env('REDIS_PORT', '6379'),
+    'database' => env('REDIS_DB', '0'),
+    'max_retries' => env('REDIS_MAX_RETRIES', 3),
+    'backoff_algorithm' => env('REDIS_BACKOFF_ALGORITHM', 'decorrelated_jitter'),
+    'backoff_base' => env('REDIS_BACKOFF_BASE', 100),
+    'backoff_cap' => env('REDIS_BACKOFF_CAP', 1000),
 ],
 ```
 

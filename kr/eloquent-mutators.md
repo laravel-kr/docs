@@ -6,6 +6,7 @@
     - [뮤테이터 정의하기](#defining-a-mutator)
 - [속성 캐스팅](#attribute-casting)
     - [배열과 JSON 캐스팅](#array-and-json-casting)
+    - [바이너리 캐스팅](#binary-casting)
     - [날짜 캐스팅](#date-casting)
     - [Enum 캐스팅](#enum-casting)
     - [암호화 캐스팅](#encrypted-casting)
@@ -15,6 +16,7 @@
     - [배열 / JSON 직렬화](#array-json-serialization)
     - [인바운드 캐스팅](#inbound-casting)
     - [캐스트 파라미터](#cast-parameters)
+    - [캐스트 값 비교하기](#comparing-cast-values)
     - [Castables](#castables)
 
 <a name="introduction"></a>
@@ -213,7 +215,9 @@ protected function address(): Attribute
 <div class="content-list" markdown="1">
 
 - `array`
+- `AsFluent::class`
 - `AsStringable::class`
+- `AsUri::class`
 - `boolean`
 - `collection`
 - `date`
@@ -520,6 +524,40 @@ class Option implements Arrayable, JsonSerializable
 }
 ```
 
+<a name="binary-casting"></a>
+### 바이너리 캐스팅(Binary Casting)
+
+Eloquent 모델에 자동 증가 ID 컬럼 외에 [바이너리 타입](/docs/{{version}}/migrations#column-method-binary) `uuid` 또는 `ulid` 컬럼이 있는 경우, `AsBinary` 캐스트를 사용하여 값을 바이너리 표현으로 자동 변환하거나 바이너리 표현에서 값을 자동 복원할 수 있습니다.
+
+```php
+use Illuminate\Database\Eloquent\Casts\AsBinary;
+
+/**
+ * 캐스팅할 속성을 가져옵니다.
+ *
+ * @return array<string, string>
+ */
+protected function casts(): array
+{
+    return [
+        'uuid' => AsBinary::uuid(),
+        'ulid' => AsBinary::ulid(),
+    ];
+}
+```
+
+모델에 캐스트가 정의되면 UUID / ULID 속성 값을 객체 인스턴스 또는 문자열로 설정할 수 있습니다. Eloquent가 자동으로 값을 바이너리 표현으로 변환합니다. 속성 값을 조회할 때는 항상 일반 텍스트 문자열 값을 받게 됩니다.
+
+```php
+use Illuminate\Support\Str;
+
+$user->uuid = Str::uuid();
+
+return $user->uuid;
+
+// "6e8cdeed-2f32-40bd-b109-1e4405be2140"
+```
+
 <a name="date-casting"></a>
 ### 날짜 캐스팅
 
@@ -636,7 +674,7 @@ protected function casts(): array
 <a name="key-rotation"></a>
 #### 키 로테이션
 
-아시다시피 Laravel은 애플리케이션의 `app` 설정 파일에 지정된 `key` 설정 값을 사용하여 문자열을 암호화합니다. 일반적으로 이 값은 `APP_KEY` 환경 변수의 값과 일치합니다. 애플리케이션의 암호화 키를 로테이션해야 하는 경우 새 키를 사용하여 암호화된 속성을 수동으로 다시 암호화해야 합니다.
+아시다시피 Laravel은 애플리케이션의 `app` 설정 파일에 지정된 `key` 설정 값을 사용하여 문자열을 암호화합니다. 일반적으로 이 값은 `APP_KEY` 환경 변수의 값과 일치합니다. 애플리케이션의 암호화 키를 로테이션해야 하는 경우 [우아하게 로테이션할 수 있습니다](/docs/{{version}}/encryption#gracefully-rotating-encryption-keys).
 
 <a name="query-time-casting"></a>
 ### 쿼리 시점 캐스팅
@@ -922,6 +960,33 @@ protected function casts(): array
     return [
         'secret' => AsHash::class.':sha256',
     ];
+}
+```
+
+<a name="comparing-cast-values"></a>
+### 캐스트 값 비교하기(Comparing Cast Values)
+
+두 개의 주어진 캐스트 값이 변경되었는지 비교하는 방법을 정의하려면, 커스텀 캐스트 클래스가 `Illuminate\Contracts\Database\Eloquent\ComparesCastableAttributes` 인터페이스를 구현할 수 있습니다. 이를 통해 모델이 업데이트될 때 Eloquent가 변경된 것으로 간주하여 데이터베이스에 저장하는 값에 대한 세밀한 제어가 가능합니다.
+
+이 인터페이스는 클래스에 주어진 값이 동일한 것으로 간주되면 `true`를 반환해야 하는 `compare` 메서드가 포함되어야 함을 명시합니다.
+
+```php
+/**
+ * 주어진 값이 동일한지 판단합니다.
+ *
+ * @param  \Illuminate\Database\Eloquent\Model  $model
+ * @param  string  $key
+ * @param  mixed  $firstValue
+ * @param  mixed  $secondValue
+ * @return bool
+ */
+public function compare(
+    Model $model,
+    string $key,
+    mixed $firstValue,
+    mixed $secondValue
+): bool {
+    return $firstValue === $secondValue;
 }
 ```
 

@@ -48,10 +48,13 @@ Laravel은 문자열 값을 조작하기 위한 다양한 함수를 포함하고
 [Str::contains](#method-str-contains)
 [Str::containsAll](#method-str-contains-all)
 [Str::doesntContain](#method-str-doesnt-contain)
+[Str::doesntEndWith](#method-str-doesnt-end-with)
+[Str::doesntStartWith](#method-str-doesnt-start-with)
 [Str::deduplicate](#method-deduplicate)
 [Str::endsWith](#method-ends-with)
 [Str::excerpt](#method-excerpt)
 [Str::finish](#method-str-finish)
+[Str::fromBase64](#method-str-from-base64)
 [Str::headline](#method-str-headline)
 [Str::inlineMarkdown](#method-str-inline-markdown)
 [Str::is](#method-str-is)
@@ -67,6 +70,9 @@ Laravel은 문자열 값을 조작하기 위한 다양한 함수를 포함하고
 [Str::lower](#method-str-lower)
 [Str::markdown](#method-str-markdown)
 [Str::mask](#method-str-mask)
+[Str::match](#method-str-match)
+[Str::matchAll](#method-str-match-all)
+[Str::isMatch](#method-str-is-match)
 [Str::orderedUuid](#method-str-ordered-uuid)
 [Str::padBoth](#method-str-padboth)
 [Str::padLeft](#method-str-padleft)
@@ -106,6 +112,7 @@ Laravel은 문자열 값을 조작하기 위한 다양한 함수를 포함하고
 [Str::rtrim](#method-str-rtrim)
 [Str::ucfirst](#method-str-ucfirst)
 [Str::ucsplit](#method-str-ucsplit)
+[Str::ucwords](#method-str-ucwords)
 [Str::upper](#method-str-upper)
 [Str::ulid](#method-str-ulid)
 [Str::unwrap](#method-str-unwrap)
@@ -143,13 +150,20 @@ Laravel은 문자열 값을 조작하기 위한 다양한 함수를 포함하고
 [chopEnd](#method-fluent-str-chop-end)
 [contains](#method-fluent-str-contains)
 [containsAll](#method-fluent-str-contains-all)
+[decrypt](#method-fluent-str-decrypt)
 [deduplicate](#method-fluent-str-deduplicate)
 [dirname](#method-fluent-str-dirname)
+[doesntContain](#method-fluent-str-doesnt-contain)
+[doesntEndWith](#method-fluent-str-doesnt-end-with)
+[doesntStartWith](#method-fluent-str-doesnt-start-with)
+[encrypt](#method-fluent-str-encrypt)
 [endsWith](#method-fluent-str-ends-with)
 [exactly](#method-fluent-str-exactly)
 [excerpt](#method-fluent-str-excerpt)
 [explode](#method-fluent-str-explode)
 [finish](#method-fluent-str-finish)
+[fromBase64](#method-fluent-str-from-base64)
+[hash](#method-fluent-str-hash)
 [headline](#method-fluent-str-headline)
 [inlineMarkdown](#method-fluent-str-inline-markdown)
 [is](#method-fluent-str-is)
@@ -206,17 +220,21 @@ Laravel은 문자열 값을 조작하기 위한 다양한 함수를 포함하고
 [title](#method-fluent-str-title)
 [toBase64](#method-fluent-str-to-base64)
 [toHtmlString](#method-fluent-str-to-html-string)
+[toUri](#method-fluent-str-to-uri)
 [transliterate](#method-fluent-str-transliterate)
 [trim](#method-fluent-str-trim)
 [ltrim](#method-fluent-str-ltrim)
 [rtrim](#method-fluent-str-rtrim)
 [ucfirst](#method-fluent-str-ucfirst)
 [ucsplit](#method-fluent-str-ucsplit)
+[ucwords](#method-fluent-str-ucwords)
 [unwrap](#method-fluent-str-unwrap)
 [upper](#method-fluent-str-upper)
 [when](#method-fluent-str-when)
 [whenContains](#method-fluent-str-when-contains)
 [whenContainsAll](#method-fluent-str-when-contains-all)
+[whenDoesntEndWith](#method-fluent-str-when-doesnt-end-with)
+[whenDoesntStartWith](#method-fluent-str-when-doesnt-start-with)
 [whenEmpty](#method-fluent-str-when-empty)
 [whenNotEmpty](#method-fluent-str-when-not-empty)
 [whenStartsWith](#method-fluent-str-when-starts-with)
@@ -535,7 +553,7 @@ $doesntContain = Str::doesntContain('This is name', 'my');
 ```php
 use Illuminate\Support\Str;
 
-$doesntContain = Str::doesntContain('This is name', ['my', 'foo']);
+$doesntContain = Str::doesntContain('This is name', ['my', 'framework']);
 
 // true
 ```
@@ -571,6 +589,54 @@ use Illuminate\Support\Str;
 $result = Str::deduplicate('The---Laravel---Framework', '-');
 
 // The-Laravel-Framework
+```
+
+<a name="method-str-doesnt-end-with"></a>
+#### `Str::doesntEndWith()` {.collection-method}
+
+`Str::doesntEndWith` 메서드는 주어진 문자열이 주어진 값으로 끝나지 않는지 확인합니다.
+
+```php
+use Illuminate\Support\Str;
+
+$result = Str::doesntEndWith('This is my name', 'dog');
+
+// true
+```
+
+배열의 값 중 어떤 것으로도 끝나지 않는지 확인하기 위해 값 배열을 전달할 수도 있습니다.
+
+```php
+use Illuminate\Support\Str;
+
+$result = Str::doesntEndWith('This is my name', ['this', 'foo']);
+
+// true
+
+$result = Str::doesntEndWith('This is my name', ['name', 'foo']);
+
+// false
+```
+
+<a name="method-str-doesnt-start-with"></a>
+#### `Str::doesntStartWith()` {.collection-method}
+
+`Str::doesntStartWith` 메서드는 주어진 문자열이 주어진 값으로 시작하지 않는지 확인합니다.
+
+```php
+use Illuminate\Support\Str;
+
+$result = Str::doesntStartWith('This is my name', 'That');
+
+// true
+```
+
+가능한 값의 배열이 전달된 경우, `doesntStartWith` 메서드는 문자열이 주어진 값 중 어떤 것으로도 시작하지 않으면 `true`를 반환합니다.
+
+```php
+$result = Str::doesntStartWith('This is my name', ['What', 'That', 'There']);
+
+// true
 ```
 
 <a name="method-ends-with"></a>
@@ -645,6 +711,19 @@ $adjusted = Str::finish('this/string', '/');
 $adjusted = Str::finish('this/string/', '/');
 
 // this/string/
+```
+
+<a name="method-str-from-base64"></a>
+#### `Str::fromBase64()` {.collection-method}
+
+`Str::fromBase64` 메서드는 주어진 Base64 문자열을 디코딩합니다.
+
+```php
+use Illuminate\Support\Str;
+
+$decoded = Str::fromBase64('TGFyYXZlbA==');
+
+// Laravel
 ```
 
 <a name="method-str-headline"></a>
@@ -814,6 +893,20 @@ $isUuid = Str::isUuid('laravel');
 // false
 ```
 
+UUID 사양 버전(1, 3, 4, 5, 6, 7 또는 8)별로 주어진 UUID가 일치하는지 검증할 수도 있습니다.
+
+```php
+use Illuminate\Support\Str;
+
+$isUuid = Str::isUuid('a0a2a2d2-0b87-4a18-83f2-2529882be2de', version: 4);
+
+// true
+
+$isUuid = Str::isUuid('a0a2a2d2-0b87-4a18-83f2-2529882be2de', version: 1);
+
+// false
+```
+
 <a name="method-kebab-case"></a>
 #### `Str::kebab()` {.collection-method}
 
@@ -950,6 +1043,65 @@ $string = Str::mask('taylor@example.com', '*', -15, 3);
 // tay***@example.com
 ```
 
+<a name="method-str-match"></a>
+#### `Str::match()` {.collection-method}
+
+`Str::match` 메서드는 주어진 정규 표현식 패턴과 일치하는 문자열 부분을 반환합니다.
+
+```php
+use Illuminate\Support\Str;
+
+$result = Str::match('/bar/', 'foo bar');
+
+// 'bar'
+
+$result = Str::match('/foo (.*)/', 'foo bar');
+
+// 'bar'
+```
+
+<a name="method-str-match-all"></a>
+#### `Str::matchAll()` {.collection-method}
+
+`Str::matchAll` 메서드는 주어진 정규 표현식 패턴과 일치하는 문자열 부분을 포함하는 컬렉션을 반환합니다.
+
+```php
+use Illuminate\Support\Str;
+
+$result = Str::matchAll('/bar/', 'bar foo bar');
+
+// collect(['bar', 'bar'])
+```
+
+표현식 내에서 매칭 그룹을 지정하면, Laravel은 첫 번째 매칭 그룹과 일치하는 항목의 컬렉션을 반환합니다.
+
+```php
+use Illuminate\Support\Str;
+
+$result = Str::matchAll('/f(\w*)/', 'bar fun bar fly');
+
+// collect(['un', 'ly']);
+```
+
+일치하는 항목이 없으면 빈 컬렉션이 반환됩니다.
+
+<a name="method-str-is-match"></a>
+#### `Str::isMatch()` {.collection-method}
+
+`Str::isMatch` 메서드는 문자열이 주어진 정규 표현식과 일치하면 `true`를 반환합니다.
+
+```php
+use Illuminate\Support\Str;
+
+$result = Str::isMatch('/foo (.*)/', 'foo bar');
+
+// true
+
+$result = Str::isMatch('/foo (.*)/', 'laravel');
+
+// false
+```
+
 <a name="method-str-ordered-uuid"></a>
 #### `Str::orderedUuid()` {.collection-method}
 
@@ -1058,6 +1210,16 @@ $plural = Str::plural('child', 2);
 $singular = Str::plural('child', 1);
 
 // child
+```
+
+`prependCount` 인수를 제공하여 복수형 문자열 앞에 포맷된 `$count`를 접두사로 추가할 수 있습니다.
+
+```php
+use Illuminate\Support\Str;
+
+$label = Str::plural('car', 1000, prependCount: true);
+
+// 1,000 cars
 ```
 
 <a name="method-str-plural-studly"></a>
@@ -1183,7 +1345,14 @@ $replaced = Str::replace('11.x', '12.x', $string);
 `replace` 메서드는 `caseSensitive` 인수도 허용합니다. 기본적으로 `replace` 메서드는 대소문자를 구분합니다.
 
 ```php
-Str::replace('Framework', 'Laravel', caseSensitive: false);
+$replaced = Str::replace(
+    'php',
+    'Laravel',
+    'PHP Framework for Web Artisans',
+    caseSensitive: false
+);
+
+// Laravel Framework for Web Artisans
 ```
 
 <a name="method-str-replace-array"></a>
@@ -1588,6 +1757,19 @@ use Illuminate\Support\Str;
 $segments = Str::ucsplit('FooBar');
 
 // [0 => 'Foo', 1 => 'Bar']
+```
+
+<a name="method-str-ucwords"></a>
+#### `Str::ucwords()` {.collection-method}
+
+`Str::ucwords` 메서드는 주어진 문자열의 각 단어의 첫 번째 문자를 대문자로 변환합니다.
+
+```php
+use Illuminate\Support\Str;
+
+$string = Str::ucwords('laravel framework');
+
+// Laravel Framework
 ```
 
 <a name="method-str-upper"></a>
@@ -2089,6 +2271,21 @@ $containsAll = Str::of('This is my name')->containsAll(['MY', 'NAME'], ignoreCas
 // true
 ```
 
+<a name="method-fluent-str-decrypt"></a>
+#### `decrypt` {.collection-method}
+
+`decrypt` 메서드는 암호화된 문자열을 [복호화](/docs/{{version}}/encryption)합니다.
+
+```php
+use Illuminate\Support\Str;
+
+$decrypted = $encrypted->decrypt();
+
+// 'secret'
+```
+
+`decrypt`의 반대 메서드는 [encrypt](#method-fluent-str-encrypt) 메서드를 참고하세요.
+
 <a name="method-fluent-str-deduplicate"></a>
 #### `deduplicate` {.collection-method}
 
@@ -2134,6 +2331,102 @@ $string = Str::of('/foo/bar/baz')->dirname(2);
 
 // '/foo'
 ```
+
+<a name="method-fluent-str-doesnt-contain"></a>
+#### `doesntContain()` {.collection-method}
+
+`doesntContain` 메서드는 주어진 문자열이 주어진 값을 포함하지 않는지 확인합니다. 이 메서드는 [contains](#method-fluent-str-contains) 메서드의 반대입니다. 기본적으로 이 메서드는 대소문자를 구분합니다.
+
+```php
+use Illuminate\Support\Str;
+
+$doesntContain = Str::of('This is name')->doesntContain('my');
+
+// true
+```
+
+배열의 값 중 어떤 것도 포함하지 않는지 확인하기 위해 값 배열을 전달할 수도 있습니다.
+
+```php
+use Illuminate\Support\Str;
+
+$doesntContain = Str::of('This is name')->doesntContain(['my', 'framework']);
+
+// true
+```
+
+`ignoreCase` 인수를 `true`로 설정하여 대소문자 구분을 비활성화할 수 있습니다.
+
+```php
+use Illuminate\Support\Str;
+
+$doesntContain = Str::of('This is my name')->doesntContain('MY', ignoreCase: true);
+
+// false
+```
+
+<a name="method-fluent-str-doesnt-end-with"></a>
+#### `doesntEndWith` {.collection-method}
+
+`doesntEndWith` 메서드는 주어진 문자열이 주어진 값으로 끝나지 않는지 확인합니다.
+
+```php
+use Illuminate\Support\Str;
+
+$result = Str::of('This is my name')->doesntEndWith('dog');
+
+// true
+```
+
+배열의 값 중 어떤 것으로도 끝나지 않는지 확인하기 위해 값 배열을 전달할 수도 있습니다.
+
+```php
+use Illuminate\Support\Str;
+
+$result = Str::of('This is my name')->doesntEndWith(['this', 'foo']);
+
+// true
+
+$result = Str::of('This is my name')->doesntEndWith(['name', 'foo']);
+
+// false
+```
+
+<a name="method-fluent-str-doesnt-start-with"></a>
+#### `doesntStartWith` {.collection-method}
+
+`doesntStartWith` 메서드는 주어진 문자열이 주어진 값으로 시작하지 않는지 확인합니다.
+
+```php
+use Illuminate\Support\Str;
+
+$result = Str::of('This is my name')->doesntStartWith('That');
+
+// true
+```
+
+배열의 값 중 어떤 것으로도 시작하지 않는지 확인하기 위해 값 배열을 전달할 수도 있습니다.
+
+```php
+use Illuminate\Support\Str;
+
+$result = Str::of('This is my name')->doesntStartWith(['What', 'That', 'There']);
+
+// true
+```
+
+<a name="method-fluent-str-encrypt"></a>
+#### `encrypt` {.collection-method}
+
+`encrypt` 메서드는 문자열을 [암호화](/docs/{{version}}/encryption)합니다.
+
+```php
+use Illuminate\Support\Str;
+
+$encrypted = Str::of('secret')->encrypt();
+```
+
+`encrypt`의 반대 메서드는 [decrypt](#method-fluent-str-decrypt) 메서드를 참고하세요.
 
 <a name="method-fluent-str-ends-with"></a>
 #### `endsWith` {.collection-method}
@@ -2233,6 +2526,32 @@ $adjusted = Str::of('this/string')->finish('/');
 $adjusted = Str::of('this/string/')->finish('/');
 
 // this/string/
+```
+
+<a name="method-fluent-str-from-base64"></a>
+#### `fromBase64` {.collection-method}
+
+`fromBase64` 메서드는 주어진 Base64 문자열을 디코딩합니다.
+
+```php
+use Illuminate\Support\Str;
+
+$decoded = Str::of('TGFyYXZlbA==')->fromBase64();
+
+// Laravel
+```
+
+<a name="method-fluent-str-hash"></a>
+#### `hash` {.collection-method}
+
+`hash` 메서드는 주어진 [알고리즘](https://www.php.net/manual/en/function.hash-algos.php)을 사용하여 문자열을 해시합니다.
+
+```php
+use Illuminate\Support\Str;
+
+$hashed = Str::of('secret')->hash(algorithm: 'sha256');
+
+// '2bb80d537b1da3e38bd30361aa855686bde0eacd7162fef6a25fe97bf527a25b'
 ```
 
 <a name="method-fluent-str-headline"></a>
@@ -2421,6 +2740,20 @@ $result = Str::of('5ace9ab9-e9cf-4ec6-a19d-5881212a452c')->isUuid();
 // true
 
 $result = Str::of('Taylor')->isUuid();
+
+// false
+```
+
+UUID 사양 버전(1, 3, 4, 5, 6, 7 또는 8)별로 주어진 UUID가 일치하는지 검증할 수도 있습니다.
+
+```php
+use Illuminate\Support\Str;
+
+$isUuid = Str::of('a0a2a2d2-0b87-4a18-83f2-2529882be2de')->isUuid(version: 4);
+
+// true
+
+$isUuid = Str::of('a0a2a2d2-0b87-4a18-83f2-2529882be2de')->isUuid(version: 1);
 
 // false
 ```
@@ -2726,7 +3059,7 @@ $plural = Str::of('child')->plural();
 // children
 ```
 
-함수의 두 번째 인자로 정수를 제공하여 문자열의 단수 또는 복수 형태를 가져올 수 있습니다.
+함수에 정수 인수를 제공하여 문자열의 단수 또는 복수 형태를 가져올 수 있습니다.
 
 ```php
 use Illuminate\Support\Str;
@@ -2738,6 +3071,16 @@ $plural = Str::of('child')->plural(2);
 $plural = Str::of('child')->plural(1);
 
 // child
+```
+
+`prependCount` 인수를 제공하여 복수형 문자열 앞에 포맷된 `$count`를 접두사로 추가할 수 있습니다.
+
+```php
+use Illuminate\Support\Str;
+
+$label = Str::of('car')->plural(1000, prependCount: true);
+
+// 1,000 cars
 ```
 
 <a name="method-fluent-str-position"></a>
@@ -2778,7 +3121,7 @@ $string = Str::of('Framework')->prepend('Laravel ');
 ```php
 use Illuminate\Support\Str;
 
-$string = Str::of('Arkansas is quite beautiful!')->remove('quite');
+$string = Str::of('Arkansas is quite beautiful!')->remove('quite ');
 
 // Arkansas is beautiful!
 ```
@@ -3031,6 +3374,16 @@ $result = Str::of('This is my name')->startsWith('This');
 // true
 ```
 
+배열의 값 중 어떤 것으로 시작하는지 확인하기 위해 값 배열을 전달할 수도 있습니다.
+
+```php
+use Illuminate\Support\Str;
+
+$result = Str::of('This is my name')->startsWith(['This', 'That']);
+
+// true
+```
+
 <a name="method-fluent-str-strip-tags"></a>
 #### `stripTags` {.collection-method}
 
@@ -3194,6 +3547,17 @@ use Illuminate\Support\Str;
 $htmlString = Str::of('Nuno Maduro')->toHtmlString();
 ```
 
+<a name="method-fluent-str-to-uri"></a>
+#### `toUri` {.collection-method}
+
+`toUri` 메서드는 주어진 문자열을 [Illuminate\Support\Uri](/docs/{{version}}/helpers#uri) 인스턴스로 변환합니다.
+
+```php
+use Illuminate\Support\Str;
+
+$uri = Str::of('https://example.com')->toUri();
+```
+
 <a name="method-fluent-str-transliterate"></a>
 #### `transliterate` {.collection-method}
 
@@ -3281,7 +3645,20 @@ use Illuminate\Support\Str;
 
 $string = Str::of('Foo Bar')->ucsplit();
 
-// collect(['Foo', 'Bar'])
+// collect(['Foo ', 'Bar'])
+```
+
+<a name="method-fluent-str-ucwords"></a>
+#### `ucwords` {.collection-method}
+
+`ucwords` 메서드는 주어진 문자열의 각 단어의 첫 번째 문자를 대문자로 변환합니다.
+
+```php
+use Illuminate\Support\Str;
+
+$string = Str::of('laravel framework')->ucwords();
+
+// Laravel Framework
 ```
 
 <a name="method-fluent-str-unwrap"></a>
@@ -3331,7 +3708,7 @@ $string = Str::of('Taylor')
 // 'Taylor Otwell'
 ```
 
-필요한 경우 `when` 메소드의 세 번째 매개변수로 또 다른 클로저를 전달할 수 있습니다. 이 클로저는 조건 매개변수가 `false`로 평가될 때 실행됩니다.
+필요한 경우 세 번째 매개변수로 또 다른 클로저를 전달할 수 있습니다. 이 클로저는 조건 매개변수가 `false`로 평가될 때 호출됩니다.
 
 <a name="method-fluent-str-when-contains"></a>
 #### `whenContains` {.collection-method}
@@ -3350,7 +3727,7 @@ $string = Str::of('tony stark')
 // 'Tony Stark'
 ```
 
-필요한 경우 `when` 메소드의 세 번째 매개변수로 또 다른 클로저를 전달할 수 있습니다. 이 클로저는 문자열이 주어진 값을 포함하지 않을 때 실행됩니다.
+필요한 경우 세 번째 매개변수로 또 다른 클로저를 전달할 수 있습니다. 이 클로저는 문자열이 주어진 값을 포함하지 않을 때 호출됩니다.
 
 배열의 값 중 하나라도 주어진 문자열에 포함되어 있는지 확인하기 위해 값 배열을 전달할 수도 있습니다.
 
@@ -3383,7 +3760,39 @@ $string = Str::of('tony stark')
 // 'Tony Stark'
 ```
 
-필요한 경우 `when` 메소드의 세 번째 매개변수로 또 다른 클로저를 전달할 수 있습니다. 이 클로저는 조건 매개변수가 `false`로 평가될 때 실행됩니다.
+필요한 경우 세 번째 매개변수로 또 다른 클로저를 전달할 수 있습니다. 이 클로저는 조건 매개변수가 `false`로 평가될 때 호출됩니다.
+
+<a name="method-fluent-str-when-doesnt-end-with"></a>
+#### `whenDoesntEndWith` {.collection-method}
+
+`whenDoesntEndWith` 메서드는 문자열이 주어진 하위 문자열로 끝나지 않을 때 주어진 클로저를 호출합니다. 클로저는 플루언트 문자열 인스턴스를 받습니다.
+
+```php
+use Illuminate\Support\Str;
+use Illuminate\Support\Stringable;
+
+$string = Str::of('disney world')->whenDoesntEndWith('land', function (Stringable $string) {
+    return $string->title();
+});
+
+// 'Disney World'
+```
+
+<a name="method-fluent-str-when-doesnt-start-with"></a>
+#### `whenDoesntStartWith` {.collection-method}
+
+`whenDoesntStartWith` 메서드는 문자열이 주어진 하위 문자열로 시작하지 않을 때 주어진 클로저를 호출합니다. 클로저는 플루언트 문자열 인스턴스를 받습니다.
+
+```php
+use Illuminate\Support\Str;
+use Illuminate\Support\Stringable;
+
+$string = Str::of('disney world')->whenDoesntStartWith('sea', function (Stringable $string) {
+    return $string->title();
+});
+
+// 'Disney World'
+```
 
 <a name="method-fluent-str-when-empty"></a>
 #### `whenEmpty` {.collection-method}

@@ -165,7 +165,7 @@ class UserControllerTest extends TestCase
 
 use Illuminate\Support\Facades\Cache;
 
-test('values are be stored in cache', function () {
+test('values are stored in cache', function () {
     Cache::spy();
 
     $response = $this->get('/');
@@ -179,7 +179,7 @@ test('values are be stored in cache', function () {
 ```php tab=PHPUnit
 use Illuminate\Support\Facades\Cache;
 
-public function test_values_are_be_stored_in_cache(): void
+public function test_values_are_stored_in_cache(): void
 {
     Cache::spy();
 
@@ -211,7 +211,7 @@ test('time can be manipulated', function () {
     $this->travel(-5)->hours();
 
     // 특정 시간으로 이동...
-    $this->travelTo(now()->subHours(6));
+    $this->travelTo(now()->minus(hours: 6));
 
     // 현재 시간으로 돌아오기...
     $this->travelBack();
@@ -234,7 +234,7 @@ public function test_time_can_be_manipulated(): void
     $this->travel(-5)->hours();
 
     // 특정 시간으로 이동...
-    $this->travelTo(now()->subHours(6));
+    $this->travelTo(now()->minus(hours: 6));
 
     // 현재 시간으로 돌아오기...
     $this->travelBack();
@@ -248,7 +248,7 @@ $this->travel(5)->days(function () {
     // 5일 후 미래에서 무언가를 테스트...
 });
 
-$this->travelTo(now()->subDays(10), function () {
+$this->travelTo(now()->mins(days: 10), function () {
     // 특정 시점에서 무언가를 테스트...
 });
 ```

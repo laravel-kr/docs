@@ -394,6 +394,15 @@ $perPage = $request->integer('per_page');
 $archived = $request->boolean('archived');
 ```
 
+<a name="retrieving-array-input-values"></a>
+#### 배열 입력값 조회하기
+
+배열을 포함하는 입력값은 `array` 메소드를 사용하여 조회할 수 있습니다. 이 메소드는 입력값을 항상 배열로 캐스팅합니다. 요청에 주어진 이름의 입력값이 없으면 빈 배열이 반환됩니다.
+
+```php
+$versions = $request->array('versions');
+```
+
 <a name="retrieving-date-input-values"></a>
 #### 날짜 입력값 조회하기
 
@@ -420,6 +429,12 @@ $elapsed = $request->date('elapsed', '!H:i', 'Europe/Madrid');
 use App\Enums\Status;
 
 $status = $request->enum('status', Status::class);
+```
+
+값이 누락되었거나 유효하지 않은 경우 반환될 기본값을 제공할 수도 있습니다.
+
+```php
+$status = $request->enum('status', Status::class, Status::Pending);
 ```
 
 입력값이 PHP 열거형에 해당하는 값의 배열인 경우, `enums` 메소드를 사용하여 값 배열을 열거형 인스턴스로 조회할 수 있습니다.
@@ -660,7 +675,7 @@ $value = $request->cookie('name');
 use Illuminate\Foundation\Http\Middleware\ConvertEmptyStringsToNull;
 use Illuminate\Foundation\Http\Middleware\TrimStrings;
 
-->withMiddleware(function (Middleware $middleware) {
+->withMiddleware(function (Middleware $middleware): void {
     $middleware->remove([
         ConvertEmptyStringsToNull::class,
         TrimStrings::class,
@@ -671,7 +686,7 @@ use Illuminate\Foundation\Http\Middleware\TrimStrings;
 애플리케이션에 대한 요청의 하위 집합에 대해 문자열 트리밍 및 빈 문자열 변환을 비활성화하려면, 애플리케이션의 `bootstrap/app.php` 파일 내에서 `trimStrings` 및 `convertEmptyStringsToNull` 미들웨어 메소드를 사용할 수 있습니다. 두 메소드 모두 입력 정규화를 건너뛸지 여부를 나타내기 위해 `true` 또는 `false`를 반환해야 하는 클로저 배열을 받습니다.
 
 ```php
-->withMiddleware(function (Middleware $middleware) {
+->withMiddleware(function (Middleware $middleware): void {
     $middleware->convertEmptyStringsToNull(except: [
         fn (Request $request) => $request->is('admin/*'),
     ]);
@@ -765,7 +780,7 @@ TLS / SSL 인증서를 종료하는 로드 밸런서 뒤에서 애플리케이�
 이를 해결하려면, Laravel 애플리케이션에 포함된 `Illuminate\Http\Middleware\TrustProxies` 미들웨어를 활성화하여 애플리케이션이 신뢰해야 하는 로드 밸런서나 프록시를 빠르게 사용자 지정할 수 있습니다. 신뢰할 수 있는 프록시는 애플리케이션의 `bootstrap/app.php` 파일에서 `trustProxies` 미들웨어 메소드를 사용하여 지정해야 합니다.
 
 ```php
-->withMiddleware(function (Middleware $middleware) {
+->withMiddleware(function (Middleware $middleware): void {
     $middleware->trustProxies(at: [
         '192.168.1.1',
         '10.0.0.0/8',
@@ -776,7 +791,7 @@ TLS / SSL 인증서를 종료하는 로드 밸런서 뒤에서 애플리케이�
 신뢰할 수 있는 프록시를 설정하는 것 외에도, 신뢰해야 하는 프록시 헤더를 설정할 수도 있습니다.
 
 ```php
-->withMiddleware(function (Middleware $middleware) {
+->withMiddleware(function (Middleware $middleware): void {
     $middleware->trustProxies(headers: Request::HEADER_X_FORWARDED_FOR |
         Request::HEADER_X_FORWARDED_HOST |
         Request::HEADER_X_FORWARDED_PORT |
@@ -795,7 +810,7 @@ TLS / SSL 인증서를 종료하는 로드 밸런서 뒤에서 애플리케이�
 Amazon AWS나 다른 "클라우드" 로드 밸런서 제공업체를 사용하는 경우, 실제 밸런서의 IP 주소를 알지 못할 수 있습니다. 이 경우 `*`를 사용하여 모든 프록시를 신뢰할 수 있습니다.
 
 ```php
-->withMiddleware(function (Middleware $middleware) {
+->withMiddleware(function (Middleware $middleware): void {
     $middleware->trustProxies(at: '*');
 })
 ```
@@ -807,18 +822,18 @@ Amazon AWS나 다른 "클라우드" 로드 밸런서 제공업체를 사용하�
 
 일반적으로 Nginx나 Apache와 같은 웹 서버를 설정하여 주어진 호스트명과 일치하는 요청만 애플리케이션에 보내도록 해야 합니다. 하지만 웹 서버를 직접 사용자 지정할 수 없고 Laravel이 특정 호스트명에만 응답하도록 지시해야 하는 경우, 애플리케이션에 대해 `Illuminate\Http\Middleware\TrustHosts` 미들웨어를 활성화할 수 있습니다.
 
-`TrustHosts` 미들웨어를 활성화하려면, 애플리케이션의 `bootstrap/app.php` 파일에서 `trustHosts` 미들웨어 메소드를 호출해야 합니다. 이 메소드의 `at` 인수를 사용하여 애플리케이션이 응답해야 하는 호스트명을 지정할 수 있습니다. 다른 `Host` 헤더를 가진 들어오는 요청은 거부됩니다.
+`TrustHosts` 미들웨어를 활성화하려면, 애플리케이션의 `bootstrap/app.php` 파일에서 `trustHosts` 미들웨어 메소드를 호출해야 합니다. 이 메소드의 `at` 인수를 사용하여 애플리케이션이 응답해야 하는 호스트명을 지정할 수 있습니다. 호스트명 문자열은 정규 표현식으로 처리됩니다. 다른 `Host` 헤더를 가진 들어오는 요청은 거부됩니다.
 
 ```php
-->withMiddleware(function (Middleware $middleware) {
-    $middleware->trustHosts(at: ['laravel.test']);
+->withMiddleware(function (Middleware $middleware): void {
+    $middleware->trustHosts(at: ['^laravel\.test$']);
 })
 ```
 
 기본적으로 애플리케이션 URL의 하위 도메인에서 오는 요청도 자동으로 신뢰됩니다. 이 동작을 비활성화하려면 `subdomains` 인수를 사용할 수 있습니다.
 
 ```php
-->withMiddleware(function (Middleware $middleware) {
+->withMiddleware(function (Middleware $middleware): void {
     $middleware->trustHosts(at: ['laravel.test'], subdomains: false);
 })
 ```
@@ -826,7 +841,7 @@ Amazon AWS나 다른 "클라우드" 로드 밸런서 제공업체를 사용하�
 신뢰할 수 있는 호스트를 결정하기 위해 애플리케이션의 설정 파일이나 데이터베이스에 액세스해야 하는 경우, `at` 인수에 클로저를 제공할 수 있습니다.
 
 ```php
-->withMiddleware(function (Middleware $middleware) {
+->withMiddleware(function (Middleware $middleware): void {
     $middleware->trustHosts(at: fn () => config('app.trusted_hosts'));
 })
 ```

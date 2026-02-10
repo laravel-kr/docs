@@ -5,6 +5,7 @@
 - [사용 가능한 프롬프트](#available-prompts)
     - [Text](#text)
     - [Textarea](#textarea)
+    - [Number](#number)
     - [Password](#password)
     - [Confirm](#confirm)
     - [Select](#select)
@@ -22,6 +23,7 @@
 - [터미널 비우기](#clear)
 - [터미널 고려 사항](#terminal-considerations)
 - [지원되지 않는 환경과 폴백](#fallbacks)
+- [테스팅](#testing)
 
 <a name="introduction"></a>
 ## 소개
@@ -185,6 +187,76 @@ $story = textarea(
 $story = textarea(
     label: 'Tell me a story.',
     validate: ['story' => 'required|max:10000']
+);
+```
+
+<a name="number"></a>
+### Number
+
+`number` 함수는 주어진 질문과 함께 사용자에게 숫자 입력을 요청하고 그 값을 반환합니다. `number` 함수는 사용자가 위쪽 및 아래쪽 화살표 키를 사용하여 숫자를 조작할 수 있도록 합니다.
+
+```php
+use function Laravel\Prompts\number;
+
+$number = number('How many copies would you like?');
+```
+
+플레이스홀더 텍스트, 기본값, 정보 힌트를 포함할 수도 있습니다.
+
+```php
+$name = number(
+    label: 'How many copies would you like?',
+    placeholder: '5',
+    default: 1,
+    hint: 'This will be determine how many copies to create.'
+);
+```
+
+<a name="number-required"></a>
+#### 필수 값
+
+값을 반드시 입력하도록 요구하려면 `required` 인수를 전달하면 됩니다.
+
+```php
+$copies = number(
+    label: 'How many copies would you like?',
+    required: true
+);
+```
+
+유효성 검사 메시지를 커스터마이즈하려면 문자열을 전달할 수도 있습니다.
+
+```php
+$copies = number(
+    label: 'How many copies would you like?',
+    required: 'A number of copies is required.'
+);
+```
+
+<a name="number-validation"></a>
+#### 추가 유효성 검사
+
+추가적인 유효성 검사 로직을 수행하려면 `validate` 인수에 클로저를 전달할 수 있습니다.
+
+```php
+$copies = number(
+    label: 'How many copies would you like?',
+    validate: fn (?int $value) => match (true) {
+        $value < 1 => 'At least one copy is required.',
+        $value > 100 => 'You may not create more than 100 copies.',
+        default => null
+    }
+);
+```
+
+클로저는 입력된 값을 받으며 에러 메시지를 반환하거나, 유효성 검사를 통과하면 `null`을 반환할 수 있습니다.
+
+또한 Laravel의 [유효성 검사기](/docs/{{version}}/validation)를 활용할 수도 있습니다. 이를 위해 `validate` 인수에 속성 이름과 원하는 유효성 검사 규칙을 포함하는 배열을 전달하세요.
+
+```php
+$copies = number(
+    label: 'How many copies would you like?',
+    validate: ['copies' => 'required|integer|min:1|max:100']
 );
 ```
 
@@ -858,13 +930,13 @@ table(
 use function Laravel\Prompts\spin;
 
 $response = spin(
-    message: 'Fetching response...',
-    callback: fn () => Http::get('http://example.com')
+    callback: fn () => Http::get('http://example.com'),
+    message: 'Fetching response...'
 );
 ```
 
 > [!WARNING]
-> `spin` 함수는 스피너 애니메이션을 위해 `pcntl` PHP 확장 모듈이 필요합니다. 이 확장 모듈을 사용할 수 없는 경우 정적인 버전의 스피너가 대신 표시됩니다.
+> `spin` 함수는 스피너 애니메이션을 위해 [PCNTL](https://www.php.net/manual/en/book.pcntl.php) PHP 확장 모듈이 필요합니다. 이 확장 모듈을 사용할 수 없는 경우 정적인 버전의 스피너가 대신 표시됩니다.
 
 <a name="progress"></a>
 ## 프로그레스 바(Progress Bars)
@@ -1001,3 +1073,49 @@ TextPrompt::fallbackUsing(function (TextPrompt $prompt) use ($input, $output) {
 ```
 
 폴백은 각 프롬프트 클래스에 대해 개별적으로 구성해야 합니다. 클로저는 프롬프트 클래스의 인스턴스를 받으며 프롬프트에 적합한 타입을 반환해야 합니다.
+
+<a name="testing"></a>
+## 테스팅
+
+Laravel은 명령어가 예상된 프롬프트(Prompt) 메시지를 표시하는지 테스트하기 위한 다양한 메서드를 제공합니다.
+
+```php tab=Pest
+test('report generation', function () {
+    $this->artisan('report:generate')
+        ->expectsPromptsInfo('Welcome to the application!')
+        ->expectsPromptsWarning('This action cannot be undone')
+        ->expectsPromptsError('Something went wrong')
+        ->expectsPromptsAlert('Important notice!')
+        ->expectsPromptsIntro('Starting process...')
+        ->expectsPromptsOutro('Process completed!')
+        ->expectsPromptsTable(
+            headers: ['Name', 'Email'],
+            rows: [
+                ['Taylor Otwell', 'taylor@example.com'],
+                ['Jason Beggs', 'jason@example.com'],
+            ]
+        )
+        ->assertExitCode(0);
+});
+```
+
+```php tab=PHPUnit
+public function test_report_generation(): void
+{
+    $this->artisan('report:generate')
+        ->expectsPromptsInfo('Welcome to the application!')
+        ->expectsPromptsWarning('This action cannot be undone')
+        ->expectsPromptsError('Something went wrong')
+        ->expectsPromptsAlert('Important notice!')
+        ->expectsPromptsIntro('Starting process...')
+        ->expectsPromptsOutro('Process completed!')
+        ->expectsPromptsTable(
+            headers: ['Name', 'Email'],
+            rows: [
+                ['Taylor Otwell', 'taylor@example.com'],
+                ['Jason Beggs', 'jason@example.com'],
+            ]
+        )
+        ->assertExitCode(0);
+}
+```

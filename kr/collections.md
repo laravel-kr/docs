@@ -17,7 +17,7 @@
 `Illuminate\Support\Collection` 클래스는 배열 데이터를 다루기 위한 유연하고 편리한 래퍼(wrapper)를 제공합니다. 예를 들어, 다음 코드를 살펴보세요. `collect` 헬퍼를 사용하여 배열에서 새 컬렉션 인스턴스를 생성하고, 각 요소에 `strtoupper` 함수를 실행한 다음, 모든 빈 요소를 제거합니다:
 
 ```php
-$collection = collect(['taylor', 'abigail', null])->map(function (?string $name) {
+$collection = collect(['Taylor', 'Abigail', null])->map(function (?string $name) {
     return strtoupper($name);
 })->reject(function (string $name) {
     return empty($name);
@@ -82,6 +82,8 @@ Collection::macro('toLocale', function (string $locale) {
 $collection = collect(['first', 'second']);
 
 $translated = $collection->toLocale('es');
+
+// ['primero', 'segundo'];
 ```
 
 <a name="available-methods"></a>
@@ -117,7 +119,6 @@ $translated = $collection->toLocale('es');
 [combine](#method-combine)
 [concat](#method-concat)
 [contains](#method-contains)
-[containsOneItem](#method-containsoneitem)
 [containsStrict](#method-containsstrict)
 [count](#method-count)
 [countBy](#method-countBy)
@@ -128,6 +129,7 @@ $translated = $collection->toLocale('es');
 [diffAssocUsing](#method-diffassocusing)
 [diffKeys](#method-diffkeys)
 [doesntContain](#method-doesntcontain)
+[doesntContainStrict](#method-doesntcontainstrict)
 [dot](#method-dot)
 [dump](#method-dump)
 [duplicates](#method-duplicates)
@@ -151,6 +153,8 @@ $translated = $collection->toLocale('es');
 [groupBy](#method-groupby)
 [has](#method-has)
 [hasAny](#method-hasany)
+[hasMany](#method-hasmany)
+[hasSole](#method-hassole)
 [implode](#method-implode)
 [intersect](#method-intersect)
 [intersectUsing](#method-intersectusing)
@@ -229,6 +233,7 @@ $translated = $collection->toLocale('es');
 [times](#method-times)
 [toArray](#method-toarray)
 [toJson](#method-tojson)
+[toPrettyJson](#method-to-pretty-json)
 [transform](#method-transform)
 [undot](#method-undot)
 [union](#method-union)
@@ -436,7 +441,7 @@ $collapsed->all();
 <a name="method-collapsewithkeys"></a>
 #### `collapseWithKeys()` {.collection-method}
 
-`collapseWithKeys` 메서드는 배열 또는 컬렉션의 컬렉션을 원래 키를 유지하면서 단일 컬렉션으로 평면화합니다:
+`collapseWithKeys` 메서드는 배열 또는 컬렉션의 컬렉션을 원래 키를 유지하면서 단일 컬렉션으로 평면화합니다. 컬렉션이 이미 평면인 경우 빈 컬렉션을 반환합니다:
 
 ```php
 $collection = collect([
@@ -572,25 +577,6 @@ $collection->contains('product', 'Bookcase');
 
 `contains`의 반대는 [doesntContain](#method-doesntcontain) 메서드를 참조하세요.
 
-<a name="method-containsoneitem"></a>
-#### `containsOneItem()` {.collection-method}
-
-`containsOneItem` 메서드는 컬렉션에 단일 아이템이 포함되어 있는지 확인합니다:
-
-```php
-collect([])->containsOneItem();
-
-// false
-
-collect(['1'])->containsOneItem();
-
-// true
-
-collect(['1', '2'])->containsOneItem();
-
-// false
-```
-
 <a name="method-containsstrict"></a>
 #### `containsStrict()` {.collection-method}
 
@@ -693,12 +679,10 @@ $collection = collect(['John Doe', 'Jane Doe']);
 $collection->dd();
 
 /*
-    Collection {
-        #items: array:2 [
-            0 => "John Doe"
-            1 => "Jane Doe"
-        ]
-    }
+    array:2 [
+        0 => "John Doe"
+        1 => "Jane Doe"
+    ]
 */
 ```
 
@@ -841,6 +825,11 @@ $collection->doesntContain('product', 'Bookcase');
 
 `doesntContain` 메서드는 아이템 값을 확인할 때 "느슨한(loose)" 비교를 사용합니다. 즉, 정수 값을 가진 문자열은 같은 값의 정수와 동일하게 간주됩니다.
 
+<a name="method-doesntcontainstrict"></a>
+#### `doesntContainStrict()` {.collection-method}
+
+이 메서드는 [doesntContain](#method-doesntcontain) 메서드와 동일한 시그니처를 가지지만 모든 값은 "엄격한(strict)" 비교를 사용하여 비교됩니다.
+
 <a name="method-dot"></a>
 #### `dot()` {.collection-method}
 
@@ -867,12 +856,10 @@ $collection = collect(['John Doe', 'Jane Doe']);
 $collection->dump();
 
 /*
-    Collection {
-        #items: array:2 [
-            0 => "John Doe"
-            1 => "Jane Doe"
-        ]
-    }
+    array:2 [
+        0 => "John Doe"
+        1 => "Jane Doe"
+    ]
 */
 ```
 
@@ -1152,9 +1139,9 @@ $flattened->all();
 
 ```php
 $collection = collect([
-    'name' => 'taylor',
+    'name' => 'Taylor',
     'languages' => [
-        'php', 'javascript'
+        'PHP', 'JavaScript'
     ]
 ]);
 
@@ -1162,7 +1149,7 @@ $flattened = $collection->flatten();
 
 $flattened->all();
 
-// ['taylor', 'php', 'javascript'];
+// ['Taylor', 'PHP', 'JavaScript'];
 ```
 
 필요한 경우 `flatten` 메서드에 "depth" 인수를 전달할 수 있습니다:
@@ -1203,13 +1190,13 @@ $products->values()->all();
 `flip` 메서드는 컬렉션의 키와 해당 값을 교환합니다:
 
 ```php
-$collection = collect(['name' => 'taylor', 'framework' => 'laravel']);
+$collection = collect(['name' => 'Taylor', 'framework' => 'Laravel']);
 
 $flipped = $collection->flip();
 
 $flipped->all();
 
-// ['taylor' => 'name', 'laravel' => 'framework']
+// ['Taylor' => 'name', 'Laravel' => 'framework']
 ```
 
 <a name="method-forget"></a>
@@ -1218,12 +1205,12 @@ $flipped->all();
 `forget` 메서드는 키로 컬렉션에서 아이템을 제거합니다:
 
 ```php
-$collection = collect(['name' => 'taylor', 'framework' => 'laravel']);
+$collection = collect(['name' => 'Taylor', 'framework' => 'Laravel']);
 
 // Forget a single key...
 $collection->forget('name');
 
-// ['framework' => 'laravel']
+// ['framework' => 'Laravel']
 
 // Forget multiple keys...
 $collection->forget(['name', 'framework']);
@@ -1272,17 +1259,17 @@ $collection = Collection::fromJson($json);
 `get` 메서드는 주어진 키의 아이템을 반환합니다. 키가 존재하지 않으면 `null`이 반환됩니다:
 
 ```php
-$collection = collect(['name' => 'taylor', 'framework' => 'laravel']);
+$collection = collect(['name' => 'Taylor', 'framework' => 'Laravel']);
 
 $value = $collection->get('name');
 
-// taylor
+// Taylor
 ```
 
 선택적으로 두 번째 인수로 기본값을 전달할 수 있습니다:
 
 ```php
-$collection = collect(['name' => 'taylor', 'framework' => 'laravel']);
+$collection = collect(['name' => 'Taylor', 'framework' => 'Laravel']);
 
 $value = $collection->get('age', 34);
 
@@ -1428,6 +1415,51 @@ $collection->hasAny(['name', 'price']);
 // false
 ```
 
+<a name="method-hasmany"></a>
+#### `hasMany()` {.collection-method}
+
+`hasMany` 메서드는 컬렉션에 여러 아이템이 포함되어 있는지 확인합니다:
+
+```php
+collect([])->hasMany();
+
+// false
+
+collect(['1'])->hasMany();
+
+// false
+
+collect([1, 2, 3])->hasMany();
+
+// true
+
+collect([
+    ['age' => 2],
+    ['age' => 3],
+])->hasMany(fn ($item) => $item['age'] === 2)
+
+// false
+```
+
+<a name="method-hassole"></a>
+#### `hasSole()` {.collection-method}
+
+`hasSole` 메서드는 컬렉션에 단일 아이템이 포함되어 있는지 확인하며, 선택적으로 주어진 조건에 맞는지도 확인합니다:
+
+```php
+collect([])->hasSole();
+
+// false
+
+collect(['1'])->hasSole();
+
+// true
+
+collect([1, 2, 3])->hasSole(fn (int $item) => $item === 2);
+
+// true
+```
+
 <a name="method-implode"></a>
 #### `implode()` {.collection-method}
 
@@ -1488,7 +1520,7 @@ $intersect->all();
 ```php
 $collection = collect(['Desk', 'Sofa', 'Chair']);
 
-$intersect = $collection->intersectUsing(['desk', 'chair', 'bookcase'], function ($a, $b) {
+$intersect = $collection->intersectUsing(['desk', 'chair', 'bookcase'], function (string $a, string $b) {
     return strcasecmp($a, $b);
 });
 
@@ -1536,7 +1568,7 @@ $intersect = $collection->intersectAssocUsing([
     'color' => 'blue',
     'size' => 'M',
     'material' => 'polyester',
-], function ($a, $b) {
+], function (string $a, string $b) {
     return strcasecmp($a, $b);
 });
 
@@ -2106,7 +2138,7 @@ $equalOrAboveThree->all();
 ```php
 $collection = collect([1, 1, 2, 2, 2, 3]);
 
-$percentage = $collection->percentage(fn ($value) => $value === 1);
+$percentage = $collection->percentage(fn (int $value) => $value === 1);
 
 // 33.33
 ```
@@ -2114,7 +2146,7 @@ $percentage = $collection->percentage(fn ($value) => $value === 1);
 기본적으로 백분율은 소수점 이하 두 자리로 반올림됩니다. 그러나 메서드에 두 번째 인수를 제공하여 이 동작을 사용자 정의할 수 있습니다:
 
 ```php
-$percentage = $collection->percentage(fn ($value) => $value === 1, precision: 3);
+$percentage = $collection->percentage(fn (int $value) => $value === 1, precision: 3);
 
 // 33.333
 ```
@@ -2254,7 +2286,7 @@ $plucked->all();
 <a name="method-pop"></a>
 #### `pop()` {.collection-method}
 
-`pop` 메서드는 컬렉션에서 마지막 아이템을 제거하고 반환합니다:
+`pop` 메서드는 컬렉션에서 마지막 아이템을 제거하고 반환합니다. 컬렉션이 비어 있으면 `null`이 반환됩니다:
 
 ```php
 $collection = collect([1, 2, 3, 4, 5]);
@@ -2339,6 +2371,18 @@ $collection->push(5);
 $collection->all();
 
 // [1, 2, 3, 4, 5]
+```
+
+컬렉션 끝에 여러 아이템을 추가할 수도 있습니다:
+
+```php
+$collection = collect([1, 2, 3, 4]);
+
+$collection->push(5, 6, 7);
+
+$collection->all();
+
+// [1, 2, 3, 4, 5, 6, 7]
 ```
 
 <a name="method-put"></a>
@@ -2509,7 +2553,7 @@ $replaced->all();
 <a name="method-replacerecursive"></a>
 #### `replaceRecursive()` {.collection-method}
 
-이 메서드는 `replace`처럼 작동하지만 배열로 재귀하여 내부 값에 동일한 교체 프로세스를 적용합니다:
+`replaceRecursive` 메서드는 `replace`와 유사하게 동작하지만 배열로 재귀하여 내부 값에 동일한 교체 프로세스를 적용합니다:
 
 ```php
 $collection = collect([
@@ -3315,6 +3359,17 @@ $collection->toJson();
 // '{"name":"Desk", "price":200}'
 ```
 
+<a name="method-to-pretty-json"></a>
+#### `toPrettyJson()` {.collection-method}
+
+`toPrettyJson` 메서드는 `JSON_PRETTY_PRINT` 옵션을 사용하여 컬렉션을 포맷된 JSON 문자열로 변환합니다:
+
+```php
+$collection = collect(['name' => 'Desk', 'price' => 200]);
+
+$collection->toPrettyJson();
+```
+
 <a name="method-transform"></a>
 #### `transform()` {.collection-method}
 
@@ -3457,16 +3512,16 @@ $unique->values()->all();
 <a name="method-unless"></a>
 #### `unless()` {.collection-method}
 
-`unless` 메서드는 메서드에 주어진 첫 번째 인수가 `true`로 평가되지 않는 한 주어진 콜백을 실행합니다:
+`unless` 메서드는 메서드에 주어진 첫 번째 인수가 `true`로 평가되지 않는 한 주어진 콜백을 실행합니다. 컬렉션 인스턴스와 `unless` 메서드에 주어진 첫 번째 인수가 클로저에 제공됩니다:
 
 ```php
 $collection = collect([1, 2, 3]);
 
-$collection->unless(true, function (Collection $collection) {
+$collection->unless(true, function (Collection $collection, bool $value) {
     return $collection->push(4);
 });
 
-$collection->unless(false, function (Collection $collection) {
+$collection->unless(false, function (Collection $collection, bool $value) {
     return $collection->push(5);
 });
 
@@ -3480,9 +3535,9 @@ $collection->all();
 ```php
 $collection = collect([1, 2, 3]);
 
-$collection->unless(true, function (Collection $collection) {
+$collection->unless(true, function (Collection $collection, bool $value) {
     return $collection->push(4);
-}, function (Collection $collection) {
+}, function (Collection $collection, bool $value) {
     return $collection->push(5);
 });
 
@@ -3546,7 +3601,7 @@ $value = $collection->value('price');
 ```php
 $collection = collect([
     10 => ['product' => 'Desk', 'price' => 200],
-    11 => ['product' => 'Desk', 'price' => 200],
+    11 => ['product' => 'Speaker', 'price' => 400],
 ]);
 
 $values = $collection->values();
@@ -3556,7 +3611,7 @@ $values->all();
 /*
     [
         0 => ['product' => 'Desk', 'price' => 200],
-        1 => ['product' => 'Desk', 'price' => 200],
+        1 => ['product' => 'Speaker', 'price' => 400],
     ]
 */
 ```
@@ -3569,11 +3624,11 @@ $values->all();
 ```php
 $collection = collect([1, 2, 3]);
 
-$collection->when(true, function (Collection $collection, int $value) {
+$collection->when(true, function (Collection $collection, bool $value) {
     return $collection->push(4);
 });
 
-$collection->when(false, function (Collection $collection, int $value) {
+$collection->when(false, function (Collection $collection, bool $value) {
     return $collection->push(5);
 });
 
@@ -3587,9 +3642,9 @@ $collection->all();
 ```php
 $collection = collect([1, 2, 3]);
 
-$collection->when(false, function (Collection $collection, int $value) {
+$collection->when(false, function (Collection $collection, bool $value) {
     return $collection->push(4);
-}, function (Collection $collection) {
+}, function (Collection $collection, bool $value) {
     return $collection->push(5);
 });
 
@@ -3651,20 +3706,20 @@ $collection->all();
 `whenNotEmpty` 메서드는 컬렉션이 비어 있지 않을 때 주어진 콜백을 실행합니다:
 
 ```php
-$collection = collect(['michael', 'tom']);
+$collection = collect(['Michael', 'Tom']);
 
 $collection->whenNotEmpty(function (Collection $collection) {
-    return $collection->push('adam');
+    return $collection->push('Adam');
 });
 
 $collection->all();
 
-// ['michael', 'tom', 'adam']
+// ['Michael', 'Tom', 'Adam']
 
 $collection = collect();
 
 $collection->whenNotEmpty(function (Collection $collection) {
-    return $collection->push('adam');
+    return $collection->push('Adam');
 });
 
 $collection->all();
@@ -3678,14 +3733,14 @@ $collection->all();
 $collection = collect();
 
 $collection->whenNotEmpty(function (Collection $collection) {
-    return $collection->push('adam');
+    return $collection->push('Adam');
 }, function (Collection $collection) {
-    return $collection->push('taylor');
+    return $collection->push('Taylor');
 });
 
 $collection->all();
 
-// ['taylor']
+// ['Taylor']
 ```
 
 `whenNotEmpty`의 반대는 [whenEmpty](#method-whenempty) 메서드를 참조하세요.
@@ -3715,25 +3770,25 @@ $filtered->all();
 */
 ```
 
-`where` 메서드는 아이템 값을 확인할 때 "느슨한(loose)" 비교를 사용합니다. 즉, 정수 값을 가진 문자열은 같은 값의 정수와 동일하게 간주됩니다. "엄격한(strict)" 비교를 사용하여 필터링하려면 [whereStrict](#method-wherestrict) 메서드를 사용하세요.
+`where` 메서드는 아이템 값을 확인할 때 "느슨한(loose)" 비교를 사용합니다. 즉, 정수 값을 가진 문자열은 같은 값의 정수와 동일하게 간주됩니다. "엄격한(strict)" 비교를 사용하여 필터링하려면 [whereStrict](#method-wherestrict) 메서드를 사용하거나, `null` 값으로 필터링하려면 [whereNull](#method-wherenull) 및 [whereNotNull](#method-wherenotnull) 메서드를 사용하세요.
 
 선택적으로 두 번째 매개변수로 비교 연산자를 전달할 수 있습니다. 지원되는 연산자는 '===', '!==', '!=', '==', '=', '<>', '>', '<', '>=', '<='입니다:
 
 ```php
 $collection = collect([
-    ['name' => 'Jim', 'deleted_at' => '2019-01-01 00:00:00'],
-    ['name' => 'Sally', 'deleted_at' => '2019-01-02 00:00:00'],
-    ['name' => 'Sue', 'deleted_at' => null],
+    ['name' => 'Jim', 'platform' => 'Mac'],
+    ['name' => 'Sally', 'platform' => 'Mac'],
+    ['name' => 'Sue', 'platform' => 'Linux'],
 ]);
 
-$filtered = $collection->where('deleted_at', '!=', null);
+$filtered = $collection->where('platform', '!=', 'Linux');
 
 $filtered->all();
 
 /*
     [
-        ['name' => 'Jim', 'deleted_at' => '2019-01-01 00:00:00'],
-        ['name' => 'Sally', 'deleted_at' => '2019-01-02 00:00:00'],
+        ['name' => 'Jim', 'platform' => 'Mac'],
+        ['name' => 'Sally', 'platform' => 'Mac'],
     ]
 */
 ```
@@ -3892,6 +3947,8 @@ $collection = collect([
     ['name' => 'Desk'],
     ['name' => null],
     ['name' => 'Bookcase'],
+    ['name' => 0],
+    ['name' => ''],
 ]);
 
 $filtered = $collection->whereNotNull('name');
@@ -3902,6 +3959,8 @@ $filtered->all();
     [
         ['name' => 'Desk'],
         ['name' => 'Bookcase'],
+        ['name' => 0],
+        ['name' => ''],
     ]
 */
 ```
@@ -3916,6 +3975,8 @@ $collection = collect([
     ['name' => 'Desk'],
     ['name' => null],
     ['name' => 'Bookcase'],
+    ['name' => 0],
+    ['name' => ''],
 ]);
 
 $filtered = $collection->whereNull('name');
@@ -4218,7 +4279,7 @@ LazyCollection::make(function () {
 
 ```php
 $lazyCollection = LazyCollection::times(INF)
-    ->takeUntilTimeout(now()->addMinute());
+    ->takeUntilTimeout(now()->plus(minutes: 1));
 
 $lazyCollection->each(function (int $number) {
     dump($number);
@@ -4297,4 +4358,30 @@ $users->take(5)->all();
 // 처음 5명의 사용자는 컬렉션의 캐시에서 가져옵니다...
 // 나머지는 데이터베이스에서 하이드레이트됩니다...
 $users->take(20)->all();
+```
+
+<a name="method-with-heartbeat"></a>
+#### `withHeartbeat()` {.collection-method}
+
+`withHeartbeat` 메서드는 lazy 컬렉션이 열거되는 동안 정기적인 시간 간격으로 콜백을 실행할 수 있게 해줍니다. 이는 잠금 연장이나 진행 상태 업데이트 전송과 같은 주기적인 유지 관리 작업이 필요한 장시간 실행 작업에 특히 유용합니다:
+
+```php
+use Carbon\CarbonInterval;
+use Illuminate\Support\Facades\Cache;
+
+$lock = Cache::lock('generate-reports', seconds: 60 * 5);
+
+if ($lock->get()) {
+    try {
+        Report::where('status', 'pending')
+            ->lazy()
+            ->withHeartbeat(
+                CarbonInterval::minutes(4),
+                fn () => $lock->extend(CarbonInterval::minutes(5))
+            )
+            ->each(fn ($report) => $report->process());
+    } finally {
+        $lock->release();
+    }
+}
 ```

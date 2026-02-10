@@ -168,6 +168,7 @@ Schedule::exec('node /home/forge/script.js')->daily();
 | `->dailyAt('13:00');`              | 매일 13:00에 작업을 실행합니다.                        |
 | `->twiceDaily(1, 13);`             | 매일 1:00과 13:00에 작업을 실행합니다.                  |
 | `->twiceDailyAt(1, 13, 15);`       | 매일 1:15와 13:15에 작업을 실행합니다.                  |
+| `->daysOfMonth([1, 10, 20]);`      | 매월 특정 날짜에 작업을 실행합니다.                       |
 | `->weekly();`                      | 매주 일요일 00:00에 작업을 실행합니다.                   |
 | `->weeklyOn(1, '8:00');`           | 매주 월요일 8:00에 작업을 실행합니다.                    |
 | `->monthly();`                     | 매월 1일 00:00에 작업을 실행합니다.                     |
@@ -623,12 +624,12 @@ Laravel은 스케줄링 프로세스 중에 다양한 [이벤트](/docs/{{versio
 
 <div class="overflow-auto">
 
-| 이벤트 이름 |
-| --- |
-| `Illuminate\Console\Events\ScheduledTaskStarting` |
-| `Illuminate\Console\Events\ScheduledTaskFinished` |
+| 이벤트 이름                                                  |
+| ----------------------------------------------------------- |
+| `Illuminate\Console\Events\ScheduledTaskStarting`           |
+| `Illuminate\Console\Events\ScheduledTaskFinished`           |
 | `Illuminate\Console\Events\ScheduledBackgroundTaskFinished` |
-| `Illuminate\Console\Events\ScheduledTaskSkipped` |
-| `Illuminate\Console\Events\ScheduledTaskFailed` |
+| `Illuminate\Console\Events\ScheduledTaskSkipped`            |
+| `Illuminate\Console\Events\ScheduledTaskFailed`             |
 
 </div>

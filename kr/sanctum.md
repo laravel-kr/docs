@@ -166,7 +166,7 @@ Sanctum에는 들어오는 요청이 주어진 기능이 부여된 토큰으로 
 use Laravel\Sanctum\Http\Middleware\CheckAbilities;
 use Laravel\Sanctum\Http\Middleware\CheckForAnyAbility;
 
-->withMiddleware(function (Middleware $middleware) {
+->withMiddleware(function (Middleware $middleware): void {
     $middleware->alias([
         'abilities' => CheckAbilities::class,
         'ability' => CheckForAnyAbility::class,
@@ -250,7 +250,7 @@ $user->tokens()->where('id', $tokenId)->delete();
 
 ```php
 return $user->createToken(
-    'token-name', ['*'], now()->addWeek()
+    'token-name', ['*'], now()->plus(weeks: 1)
 )->plainTextToken;
 ```
 
@@ -291,7 +291,7 @@ Sanctum은 또한 Laravel 기반 API와 통신해야 하는 싱글 페이지 애
 다음으로, SPA에서 들어오는 요청이 Laravel의 세션 쿠키를 사용하여 인증할 수 있도록 하면서, 서드파티 또는 모바일 애플리케이션의 요청이 API 토큰을 사용하여 인증할 수 있도록 Laravel에 지시해야 합니다. 이는 애플리케이션의 `bootstrap/app.php` 파일에서 `statefulApi` 미들웨어 메서드를 호출하여 쉽게 수행할 수 있습니다.
 
 ```php
-->withMiddleware(function (Middleware $middleware) {
+->withMiddleware(function (Middleware $middleware): void {
     $middleware->statefulApi();
 })
 ```

@@ -12,6 +12,7 @@
     - [파일 변경 감시하기](#watching-for-file-changes)
     - [워커 수 지정하기](#specifying-the-worker-count)
     - [최대 요청 수 지정하기](#specifying-the-max-request-count)
+    - [최대 실행 시간 지정하기](#specifying-the-max-execution-time)
     - [워커 다시 로드하기](#reloading-the-workers)
     - [서버 중지하기](#stopping-the-server)
 - [의존성 주입과 Octane](#dependency-injection-and-octane)
@@ -46,9 +47,6 @@ php artisan octane:install
 
 <a name="server-prerequisites"></a>
 ## 서버 요구 사항
-
-> [!WARNING]
-> Laravel Octane은 [PHP 8.1+](https://php.net/releases/)가 필요합니다.
 
 <a name="frankenphp"></a>
 ### FrankenPHP
@@ -138,6 +136,17 @@ services:
 `--log-level` 옵션이 `php artisan octane:start` 명령에 명시적으로 전달되면, Octane은 FrankenPHP의 네이티브 로거를 사용하며, 별도로 설정하지 않으면 구조화된 JSON 로그를 생성합니다.
 
 Docker에서 FrankenPHP를 실행하는 방법에 대한 자세한 내용은 [공식 FrankenPHP 문서](https://frankenphp.dev/docs/docker/)를 참조하세요.
+
+<a name="frankenphp-caddyfile"></a>
+#### 커스텀 Caddyfile 설정
+
+FrankenPHP를 사용할 때, Octane을 시작할 때 `--caddyfile` 옵션을 사용하여 커스텀 Caddyfile을 지정할 수 있습니다.
+
+```shell
+php artisan octane:start --server=frankenphp --caddyfile=/path/to/your/Caddyfile
+```
+
+이를 통해 커스텀 미들웨어 추가, 고급 라우팅 설정, 커스텀 디렉티브 설정 등 기본 설정을 넘어서 FrankenPHP의 설정을 사용자 정의할 수 있습니다. Caddyfile 문법 및 설정 옵션에 대한 자세한 내용은 [공식 Caddy 문서](https://caddyserver.com/docs/caddyfile)를 참조하세요.
 
 <a name="roadrunner"></a>
 ### RoadRunner
@@ -248,6 +257,23 @@ php artisan octane:start
 ```
 
 기본적으로 Octane은 포트 8000에서 서버를 시작하므로, 웹 브라우저에서 `http://localhost:8000`을 통해 애플리케이션에 접근할 수 있습니다.
+
+<a name="keeping-octane-running-in-production"></a>
+#### 프로덕션에서 Octane 유지하기
+
+Octane 애플리케이션을 프로덕션에 배포하는 경우, Octane 서버가 계속 실행되도록 Supervisor와 같은 프로세스 모니터를 사용해야 합니다. Octane을 위한 Supervisor 설정 파일 예시는 다음과 같습니다.
+
+```ini
+[program:octane]
+process_name=%(program_name)s_%(process_num)02d
+command=php /home/forge/example.com/artisan octane:start --server=frankenphp --host=127.0.0.1 --port=8000
+autostart=true
+autorestart=true
+user=forge
+redirect_stderr=true
+stdout_logfile=/home/forge/example.com/storage/logs/octane.log
+stopwaitsecs=3600
+```
 
 <a name="serving-your-application-via-https"></a>
 ### HTTPS로 애플리케이션 서비스하기
@@ -362,6 +388,20 @@ php artisan octane:start --workers=4 --task-workers=6
 ```shell
 php artisan octane:start --max-requests=250
 ```
+
+<a name="specifying-the-max-execution-time"></a>
+### 최대 실행 시간 지정하기
+
+기본적으로 Laravel Octane은 애플리케이션의 `config/octane.php` 설정 파일에 있는 `max_execution_time` 옵션을 통해 들어오는 요청에 대해 최대 실행 시간을 30초로 설정합니다.
+
+```php
+'max_execution_time' => 30,
+```
+
+이 설정은 들어오는 요청이 종료되기 전에 실행할 수 있는 최대 시간(초)을 정의합니다. 이 값을 `0`으로 설정하면 실행 시간 제한이 완전히 비활성화됩니다. 이 설정 옵션은 파일 업로드, 데이터 처리 또는 외부 서비스에 대한 API 호출과 같이 오래 실행되는 요청을 처리하는 애플리케이션에 특히 유용합니다.
+
+> [!WARNING]
+> `max_execution_time` 설정을 수정한 경우, 변경 사항을 적용하려면 Octane 서버를 재시작해야 합니다.
 
 <a name="reloading-the-workers"></a>
 ### 워커 다시 로드하기

@@ -194,7 +194,7 @@ Route::get('/flights', function () {
 ```php
 use Illuminate\Http\Request;
 
-->withMiddleware(function (Middleware $middleware) {
+->withMiddleware(function (Middleware $middleware): void {
     $middleware->redirectGuestsTo('/login');
 
     // 클로저 사용...
@@ -210,7 +210,7 @@ use Illuminate\Http\Request;
 ```php
 use Illuminate\Http\Request;
 
-->withMiddleware(function (Middleware $middleware) {
+->withMiddleware(function (Middleware $middleware): void {
     $middleware->redirectUsersTo('/panel');
 
     // 클로저 사용...
@@ -409,7 +409,7 @@ Auth::loginUsingId(1, remember: true);
 <a name="authenticate-a-user-once"></a>
 #### 단일 요청에 대해 사용자 인증
 
-`once` 메서드를 사용하여 단일 요청에 대해 애플리케이션에서 사용자를 인증할 수 있습니다. 이 메서드를 호출할 때 세션이나 쿠키가 사용되지 않습니다.
+`once` 메서드를 사용하여 단일 요청에 대해 애플리케이션에서 사용자를 인증할 수 있습니다. 이 메서드를 호출할 때 세션이나 쿠키가 사용되지 않으며, `Login` 이벤트도 발생하지 않습니다.
 
 ```php
 if (Auth::once($credentials)) {
@@ -433,7 +433,7 @@ Route::get('/profile', function () {
 <a name="a-note-on-fastcgi"></a>
 #### FastCGI에 대한 참고사항
 
-PHP FastCGI와 Apache를 사용하여 Laravel 애플리케이션을 서비스하는 경우, HTTP 기본 인증이 올바르게 작동하지 않을 수 있습니다. 이러한 문제를 해결하려면 애플리케이션의 `.htaccess` 파일에 다음 줄을 추가할 수 있습니다.
+[PHP FastCGI](https://www.php.net/manual/en/install.fpm.php)와 Apache를 사용하여 Laravel 애플리케이션을 서비스하는 경우, HTTP 기본 인증이 올바르게 작동하지 않을 수 있습니다. 이러한 문제를 해결하려면 애플리케이션의 `.htaccess` 파일에 다음 줄을 추가할 수 있습니다.
 
 ```apache
 RewriteCond %{HTTP:Authorization} ^(.+)$
@@ -567,7 +567,6 @@ Route::get('/confirm-password', function () {
 ```php
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Redirect;
 
 Route::post('/confirm-password', function (Request $request) {
     if (! Hash::check($request->password, $request->user()->password)) {
@@ -825,19 +824,20 @@ Laravel은 인증 프로세스 중에 다양한 [이벤트](/docs/{{version}}/ev
 
 <div class="overflow-auto">
 
-| 이벤트 이름 |
-| --- |
-| `Illuminate\Auth\Events\Registered` |
-| `Illuminate\Auth\Events\Attempting` |
-| `Illuminate\Auth\Events\Authenticated` |
-| `Illuminate\Auth\Events\Login` |
-| `Illuminate\Auth\Events\Failed` |
-| `Illuminate\Auth\Events\Validated` |
-| `Illuminate\Auth\Events\Verified` |
-| `Illuminate\Auth\Events\Logout` |
-| `Illuminate\Auth\Events\CurrentDeviceLogout` |
-| `Illuminate\Auth\Events\OtherDeviceLogout` |
-| `Illuminate\Auth\Events\Lockout` |
-| `Illuminate\Auth\Events\PasswordReset` |
+| 이벤트 이름                                     |
+| ---------------------------------------------- |
+| `Illuminate\Auth\Events\Registered`            |
+| `Illuminate\Auth\Events\Attempting`            |
+| `Illuminate\Auth\Events\Authenticated`         |
+| `Illuminate\Auth\Events\Login`                 |
+| `Illuminate\Auth\Events\Failed`                |
+| `Illuminate\Auth\Events\Validated`             |
+| `Illuminate\Auth\Events\Verified`              |
+| `Illuminate\Auth\Events\Logout`                |
+| `Illuminate\Auth\Events\CurrentDeviceLogout`   |
+| `Illuminate\Auth\Events\OtherDeviceLogout`     |
+| `Illuminate\Auth\Events\Lockout`               |
+| `Illuminate\Auth\Events\PasswordReset`         |
+| `Illuminate\Auth\Events\PasswordResetLinkSent` |
 
 </div>

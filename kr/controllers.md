@@ -14,6 +14,7 @@
     - [리소스 URI 지역화](#restful-localizing-resource-uris)
     - [리소스 컨트롤러 보완](#restful-supplementing-resource-controllers)
     - [싱글톤 리소스 컨트롤러](#singleton-resource-controllers)
+    - [미들웨어와 리소스 컨트롤러](#middleware-and-resource-controllers)
 - [의존성 주입과 컨트롤러](#dependency-injection-and-controllers)
 
 <a name="introduction"></a>
@@ -128,7 +129,7 @@ namespace App\Http\Controllers;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
 
-class UserController extends Controller implements HasMiddleware
+class UserController implements HasMiddleware
 {
     /**
      * 컨트롤러에 할당할 미들웨어를 가져옵니다.
@@ -165,9 +166,6 @@ public static function middleware(): array
 }
 ```
 
-> [!WARNING]
-> `Illuminate\Routing\Controllers\HasMiddleware`를 구현하는 컨트롤러는 `Illuminate\Routing\Controller`를 상속해서는 안 됩니다.
-
 <a name="resource-controllers"></a>
 ## 리소스 컨트롤러
 
@@ -193,6 +191,15 @@ Route::resource('photos', PhotoController::class);
 
 ```php
 Route::resources([
+    'photos' => PhotoController::class,
+    'posts' => PostController::class,
+]);
+```
+
+`softDeletableResources` 메서드는 모두 `withTrashed` 메서드를 사용하는 여러 리소스 컨트롤러를 등록합니다.
+
+```php
+Route::softDeletableResources([
     'photos' => PhotoController::class,
     'posts' => PostController::class,
 ]);
@@ -540,6 +547,64 @@ Route::apiSingleton('profile', ProfileController::class);
 
 ```php
 Route::apiSingleton('photos.thumbnail', ProfileController::class)->creatable();
+```
+<a name="middleware-and-resource-controllers"></a>
+### 미들웨어와 리소스 컨트롤러
+
+Laravel은 `middleware`, `middlewareFor`, `withoutMiddlewareFor` 메서드를 사용하여 리소스 라우트의 전체 또는 특정 메서드에만 미들웨어를 할당할 수 있도록 합니다. 이러한 메서드는 각 리소스 액션에 적용되는 미들웨어에 대한 세밀한 제어를 제공합니다.
+
+#### 모든 메서드에 미들웨어 적용하기
+
+`middleware` 메서드를 사용하여 리소스 또는 싱글톤 리소스 라우트에 의해 생성된 모든 라우트에 미들웨어를 할당할 수 있습니다.
+
+```php
+Route::resource('users', UserController::class)
+    ->middleware(['auth', 'verified']);
+
+Route::singleton('profile', ProfileController::class)
+    ->middleware('auth');
+```
+
+#### 특정 메서드에 미들웨어 적용하기
+
+`middlewareFor` 메서드를 사용하여 주어진 리소스 컨트롤러의 하나 이상의 특정 메서드에 미들웨어를 할당할 수 있습니다.
+
+```php
+Route::resource('users', UserController::class)
+    ->middlewareFor('show', 'auth');
+
+Route::apiResource('users', UserController::class)
+    ->middlewareFor(['show', 'update'], 'auth');
+
+Route::resource('users', UserController::class)
+    ->middlewareFor('show', 'auth')
+    ->middlewareFor('update', 'auth');
+
+Route::apiResource('users', UserController::class)
+    ->middlewareFor(['show', 'update'], ['auth', 'verified']);
+```
+
+`middlewareFor` 메서드는 싱글톤 및 API 싱글톤 리소스 컨트롤러와 함께 사용할 수도 있습니다.
+
+```php
+Route::singleton('profile', ProfileController::class)
+    ->middlewareFor('show', 'auth');
+
+Route::apiSingleton('profile', ProfileController::class)
+    ->middlewareFor(['show', 'update'], 'auth');
+```
+
+#### 특정 메서드에서 미들웨어 제외하기
+
+`withoutMiddlewareFor` 메서드를 사용하여 리소스 컨트롤러의 특정 메서드에서 미들웨어를 제외할 수 있습니다.
+
+```php
+Route::middleware(['auth', 'verified', 'subscribed'])->group(function () {
+    Route::resource('users', UserController::class)
+        ->withoutMiddlewareFor('index', ['auth', 'verified'])
+        ->withoutMiddlewareFor(['create', 'store'], 'verified')
+        ->withoutMiddlewareFor('destroy', 'subscribed');
+});
 ```
 
 <a name="dependency-injection-and-controllers"></a>

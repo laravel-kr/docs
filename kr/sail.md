@@ -36,7 +36,7 @@
 
 [Laravel Sail](https://github.com/laravel/sail)은 라라벨의 기본 Docker 개발 환경과 상호작용하기 위한 경량 명령줄 인터페이스(Command-line Interface)입니다. Sail은 Docker 경험이 없어도 PHP, MySQL, Redis를 사용하여 라라벨 애플리케이션을 구축할 수 있는 훌륭한 출발점을 제공합니다.
 
-핵심적으로 Sail은 프로젝트 루트에 저장된 `docker-compose.yml` 파일과 `sail` 스크립트로 구성됩니다. `sail` 스크립트는 `docker-compose.yml` 파일에 정의된 Docker 컨테이너와 상호작용하기 위한 편리한 메서드를 제공하는 CLI입니다.
+핵심적으로 Sail은 프로젝트 루트에 저장된 `compose.yaml` 파일과 `sail` 스크립트로 구성됩니다. `sail` 스크립트는 `compose.yaml` 파일에 정의된 Docker 컨테이너와 상호작용하기 위한 편리한 메서드를 제공하는 CLI입니다.
 
 Laravel Sail은 macOS, Linux, Windows([WSL2](https://docs.microsoft.com/en-us/windows/wsl/about) 사용)에서 지원됩니다.
 
@@ -54,7 +54,7 @@ Laravel Sail은 모든 새 라라벨 애플리케이션에 자동으로 설치�
 composer require laravel/sail --dev
 ```
 
-Sail이 설치된 후 `sail:install` Artisan 명령어를 실행할 수 있습니다. 이 명령어는 Sail의 `docker-compose.yml` 파일을 애플리케이션 루트에 퍼블리시하고, Docker 서비스에 연결하는 데 필요한 환경 변수로 `.env` 파일을 수정합니다.
+Sail이 설치된 후 `sail:install` Artisan 명령어를 실행할 수 있습니다. 이 명령어는 Sail의 `compose.yaml` 파일을 애플리케이션 루트에 퍼블리시하고, Docker 서비스에 연결하는 데 필요한 환경 변수로 `.env` 파일을 수정합니다.
 
 ```shell
 php artisan sail:install
@@ -67,7 +67,7 @@ php artisan sail:install
 ```
 
 > [!WARNING]
-> Linux용 Docker Desktop을 사용하는 경우 다음 명령어를 실행하여 `default` Docker 컨텍스트를 사용해야 합니다: `docker context use default`.
+> Linux용 Docker Desktop을 사용하는 경우 다음 명령어를 실행하여 `default` Docker 컨텍스트를 사용해야 합니다: `docker context use default`. 또한 컨테이너 내에서 파일 권한 오류가 발생하는 경우 `SUPERVISOR_PHP_USER` 환경 변수를 `root`로 설정해야 할 수 있습니다.
 
 <a name="adding-additional-services"></a>
 #### 추가 서비스 추가하기
@@ -126,9 +126,9 @@ sail up
 <a name="starting-and-stopping-sail"></a>
 ## Sail 시작 및 중지
 
-Laravel Sail의 `docker-compose.yml` 파일은 라라벨 애플리케이션을 구축하는 데 함께 작동하는 다양한 Docker 컨테이너를 정의합니다. 이러한 각 컨테이너는 `docker-compose.yml` 파일의 `services` 설정 내의 항목입니다. `laravel.test` 컨테이너는 애플리케이션을 서빙하는 주요 애플리케이션 컨테이너입니다.
+Laravel Sail의 `compose.yaml` 파일은 라라벨 애플리케이션을 구축하는 데 함께 작동하는 다양한 Docker 컨테이너를 정의합니다. 이러한 각 컨테이너는 `compose.yaml` 파일의 `services` 설정 내의 항목입니다. `laravel.test` 컨테이너는 애플리케이션을 서빙하는 주요 애플리케이션 컨테이너입니다.
 
-Sail을 시작하기 전에 로컬 컴퓨터에서 다른 웹 서버나 데이터베이스가 실행되고 있지 않은지 확인해야 합니다. 애플리케이션의 `docker-compose.yml` 파일에 정의된 모든 Docker 컨테이너를 시작하려면 `up` 명령어를 실행해야 합니다.
+Sail을 시작하기 전에 로컬 컴퓨터에서 다른 웹 서버나 데이터베이스가 실행되고 있지 않은지 확인해야 합니다. 애플리케이션의 `compose.yaml` 파일에 정의된 모든 Docker 컨테이너를 시작하려면 `up` 명령어를 실행해야 합니다.
 
 ```shell
 sail up
@@ -215,7 +215,7 @@ sail yarn
 <a name="mysql"></a>
 ### MySQL
 
-눈치채셨겠지만, 애플리케이션의 `docker-compose.yml` 파일에는 MySQL 컨테이너에 대한 항목이 포함되어 있습니다. 이 컨테이너는 [Docker 볼륨](https://docs.docker.com/storage/volumes/)을 사용하여 컨테이너를 중지하고 다시 시작해도 데이터베이스에 저장된 데이터가 유지됩니다.
+눈치채셨겠지만, 애플리케이션의 `compose.yaml` 파일에는 MySQL 컨테이너에 대한 항목이 포함되어 있습니다. 이 컨테이너는 [Docker 볼륨](https://docs.docker.com/storage/volumes/)을 사용하여 컨테이너를 중지하고 다시 시작해도 데이터베이스에 저장된 데이터가 유지됩니다.
 
 또한 MySQL 컨테이너가 처음 시작될 때 두 개의 데이터베이스를 생성합니다. 첫 번째 데이터베이스는 `DB_DATABASE` 환경 변수 값을 사용하여 이름이 지정되며 로컬 개발용입니다. 두 번째는 `testing`이라는 전용 테스트 데이터베이스로, 테스트가 개발 데이터를 방해하지 않도록 보장합니다.
 
@@ -226,7 +226,7 @@ sail yarn
 <a name="mongodb"></a>
 ### MongoDB
 
-Sail 설치 시 [MongoDB](https://www.mongodb.com/) 서비스를 설치하기로 선택한 경우, 애플리케이션의 `docker-compose.yml` 파일에는 [검색 인덱스](https://www.mongodb.com/docs/atlas/atlas-search/)와 같은 Atlas 기능이 포함된 MongoDB 문서 데이터베이스를 제공하는 [MongoDB Atlas Local](https://www.mongodb.com/docs/atlas/cli/current/atlas-cli-local-cloud/) 컨테이너에 대한 항목이 포함됩니다. 이 컨테이너는 [Docker 볼륨](https://docs.docker.com/storage/volumes/)을 사용하여 컨테이너를 중지하고 다시 시작해도 데이터베이스에 저장된 데이터가 유지됩니다.
+Sail 설치 시 [MongoDB](https://www.mongodb.com/) 서비스를 설치하기로 선택한 경우, 애플리케이션의 `compose.yaml` 파일에는 [검색 인덱스](https://www.mongodb.com/docs/atlas/atlas-search/)와 같은 Atlas 기능이 포함된 MongoDB 문서 데이터베이스를 제공하는 [MongoDB Atlas Local](https://www.mongodb.com/docs/atlas/cli/current/atlas-cli-local-cloud/) 컨테이너에 대한 항목이 포함됩니다. 이 컨테이너는 [Docker 볼륨](https://docs.docker.com/storage/volumes/)을 사용하여 컨테이너를 중지하고 다시 시작해도 데이터베이스에 저장된 데이터가 유지됩니다.
 
 컨테이너를 시작한 후 애플리케이션의 `.env` 파일에서 `MONGODB_URI` 환경 변수를 `mongodb://mongodb:27017`로 설정하여 애플리케이션 내에서 MongoDB 인스턴스에 연결할 수 있습니다. 인증은 기본적으로 비활성화되어 있지만, `mongodb` 컨테이너를 시작하기 전에 `MONGODB_USERNAME` 및 `MONGODB_PASSWORD` 환경 변수를 설정하여 인증을 활성화할 수 있습니다. 그런 다음 연결 문자열에 자격 증명을 추가합니다.
 
@@ -243,28 +243,28 @@ MongoDB를 애플리케이션과 원활하게 통합하려면 [MongoDB에서 관
 <a name="redis"></a>
 ### Redis
 
-애플리케이션의 `docker-compose.yml` 파일에는 [Redis](https://redis.io) 컨테이너에 대한 항목도 포함되어 있습니다. 이 컨테이너는 [Docker 볼륨](https://docs.docker.com/storage/volumes/)을 사용하여 컨테이너를 중지하고 다시 시작해도 Redis 인스턴스에 저장된 데이터가 유지됩니다. 컨테이너를 시작한 후 애플리케이션의 `.env` 파일에서 `REDIS_HOST` 환경 변수를 `redis`로 설정하여 애플리케이션 내에서 Redis 인스턴스에 연결할 수 있습니다.
+애플리케이션의 `compose.yaml` 파일에는 [Redis](https://redis.io) 컨테이너에 대한 항목도 포함되어 있습니다. 이 컨테이너는 [Docker 볼륨](https://docs.docker.com/storage/volumes/)을 사용하여 컨테이너를 중지하고 다시 시작해도 Redis 인스턴스에 저장된 데이터가 유지됩니다. 컨테이너를 시작한 후 애플리케이션의 `.env` 파일에서 `REDIS_HOST` 환경 변수를 `redis`로 설정하여 애플리케이션 내에서 Redis 인스턴스에 연결할 수 있습니다.
 
 로컬 머신에서 애플리케이션의 Redis 데이터베이스에 연결하려면 [TablePlus](https://tableplus.com)와 같은 그래픽 데이터베이스 관리 애플리케이션을 사용할 수 있습니다. 기본적으로 Redis 데이터베이스는 `localhost` 포트 6379에서 접근할 수 있습니다.
 
 <a name="valkey"></a>
 ### Valkey
 
-Sail 설치 시 Valkey 서비스를 설치하기로 선택한 경우, 애플리케이션의 `docker-compose.yml` 파일에는 [Valkey](https://valkey.io/)에 대한 항목이 포함됩니다. 이 컨테이너는 [Docker 볼륨](https://docs.docker.com/storage/volumes/)을 사용하여 컨테이너를 중지하고 다시 시작해도 Valkey 인스턴스에 저장된 데이터가 유지됩니다. 애플리케이션의 `.env` 파일에서 `REDIS_HOST` 환경 변수를 `valkey`로 설정하여 애플리케이션에서 이 컨테이너에 연결할 수 있습니다.
+Sail 설치 시 Valkey 서비스를 설치하기로 선택한 경우, 애플리케이션의 `compose.yaml` 파일에는 [Valkey](https://valkey.io/)에 대한 항목이 포함됩니다. 이 컨테이너는 [Docker 볼륨](https://docs.docker.com/storage/volumes/)을 사용하여 컨테이너를 중지하고 다시 시작해도 Valkey 인스턴스에 저장된 데이터가 유지됩니다. 애플리케이션의 `.env` 파일에서 `REDIS_HOST` 환경 변수를 `valkey`로 설정하여 애플리케이션에서 이 컨테이너에 연결할 수 있습니다.
 
 로컬 머신에서 애플리케이션의 Valkey 데이터베이스에 연결하려면 [TablePlus](https://tableplus.com)와 같은 그래픽 데이터베이스 관리 애플리케이션을 사용할 수 있습니다. 기본적으로 Valkey 데이터베이스는 `localhost` 포트 6379에서 접근할 수 있습니다.
 
 <a name="meilisearch"></a>
 ### Meilisearch
 
-Sail 설치 시 [Meilisearch](https://www.meilisearch.com) 서비스를 설치하기로 선택한 경우, 애플리케이션의 `docker-compose.yml` 파일에는 [Laravel Scout](/docs/{{version}}/scout)와 통합된 이 강력한 검색 엔진에 대한 항목이 포함됩니다. 컨테이너를 시작한 후 `MEILISEARCH_HOST` 환경 변수를 `http://meilisearch:7700`으로 설정하여 애플리케이션 내에서 Meilisearch 인스턴스에 연결할 수 있습니다.
+Sail 설치 시 [Meilisearch](https://www.meilisearch.com) 서비스를 설치하기로 선택한 경우, 애플리케이션의 `compose.yaml` 파일에는 [Laravel Scout](/docs/{{version}}/scout)와 통합된 이 강력한 검색 엔진에 대한 항목이 포함됩니다. 컨테이너를 시작한 후 `MEILISEARCH_HOST` 환경 변수를 `http://meilisearch:7700`으로 설정하여 애플리케이션 내에서 Meilisearch 인스턴스에 연결할 수 있습니다.
 
 로컬 머신에서 웹 브라우저의 `http://localhost:7700`으로 이동하여 Meilisearch의 웹 기반 관리 패널에 접근할 수 있습니다.
 
 <a name="typesense"></a>
 ### Typesense
 
-Sail 설치 시 [Typesense](https://typesense.org) 서비스를 설치하기로 선택한 경우, 애플리케이션의 `docker-compose.yml` 파일에는 [Laravel Scout](/docs/{{version}}/scout#typesense)와 네이티브로 통합된 이 초고속 오픈소스 검색 엔진에 대한 항목이 포함됩니다. 컨테이너를 시작한 후 다음 환경 변수를 설정하여 애플리케이션 내에서 Typesense 인스턴스에 연결할 수 있습니다.
+Sail 설치 시 [Typesense](https://typesense.org) 서비스를 설치하기로 선택한 경우, 애플리케이션의 `compose.yaml` 파일에는 [Laravel Scout](/docs/{{version}}/scout#typesense)와 네이티브로 통합된 이 초고속 오픈소스 검색 엔진에 대한 항목이 포함됩니다. 컨테이너를 시작한 후 다음 환경 변수를 설정하여 애플리케이션 내에서 Typesense 인스턴스에 연결할 수 있습니다.
 
 ```ini
 TYPESENSE_HOST=typesense
@@ -278,9 +278,9 @@ TYPESENSE_API_KEY=xyz
 <a name="file-storage"></a>
 ## 파일 스토리지
 
-프로덕션 환경에서 애플리케이션을 실행할 때 Amazon S3를 사용하여 파일을 저장할 계획이라면, Sail 설치 시 [MinIO](https://min.io) 서비스를 설치하는 것이 좋습니다. MinIO는 프로덕션 S3 환경에서 "테스트" 스토리지 버킷을 생성하지 않고도 라라벨의 `s3` 파일 스토리지 드라이버를 사용하여 로컬에서 개발할 수 있는 S3 호환 API를 제공합니다. Sail 설치 시 MinIO를 설치하기로 선택하면 애플리케이션의 `docker-compose.yml` 파일에 MinIO 설정 섹션이 추가됩니다.
+프로덕션 환경에서 애플리케이션을 실행할 때 Amazon S3를 사용하여 파일을 저장할 계획이라면, Sail 설치 시 [RustFS](https://rustfs.com) 서비스를 설치하는 것이 좋습니다. RustFS는 프로덕션 S3 환경에서 "테스트" 스토리지 버킷을 생성하지 않고도 라라벨의 `s3` 파일 스토리지 드라이버를 사용하여 로컬에서 개발할 수 있는 S3 호환 API를 제공합니다. Sail 설치 시 RustFS를 설치하기로 선택하면 애플리케이션의 `compose.yaml` 파일에 RustFS 설정 섹션이 추가됩니다.
 
-기본적으로 애플리케이션의 `filesystems` 설정 파일에는 이미 `s3` 디스크에 대한 디스크 설정이 포함되어 있습니다. 이 디스크를 사용하여 Amazon S3와 상호작용하는 것 외에도, 설정을 제어하는 관련 환경 변수를 간단히 수정하여 MinIO와 같은 S3 호환 파일 스토리지 서비스와 상호작용하는 데 사용할 수 있습니다. 예를 들어, MinIO를 사용할 때 파일시스템 환경 변수 설정은 다음과 같이 정의해야 합니다.
+기본적으로 애플리케이션의 `filesystems` 설정 파일에는 이미 `s3` 디스크에 대한 디스크 설정이 포함되어 있습니다. 이 디스크를 사용하여 Amazon S3와 상호작용하는 것 외에도, 설정을 제어하는 관련 환경 변수를 간단히 수정하여 RustFS와 같은 S3 호환 파일 스토리지 서비스와 상호작용하는 데 사용할 수 있습니다. 예를 들어, RustFS를 사용할 때 파일시스템 환경 변수 설정은 다음과 같이 정의해야 합니다.
 
 ```ini
 FILESYSTEM_DISK=s3
@@ -288,20 +288,9 @@ AWS_ACCESS_KEY_ID=sail
 AWS_SECRET_ACCESS_KEY=password
 AWS_DEFAULT_REGION=us-east-1
 AWS_BUCKET=local
-AWS_ENDPOINT=http://minio:9000
+AWS_ENDPOINT=http://rustfs:9000
 AWS_USE_PATH_STYLE_ENDPOINT=true
 ```
-
-MinIO를 사용할 때 라라벨의 Flysystem 통합이 적절한 URL을 생성하도록 하려면 `AWS_URL` 환경 변수를 정의하여 애플리케이션의 로컬 URL과 일치하고 URL 경로에 버킷 이름을 포함해야 합니다.
-
-```ini
-AWS_URL=http://localhost:9000/local
-```
-
-`http://localhost:8900`에서 사용할 수 있는 MinIO 콘솔을 통해 버킷을 생성할 수 있습니다. MinIO 콘솔의 기본 사용자 이름은 `sail`이고 기본 암호는 `password`입니다.
-
-> [!WARNING]
-> MinIO를 사용할 때 `temporaryUrl` 메서드를 통한 임시 스토리지 URL 생성은 지원되지 않습니다.
 
 <a name="running-tests"></a>
 ## 테스트 실행하기
@@ -329,7 +318,7 @@ sail artisan test
 <a name="laravel-dusk"></a>
 ### Laravel Dusk
 
-[Laravel Dusk](/docs/{{version}}/dusk)는 표현력 있고 사용하기 쉬운 브라우저 자동화 및 테스트 API를 제공합니다. Sail 덕분에 로컬 컴퓨터에 Selenium이나 다른 도구를 설치하지 않고도 이러한 테스트를 실행할 수 있습니다. 시작하려면 애플리케이션의 `docker-compose.yml` 파일에서 Selenium 서비스의 주석을 해제하세요.
+[Laravel Dusk](/docs/{{version}}/dusk)는 표현력 있고 사용하기 쉬운 브라우저 자동화 및 테스트 API를 제공합니다. Sail 덕분에 로컬 컴퓨터에 Selenium이나 다른 도구를 설치하지 않고도 이러한 테스트를 실행할 수 있습니다. 시작하려면 애플리케이션의 `compose.yaml` 파일에서 Selenium 서비스의 주석을 해제하세요.
 
 ```yaml
 selenium:
@@ -342,7 +331,7 @@ selenium:
         - sail
 ```
 
-다음으로, 애플리케이션의 `docker-compose.yml` 파일에서 `laravel.test` 서비스에 `selenium`에 대한 `depends_on` 항목이 있는지 확인하세요.
+다음으로, 애플리케이션의 `compose.yaml` 파일에서 `laravel.test` 서비스에 `selenium`에 대한 `depends_on` 항목이 있는지 확인하세요.
 
 ```yaml
 depends_on:
@@ -376,7 +365,7 @@ selenium:
 <a name="previewing-emails"></a>
 ## 이메일 미리보기
 
-Laravel Sail의 기본 `docker-compose.yml` 파일에는 [Mailpit](https://github.com/axllent/mailpit)에 대한 서비스 항목이 포함되어 있습니다. Mailpit은 로컬 개발 중에 애플리케이션이 보낸 이메일을 가로채고 브라우저에서 이메일 메시지를 미리 볼 수 있는 편리한 웹 인터페이스를 제공합니다. Sail을 사용할 때 Mailpit의 기본 호스트는 `mailpit`이며 포트 1025를 통해 사용할 수 있습니다.
+Laravel Sail의 기본 `compose.yaml` 파일에는 [Mailpit](https://github.com/axllent/mailpit)에 대한 서비스 항목이 포함되어 있습니다. Mailpit은 로컬 개발 중에 애플리케이션이 보낸 이메일을 가로채고 브라우저에서 이메일 메시지를 미리 볼 수 있는 편리한 웹 인터페이스를 제공합니다. Sail을 사용할 때 Mailpit의 기본 호스트는 `mailpit`이며 포트 1025를 통해 사용할 수 있습니다.
 
 ```ini
 MAIL_HOST=mailpit
@@ -406,9 +395,12 @@ sail tinker
 <a name="sail-php-versions"></a>
 ## PHP 버전
 
-Sail은 현재 PHP 8.4, 8.3, 8.2, 8.1 또는 PHP 8.0을 통해 애플리케이션을 서빙하는 것을 지원합니다. Sail에서 사용하는 기본 PHP 버전은 현재 PHP 8.4입니다. 애플리케이션을 서빙하는 데 사용되는 PHP 버전을 변경하려면 애플리케이션의 `docker-compose.yml` 파일에서 `laravel.test` 컨테이너의 `build` 정의를 업데이트해야 합니다.
+Sail은 현재 PHP 8.5, 8.4, 8.3, 8.2, 8.1 또는 PHP 8.0을 통해 애플리케이션을 서빙하는 것을 지원합니다. Sail에서 사용하는 기본 PHP 버전은 현재 PHP 8.4입니다. 애플리케이션을 서빙하는 데 사용되는 PHP 버전을 변경하려면 애플리케이션의 `compose.yaml` 파일에서 `laravel.test` 컨테이너의 `build` 정의를 업데이트해야 합니다.
 
 ```yaml
+# PHP 8.5
+context: ./vendor/laravel/sail/runtimes/8.5
+
 # PHP 8.4
 context: ./vendor/laravel/sail/runtimes/8.4
 
@@ -425,13 +417,13 @@ context: ./vendor/laravel/sail/runtimes/8.1
 context: ./vendor/laravel/sail/runtimes/8.0
 ```
 
-또한 애플리케이션에서 사용하는 PHP 버전을 반영하도록 `image` 이름을 업데이트할 수 있습니다. 이 옵션도 애플리케이션의 `docker-compose.yml` 파일에 정의되어 있습니다.
+또한 애플리케이션에서 사용하는 PHP 버전을 반영하도록 `image` 이름을 업데이트할 수 있습니다. 이 옵션도 애플리케이션의 `compose.yaml` 파일에 정의되어 있습니다.
 
 ```yaml
 image: sail-8.2/app
 ```
 
-애플리케이션의 `docker-compose.yml` 파일을 업데이트한 후 컨테이너 이미지를 재빌드해야 합니다.
+애플리케이션의 `compose.yaml` 파일을 업데이트한 후 컨테이너 이미지를 재빌드해야 합니다.
 
 ```shell
 sail build --no-cache
@@ -442,7 +434,7 @@ sail up
 <a name="sail-node-versions"></a>
 ## Node 버전
 
-Sail은 기본적으로 Node 20을 설치합니다. 이미지를 빌드할 때 설치되는 Node 버전을 변경하려면 애플리케이션의 `docker-compose.yml` 파일에서 `laravel.test` 서비스의 `build.args` 정의를 업데이트하면 됩니다.
+Sail은 기본적으로 Node 22를 설치합니다. 이미지를 빌드할 때 설치되는 Node 버전을 변경하려면 애플리케이션의 `compose.yaml` 파일에서 `laravel.test` 서비스의 `build.args` 정의를 업데이트하면 됩니다.
 
 ```yaml
 build:
@@ -451,7 +443,7 @@ build:
         NODE_VERSION: '18'
 ```
 
-애플리케이션의 `docker-compose.yml` 파일을 업데이트한 후 컨테이너 이미지를 재빌드해야 합니다.
+애플리케이션의 `compose.yaml` 파일을 업데이트한 후 컨테이너 이미지를 재빌드해야 합니다.
 
 ```shell
 sail build --no-cache
@@ -471,7 +463,7 @@ sail share
 `share` 명령어를 통해 사이트를 공유할 때 애플리케이션의 `bootstrap/app.php` 파일에서 `trustProxies` 미들웨어 메서드를 사용하여 애플리케이션의 신뢰할 수 있는 프록시를 설정해야 합니다. 그렇지 않으면 `url` 및 `route`와 같은 URL 생성 헬퍼가 URL 생성 중에 사용해야 하는 올바른 HTTP 호스트를 결정할 수 없습니다.
 
 ```php
-->withMiddleware(function (Middleware $middleware) {
+->withMiddleware(function (Middleware $middleware): void {
     $middleware->trustProxies(at: '*');
 })
 ```
@@ -511,7 +503,7 @@ sail build --no-cache
 
 내부적으로 `XDEBUG_CONFIG` 환경 변수는 `client_host=host.docker.internal`로 정의되어 Mac 및 Windows(WSL2)에서 Xdebug가 올바르게 설정됩니다. 로컬 머신이 Linux를 실행하고 있고 Docker 20.10 이상을 사용하는 경우 `host.docker.internal`을 사용할 수 있으며 수동 설정이 필요하지 않습니다.
 
-20.10 이전의 Docker 버전에서는 Linux에서 `host.docker.internal`이 지원되지 않으므로 호스트 IP를 수동으로 정의해야 합니다. 이렇게 하려면 `docker-compose.yml` 파일에서 커스텀 네트워크를 정의하여 컨테이너에 고정 IP를 설정합니다.
+20.10 이전의 Docker 버전에서는 Linux에서 `host.docker.internal`이 지원되지 않으므로 호스트 IP를 수동으로 정의해야 합니다. 이렇게 하려면 `compose.yaml` 파일에서 커스텀 네트워크를 정의하여 컨테이너에 고정 IP를 설정합니다.
 
 ```yaml
 networks:
@@ -565,7 +557,7 @@ Sail은 단지 Docker이므로 거의 모든 것을 자유롭게 커스터마이
 sail artisan sail:publish
 ```
 
-이 명령어를 실행하면 Laravel Sail에서 사용하는 Dockerfile 및 기타 설정 파일이 애플리케이션 루트 디렉토리의 `docker` 디렉토리에 배치됩니다. Sail 설치를 커스터마이징한 후 애플리케이션의 `docker-compose.yml` 파일에서 애플리케이션 컨테이너의 이미지 이름을 변경할 수 있습니다. 그런 다음 `build` 명령어를 사용하여 애플리케이션의 컨테이너를 재빌드합니다. 단일 머신에서 여러 라라벨 애플리케이션을 개발하기 위해 Sail을 사용하는 경우 애플리케이션 이미지에 고유한 이름을 지정하는 것이 특히 중요합니다.
+이 명령어를 실행하면 Laravel Sail에서 사용하는 Dockerfile 및 기타 설정 파일이 애플리케이션 루트 디렉토리의 `docker` 디렉토리에 배치됩니다. Sail 설치를 커스터마이징한 후 애플리케이션의 `compose.yaml` 파일에서 애플리케이션 컨테이너의 이미지 이름을 변경할 수 있습니다. 그런 다음 `build` 명령어를 사용하여 애플리케이션의 컨테이너를 재빌드합니다. 단일 머신에서 여러 라라벨 애플리케이션을 개발하기 위해 Sail을 사용하는 경우 애플리케이션 이미지에 고유한 이름을 지정하는 것이 특히 중요합니다.
 
 ```shell
 sail build --no-cache

@@ -227,6 +227,7 @@ Context::get('breadcrumbs');
 use Illuminate\Support\Facades\Context;
 use Illuminate\Support\Facades\DB;
 
+// AppServiceProvider.php에서...
 DB::listen(function ($event) {
     Context::push('queries', [$event->time, $event->sql]);
 });
@@ -266,10 +267,12 @@ use Illuminate\Support\Facades\Context;
 $value = Context::get('key');
 ```
 
-`only` 메소드를 사용하여 컨텍스트 정보의 일부만 조회할 수 있습니다.
+`only` 및 `except` 메소드를 사용하여 컨텍스트 정보의 일부만 조회할 수 있습니다.
 
 ```php
 $data = Context::only(['first_key', 'second_key']);
+
+$data = Context::except(['first_key']);
 ```
 
 `pull` 메소드를 사용하여 컨텍스트에서 정보를 조회하고 즉시 컨텍스트에서 제거할 수 있습니다.
@@ -283,11 +286,20 @@ $value = Context::pull('key');
 ```php
 Context::push('breadcrumbs', 'first_value', 'second_value');
 
-Context::pop('breadcrumbs')
+Context::pop('breadcrumbs');
 // second_value
 
 Context::get('breadcrumbs');
 // ['first_value']
+```
+
+`remember` 및 `rememberHidden` 메소드를 사용하면 컨텍스트에서 정보를 조회하되, 요청한 정보가 존재하지 않을 경우 주어진 클로저가 반환하는 값을 컨텍스트 값으로 설정할 수 있습니다:
+
+```php
+$permissions = Context::remember(
+    'user-permissions',
+    fn () => $user->permissions,
+);
 ```
 
 컨텍스트에 저장된 모든 정보를 조회하려면 `all` 메소드를 호출할 수 있습니다.
@@ -372,8 +384,10 @@ Context::getHidden(/* ... */);
 Context::pullHidden(/* ... */);
 Context::popHidden(/* ... */);
 Context::onlyHidden(/* ... */);
+Context::exceptHidden(/* ... */);
 Context::allHidden(/* ... */);
 Context::hasHidden(/* ... */);
+Context::missingHidden(/* ... */);
 Context::forgetHidden(/* ... */);
 ```
 

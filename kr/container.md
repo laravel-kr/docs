@@ -178,6 +178,25 @@ $this->app->singletonIf(Transistor::class, function (Application $app) {
 });
 ```
 
+<a name="singleton-attribute"></a>
+#### 싱글톤 속성(Singleton Attribute)
+
+또는 인터페이스나 클래스에 `#[Singleton]` 속성을 표시하여 컨테이너에서 한 번만 해결되어야 함을 나타낼 수 있습니다.
+
+```php
+<?php
+
+namespace App\Services;
+
+use Illuminate\Container\Attributes\Singleton;
+
+#[Singleton]
+class Transistor
+{
+    // ...
+}
+```
+
 <a name="binding-scoped"></a>
 #### 스코프드 싱글톤 바인딩
 
@@ -199,6 +218,25 @@ $this->app->scoped(Transistor::class, function (Application $app) {
 $this->app->scopedIf(Transistor::class, function (Application $app) {
     return new Transistor($app->make(PodcastParser::class));
 });
+```
+
+<a name="scoped-attribute"></a>
+#### 스코프드 속성(Scoped Attribute)
+
+또는 인터페이스나 클래스에 `#[Scoped]` 속성을 표시하여 주어진 Laravel 요청/작업 수명 주기 내에서 한 번만 해결되어야 함을 컨테이너에 나타낼 수 있습니다.
+
+```php
+<?php
+
+namespace App\Services;
+
+use Illuminate\Container\Attributes\Scoped;
+
+#[Scoped]
+class Transistor
+{
+    // ...
+}
 ```
 
 <a name="binding-instances"></a>
@@ -238,6 +276,45 @@ use App\Contracts\EventPusher;
 public function __construct(
     protected EventPusher $pusher,
 ) {}
+```
+
+<a name="bind-attribute"></a>
+#### 바인드 속성(Bind Attribute)
+
+Laravel은 편의를 위해 `Bind` 속성도 제공합니다. 이 속성을 인터페이스에 적용하면 해당 인터페이스가 요청될 때 어떤 구현체가 자동으로 주입되어야 하는지 Laravel에 알릴 수 있습니다. `Bind` 속성을 사용할 때는 애플리케이션의 서비스 프로바이더에서 추가적인 서비스 등록을 수행할 필요가 없습니다.
+
+또한 인터페이스에 여러 `Bind` 속성을 배치하여 주어진 환경 세트에 대해 다른 구현체가 주입되도록 구성할 수 있습니다.
+
+```php
+<?php
+
+namespace App\Contracts;
+
+use App\Services\FakeEventPusher;
+use App\Services\RedisEventPusher;
+use Illuminate\Container\Attributes\Bind;
+
+#[Bind(RedisEventPusher::class)]
+#[Bind(FakeEventPusher::class, environments: ['local', 'testing'])]
+interface EventPusher
+{
+    // ...
+}
+```
+
+또한, [Singleton](#singleton-attribute)과 [Scoped](#scoped-attribute) 속성을 적용하여 컨테이너 바인딩이 한 번만 해결되어야 하는지 또는 요청/작업 수명 주기당 한 번만 해결되어야 하는지를 나타낼 수 있습니다.
+
+```php
+use App\Services\RedisEventPusher;
+use Illuminate\Container\Attributes\Bind;
+use Illuminate\Container\Attributes\Singleton;
+
+#[Bind(RedisEventPusher::class)]
+#[Singleton]
+interface EventPusher
+{
+    // ...
+}
 ```
 
 <a name="contextual-binding"></a>
@@ -284,25 +361,28 @@ class PhotoController extends Controller
 {
     public function __construct(
         #[Storage('local')] protected Filesystem $filesystem
-    )
-    {
+    ) {
         // ...
     }
 }
 ```
 
-`Storage` 속성 외에도 Laravel은 `Auth`, `Cache`, `Config`, `DB`, `Log`, `RouteParameter`, [Tag](#tagging) 속성을 제공합니다:
+`Storage` 속성 외에도 Laravel은 `Auth`, `Cache`, `Config`, `Context`, `DB`, `Give`, `Log`, `RouteParameter`, [Tag](#tagging) 속성을 제공합니다:
 
 ```php
 <?php
 
 namespace App\Http\Controllers;
 
+use App\Contracts\UserRepository;
 use App\Models\Photo;
+use App\Repositories\DatabaseRepository;
 use Illuminate\Container\Attributes\Auth;
 use Illuminate\Container\Attributes\Cache;
 use Illuminate\Container\Attributes\Config;
+use Illuminate\Container\Attributes\Context;
 use Illuminate\Container\Attributes\DB;
+use Illuminate\Container\Attributes\Give;
 use Illuminate\Container\Attributes\Log;
 use Illuminate\Container\Attributes\RouteParameter;
 use Illuminate\Container\Attributes\Tag;
@@ -317,12 +397,14 @@ class PhotoController extends Controller
         #[Auth('web')] protected Guard $auth,
         #[Cache('redis')] protected Repository $cache,
         #[Config('app.timezone')] protected string $timezone,
+        #[Context('uuid')] protected string $uuid,
+        #[Context('ulid', hidden: true)] protected string $ulid,
         #[DB('mysql')] protected Connection $connection,
+        #[Give(DatabaseRepository::class)] protected UserRepository $users,
         #[Log('daily')] protected LoggerInterface $log,
         #[RouteParameter('photo')] protected Photo $photo,
         #[Tag('reports')] protected iterable $reports,
-    )
-    {
+    ) {
         // ...
     }
 }

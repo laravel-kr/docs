@@ -14,7 +14,11 @@
     - [JSON 응답](#json-responses)
     - [파일 다운로드](#file-downloads)
     - [파일 응답](#file-responses)
-    - [스트리밍 응답](#streamed-responses)
+- [스트리밍 응답](#streamed-responses)
+    - [스트리밍 응답 사용하기](#consuming-streamed-responses)
+    - [스트리밍 JSON 응답](#streamed-json-responses)
+    - [이벤트 스트림 (SSE)](#event-streams)
+    - [스트리밍 다운로드](#streamed-downloads)
 - [응답 매크로](#response-macros)
 
 <a name="creating-responses"></a>
@@ -92,13 +96,21 @@ return response($content)
     ]);
 ```
 
+`withoutHeader` 메서드를 사용하여 발신 응답에서 특정 헤더를 제거할 수 있습니다.
+
+```php
+return response($content)->withoutHeader('X-Debug');
+
+return response($content)->withoutHeader(['X-Debug', 'X-Powered-By']);
+```
+
 <a name="cache-control-middleware"></a>
 #### 캐시 제어 미들웨어(Cache Control Middleware)
 
 Laravel은 라우트 그룹에 대해 `Cache-Control` 헤더를 빠르게 설정하는 데 사용할 수 있는 `cache.headers` 미들웨어를 포함하고 있습니다. 지시문은 해당 캐시 제어 지시문의 "스네이크 케이스" 형식으로 제공해야 하며 세미콜론으로 구분해야 합니다. 지시문 목록에 `etag`가 지정되면 응답 콘텐츠의 MD5 해시가 자동으로 ETag 식별자로 설정됩니다.
 
 ```php
-Route::middleware('cache.headers:public;max_age=2628000;etag')->group(function () {
+Route::middleware('cache.headers:public;max_age=30;s_maxage=300;stale_while_revalidate=600;etag')->group(function () {
     Route::get('/privacy', function () {
         // ...
     });
@@ -168,12 +180,15 @@ Cookie::expire('name');
 기본적으로 `Illuminate\Cookie\Middleware\EncryptCookies` 미들웨어 덕분에 Laravel이 생성하는 모든 쿠키는 암호화되고 서명되어 클라이언트가 수정하거나 읽을 수 없습니다. 애플리케이션에서 생성하는 쿠키의 일부에 대해 암호화를 비활성화하려면 애플리케이션의 `bootstrap/app.php` 파일에서 `encryptCookies` 메서드를 사용할 수 있습니다.
 
 ```php
-->withMiddleware(function (Middleware $middleware) {
+->withMiddleware(function (Middleware $middleware): void {
     $middleware->encryptCookies(except: [
         'cookie_name',
     ]);
 })
 ```
+
+> [!NOTE]
+> 일반적으로 쿠키 암호화를 비활성화해서는 안 됩니다. 비활성화하면 쿠키가 잠재적인 클라이언트 측 데이터 노출 및 변조에 노출될 수 있습니다.
 
 <a name="redirects"></a>
 ## 리다이렉트
@@ -360,20 +375,15 @@ return response()->file($pathToFile, $headers);
 ```
 
 <a name="streamed-responses"></a>
-### 스트리밍 응답
+## 스트리밍 응답
 
 데이터가 생성되는 대로 클라이언트에 스트리밍하면 메모리 사용량을 크게 줄이고 성능을 향상시킬 수 있으며, 특히 매우 큰 응답의 경우에 효과적입니다. 스트리밍 응답을 사용하면 서버가 전송을 완료하기 전에 클라이언트가 데이터 처리를 시작할 수 있습니다.
 
 ```php
-function streamedContent(): Generator {
-    yield 'Hello, ';
-    yield 'World!';
-}
-
 Route::get('/stream', function () {
     return response()->stream(function (): void {
-        foreach (streamedContent() as $chunk) {
-            echo $chunk;
+        foreach (['developer', 'admin'] as $string) {
+            echo $string;
             ob_flush();
             flush();
             sleep(2); // 청크 사이의 지연 시뮬레이션...
@@ -382,11 +392,265 @@ Route::get('/stream', function () {
 });
 ```
 
-> [!NOTE]
-> 내부적으로 Laravel은 PHP의 출력 버퍼링 기능을 활용합니다. 위의 예제에서 볼 수 있듯이 버퍼링된 콘텐츠를 클라이언트에 푸시하려면 `ob_flush` 및 `flush` 함수를 사용해야 합니다.
+편의를 위해, `stream` 메서드에 제공하는 클로저가 [Generator](https://www.php.net/manual/en/language.generators.overview.php)를 반환하는 경우, Laravel은 제너레이터가 반환하는 문자열 사이에 출력 버퍼를 자동으로 플러시하고 Nginx 출력 버퍼링도 비활성화합니다.
+
+```php
+Route::post('/chat', function () {
+    return response()->stream(function (): Generator {
+        $stream = OpenAI::client()->chat()->createStreamed(...);
+
+        foreach ($stream as $response) {
+            yield $response->choices[0];
+        }
+    });
+});
+```
+
+<a name="consuming-streamed-responses"></a>
+### 스트리밍 응답 사용하기
+
+스트리밍 응답은 Laravel의 `stream` npm 패키지를 사용하여 사용할 수 있으며, 이 패키지는 Laravel 응답 및 이벤트 스트림과 상호 작용하기 위한 편리한 API를 제공합니다. 시작하려면 `@laravel/stream-react` 또는 `@laravel/stream-vue` 패키지를 설치하세요.
+
+```shell tab=React
+npm install @laravel/stream-react
+```
+
+```shell tab=Vue
+npm install @laravel/stream-vue
+```
+
+그런 다음 `useStream`을 사용하여 이벤트 스트림을 사용할 수 있습니다. 스트림 URL을 제공하면 훅이 Laravel 애플리케이션에서 콘텐츠가 반환될 때 연결된 응답으로 `data`를 자동으로 업데이트합니다.
+
+```tsx tab=React
+import { useStream } from "@laravel/stream-react";
+
+function App() {
+    const { data, isFetching, isStreaming, send } = useStream("chat");
+
+    const sendMessage = () => {
+        send({
+            message: `Current timestamp: ${Date.now()}`,
+        });
+    };
+
+    return (
+        <div>
+            <div>{data}</div>
+            {isFetching && <div>Connecting...</div>}
+            {isStreaming && <div>Generating...</div>}
+            <button onClick={sendMessage}>Send Message</button>
+        </div>
+    );
+}
+```
+
+```vue tab=Vue
+<script setup lang="ts">
+import { useStream } from "@laravel/stream-vue";
+
+const { data, isFetching, isStreaming, send } = useStream("chat");
+
+const sendMessage = () => {
+    send({
+        message: `Current timestamp: ${Date.now()}`,
+    });
+};
+</script>
+
+<template>
+    <div>
+        <div>{{ data }}</div>
+        <div v-if="isFetching">Connecting...</div>
+        <div v-if="isStreaming">Generating...</div>
+        <button @click="sendMessage">Send Message</button>
+    </div>
+</template>
+```
+
+`send`를 통해 스트림으로 데이터를 보낼 때, 새 데이터를 보내기 전에 스트림에 대한 활성 연결이 취소됩니다. 모든 요청은 JSON `POST` 요청으로 전송됩니다.
+
+> [!WARNING]
+> `useStream` 훅은 애플리케이션에 `POST` 요청을 보내므로 유효한 CSRF 토큰이 필요합니다. CSRF 토큰을 제공하는 가장 쉬운 방법은 [애플리케이션 레이아웃의 head에 메타 태그를 통해 포함하는 것](/docs/{{version}}/csrf#csrf-x-csrf-token)입니다.
+
+`useStream`에 전달되는 두 번째 인수는 스트림 사용 동작을 커스터마이즈하는 데 사용할 수 있는 옵션 객체입니다. 이 객체의 기본값은 아래와 같습니다.
+
+```tsx tab=React
+import { useStream } from "@laravel/stream-react";
+
+function App() {
+    const { data } = useStream("chat", {
+        id: undefined,
+        initialInput: undefined,
+        headers: undefined,
+        csrfToken: undefined,
+        onResponse: (response: Response) => void,
+        onData: (data: string) => void,
+        onCancel: () => void,
+        onFinish: () => void,
+        onError: (error: Error) => void,
+    });
+
+    return <div>{data}</div>;
+}
+```
+
+```vue tab=Vue
+<script setup lang="ts">
+import { useStream } from "@laravel/stream-vue";
+
+const { data } = useStream("chat", {
+    id: undefined,
+    initialInput: undefined,
+    headers: undefined,
+    csrfToken: undefined,
+    onResponse: (response: Response) => void,
+    onData: (data: string) => void,
+    onCancel: () => void,
+    onFinish: () => void,
+    onError: (error: Error) => void,
+});
+</script>
+
+<template>
+    <div>{{ data }}</div>
+</template>
+```
+
+`onResponse`는 스트림으로부터 성공적인 초기 응답을 받은 후 트리거되며, 원시 [Response](https://developer.mozilla.org/en-US/docs/Web/API/Response)가 콜백에 전달됩니다. `onData`는 각 청크가 수신될 때 호출되며, 현재 청크가 콜백에 전달됩니다. `onFinish`는 스트림이 완료되었을 때와 fetch/read 사이클에서 에러가 발생했을 때 호출됩니다.
+
+기본적으로 초기화 시 스트림에 요청이 전송되지 않습니다. `initialInput` 옵션을 사용하여 스트림에 초기 페이로드를 전달할 수 있습니다.
+
+```tsx tab=React
+import { useStream } from "@laravel/stream-react";
+
+function App() {
+    const { data } = useStream("chat", {
+        initialInput: {
+            message: "Introduce yourself.",
+        },
+    });
+
+    return <div>{data}</div>;
+}
+```
+
+```vue tab=Vue
+<script setup lang="ts">
+import { useStream } from "@laravel/stream-vue";
+
+const { data } = useStream("chat", {
+    initialInput: {
+        message: "Introduce yourself.",
+    },
+});
+</script>
+
+<template>
+    <div>{{ data }}</div>
+</template>
+```
+
+스트림을 수동으로 취소하려면 훅에서 반환된 `cancel` 메서드를 사용할 수 있습니다.
+
+```tsx tab=React
+import { useStream } from "@laravel/stream-react";
+
+function App() {
+    const { data, cancel } = useStream("chat");
+
+    return (
+        <div>
+            <div>{data}</div>
+            <button onClick={cancel}>Cancel</button>
+        </div>
+    );
+}
+```
+
+```vue tab=Vue
+<script setup lang="ts">
+import { useStream } from "@laravel/stream-vue";
+
+const { data, cancel } = useStream("chat");
+</script>
+
+<template>
+    <div>
+        <div>{{ data }}</div>
+        <button @click="cancel">Cancel</button>
+    </div>
+</template>
+```
+
+`useStream` 훅이 사용될 때마다 스트림을 식별하기 위한 랜덤 `id`가 생성됩니다. 이 ID는 각 요청과 함께 `X-STREAM-ID` 헤더에 서버로 전송됩니다. 여러 컴포넌트에서 동일한 스트림을 사용할 때 고유한 `id`를 제공하여 스트림을 읽고 쓸 수 있습니다.
+
+```tsx tab=React
+// App.tsx
+import { useStream } from "@laravel/stream-react";
+
+function App() {
+    const { data, id } = useStream("chat");
+
+    return (
+        <div>
+            <div>{data}</div>
+            <StreamStatus id={id} />
+        </div>
+    );
+}
+
+// StreamStatus.tsx
+import { useStream } from "@laravel/stream-react";
+
+function StreamStatus({ id }) {
+    const { isFetching, isStreaming } = useStream("chat", { id });
+
+    return (
+        <div>
+            {isFetching && <div>Connecting...</div>}
+            {isStreaming && <div>Generating...</div>}
+        </div>
+    );
+}
+```
+
+```vue tab=Vue
+<!-- App.vue -->
+<script setup lang="ts">
+import { useStream } from "@laravel/stream-vue";
+import StreamStatus from "./StreamStatus.vue";
+
+const { data, id } = useStream("chat");
+</script>
+
+<template>
+    <div>
+        <div>{{ data }}</div>
+        <StreamStatus :id="id" />
+    </div>
+</template>
+
+<!-- StreamStatus.vue -->
+<script setup lang="ts">
+import { useStream } from "@laravel/stream-vue";
+
+const props = defineProps<{
+    id: string;
+}>();
+
+const { isFetching, isStreaming } = useStream("chat", { id: props.id });
+</script>
+
+<template>
+    <div>
+        <div v-if="isFetching">Connecting...</div>
+        <div v-if="isStreaming">Generating...</div>
+    </div>
+</template>
+```
 
 <a name="streamed-json-responses"></a>
-#### 스트리밍 JSON 응답
+### 스트리밍 JSON 응답
 
 JSON 데이터를 점진적으로 스트리밍해야 하는 경우 `streamJson` 메서드를 활용할 수 있습니다. 이 메서드는 JavaScript에서 쉽게 파싱할 수 있는 형식으로 브라우저에 점진적으로 전송해야 하는 대용량 데이터셋에 특히 유용합니다.
 
@@ -400,8 +664,74 @@ Route::get('/users.json', function () {
 });
 ```
 
+`useJsonStream` 훅은 [useStream 훅](#consuming-streamed-responses)과 동일하지만, 스트리밍이 완료된 후 데이터를 JSON으로 파싱하려고 시도한다는 점이 다릅니다.
+
+```tsx tab=React
+import { useJsonStream } from "@laravel/stream-react";
+
+type User = {
+    id: number;
+    name: string;
+    email: string;
+};
+
+function App() {
+    const { data, send } = useJsonStream<{ users: User[] }>("users");
+
+    const loadUsers = () => {
+        send({
+            query: "taylor",
+        });
+    };
+
+    return (
+        <div>
+            <ul>
+                {data?.users.map((user) => (
+                    <li>
+                        {user.id}: {user.name}
+                    </li>
+                ))}
+            </ul>
+            <button onClick={loadUsers}>Load Users</button>
+        </div>
+    );
+}
+```
+
+```vue tab=Vue
+<script setup lang="ts">
+import { useJsonStream } from "@laravel/stream-vue";
+
+type User = {
+    id: number;
+    name: string;
+    email: string;
+};
+
+const { data, send } = useJsonStream<{ users: User[] }>("users");
+
+const loadUsers = () => {
+    send({
+        query: "taylor",
+    });
+};
+</script>
+
+<template>
+    <div>
+        <ul>
+            <li v-for="user in data?.users" :key="user.id">
+                {{ user.id }}: {{ user.name }}
+            </li>
+        </ul>
+        <button @click="loadUsers">Load Users</button>
+    </div>
+</template>
+```
+
 <a name="event-streams"></a>
-#### 이벤트 스트림(Event Streams)
+### 이벤트 스트림 (SSE)
 
 `eventStream` 메서드는 `text/event-stream` 콘텐츠 유형을 사용하여 서버 전송 이벤트(SSE) 스트리밍 응답을 반환하는 데 사용할 수 있습니다. `eventStream` 메서드는 응답이 사용 가능해질 때 스트림에 응답을 [yield](https://www.php.net/manual/en/language.generators.overview.php)해야 하는 클로저를 받습니다.
 
@@ -427,6 +757,9 @@ yield new StreamedEvent(
     data: $response->choices[0],
 );
 ```
+
+<a name="consuming-event-streams"></a>
+#### 이벤트 스트림 사용하기
 
 이벤트 스트림은 Laravel의 `stream` npm 패키지를 사용하여 사용할 수 있으며, 이 패키지는 Laravel 이벤트 스트림과 상호 작용하기 위한 편리한 API를 제공합니다. 시작하려면 `@laravel/stream-react` 또는 `@laravel/stream-vue` 패키지를 설치하세요.
 
@@ -469,7 +802,7 @@ import { useEventStream } from "@laravel/stream-react";
 
 function App() {
   const { message } = useEventStream("/stream", {
-    event: "update",
+    eventName: "update",
     onMessage: (message) => {
       //
     },
@@ -492,7 +825,7 @@ function App() {
 import { useEventStream } from "@laravel/stream-vue";
 
 const { message } = useEventStream("/chat", {
-  event: "update",
+  eventName: "update",
   onMessage: (message) => {
     // ...
   },
@@ -521,7 +854,7 @@ source.addEventListener('update', (event) => {
     }
 
     console.log(event.data);
-})
+});
 ```
 
 이벤트 스트림에 전송되는 최종 이벤트를 커스터마이즈하려면 `eventStream` 메서드의 `endStreamWith` 인수에 `StreamedEvent` 인스턴스를 제공할 수 있습니다.
@@ -533,7 +866,7 @@ return response()->eventStream(function () {
 ```
 
 <a name="streamed-downloads"></a>
-#### 스트리밍 다운로드
+### 스트리밍 다운로드
 
 때때로 특정 작업의 문자열 응답을 디스크에 콘텐츠를 쓰지 않고 다운로드 가능한 응답으로 변환하고 싶을 수 있습니다. 이 시나리오에서는 `streamDownload` 메서드를 사용할 수 있습니다. 이 메서드는 콜백, 파일명, 그리고 선택적으로 헤더 배열을 인수로 받습니다.
 

@@ -462,7 +462,7 @@ Route::get('/user/{id}/profile', function (string $id) {
 
 $url = route('profile', ['id' => 1, 'photos' => 'yes']);
 
-// /user/1/profile?photos=yes
+// http://example.com/user/1/profile?photos=yes
 ```
 
 > [!NOTE]
@@ -851,7 +851,7 @@ use Illuminate\Support\Facades\RateLimiter;
 /**
  * Bootstrap any application services.
  */
-protected function boot(): void
+public function boot(): void
 {
     RateLimiter::for('api', function (Request $request) {
         return Limit::perMinute(60)->by($request->user()?->id ?: $request->ip());
@@ -869,7 +869,7 @@ use Illuminate\Support\Facades\RateLimiter;
 /**
  * Bootstrap any application services.
  */
-protected function boot(): void
+public function boot(): void
 {
     RateLimiter::for('global', function (Request $request) {
         return Limit::perMinute(1000);
@@ -893,7 +893,7 @@ Since rate limiter callbacks receive the incoming HTTP request instance, you may
 RateLimiter::for('uploads', function (Request $request) {
     return $request->user()->vipCustomer()
         ? Limit::none()
-        : Limit::perMinute(100);
+        : Limit::perHour(10);
 });
 ```
 
@@ -945,6 +945,29 @@ RateLimiter::for('uploads', function (Request $request) {
 });
 ```
 
+<a name="response-base-rate-limiting"></a>
+#### Response-Based Rate Limiting
+
+In addition to rate limiting incoming requests, Laravel allows you to rate limit based on the response using the `after` method. This is useful when you only want to count certain responses toward the rate limit, such as validation errors, 404 responses, or other specific HTTP status codes.
+
+The `after` method accepts a closure that receives the response and should return `true` if the response should be counted toward the rate limit, or `false` if it should be ignored. This is particularly useful for preventing enumeration attacks by limiting consecutive 404 responses, or allowing users to retry requests that fail validation without exhausting their rate limit on an endpoint that should only throttle successful operations:
+
+```php
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\RateLimiter;
+use Symfony\Component\HttpFoundation\Response;
+
+RateLimiter::for('resource-not-found', function (Request $request) {
+    return Limit::perMinute(10)
+        ->by($request->user()?->id ?: $request->ip())
+        ->after(function (Response $response) {
+            // Only count 404 responses toward the rate limit to prevent enumeration...
+            return $response->status() === 404;
+        });
+});
+```
+
 <a name="attaching-rate-limiters-to-routes"></a>
 ### Attaching Rate Limiters to Routes
 
@@ -968,7 +991,7 @@ Route::middleware(['throttle:uploads'])->group(function () {
 By default, the `throttle` middleware is mapped to the `Illuminate\Routing\Middleware\ThrottleRequests` class. However, if you are using Redis as your application's cache driver, you may wish to instruct Laravel to use Redis to manage rate limiting. To do so, you should use the `throttleWithRedis` method in your application's `bootstrap/app.php` file. This method maps the `throttle` middleware to the `Illuminate\Routing\Middleware\ThrottleRequestsWithRedis` middleware class:
 
 ```php
-->withMiddleware(function (Middleware $middleware) {
+->withMiddleware(function (Middleware $middleware): void {
     $middleware->throttleWithRedis();
     // ...
 })

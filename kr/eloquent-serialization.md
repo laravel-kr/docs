@@ -131,16 +131,20 @@ class User extends Model
 <a name="temporarily-modifying-attribute-visibility"></a>
 #### 일시적으로 속성 가시성 수정하기
 
-특정 모델 인스턴스에서 일반적으로 숨겨진 속성을 표시하고 싶다면 `makeVisible` 메서드를 사용할 수 있습니다. `makeVisible` 메서드는 모델 인스턴스를 반환합니다.
+특정 모델 인스턴스에서 일반적으로 숨겨진 속성을 표시하고 싶다면 `makeVisible` 또는 `mergeVisible` 메서드를 사용할 수 있습니다. `makeVisible` 메서드는 모델 인스턴스를 반환합니다.
 
 ```php
 return $user->makeVisible('attribute')->toArray();
+
+return $user->mergeVisible(['name', 'email'])->toArray();
 ```
 
-마찬가지로, 일반적으로 표시되는 속성을 숨기고 싶다면 `makeHidden` 메서드를 사용할 수 있습니다.
+마찬가지로, 일반적으로 표시되는 속성을 숨기고 싶다면 `makeHidden` 또는 `mergeHidden` 메서드를 사용할 수 있습니다.
 
 ```php
 return $user->makeHidden('attribute')->toArray();
+
+return $user->mergeHidden(['name', 'email'])->toArray();
 ```
 
 모든 visible 또는 hidden 속성을 일시적으로 재정의하려면 각각 `setVisible` 및 `setHidden` 메서드를 사용할 수 있습니다.
@@ -203,12 +207,20 @@ class User extends Model
 <a name="appending-at-run-time"></a>
 #### 런타임에 추가하기
 
-런타임에 `append` 메서드를 사용하여 모델 인스턴스에 추가 속성을 추가하도록 지시할 수 있습니다. 또는 `setAppends` 메서드를 사용하여 특정 모델 인스턴스에 대해 추가된 속성의 전체 배열을 재정의할 수 있습니다.
+런타임에 `append` 또는 `mergeAppends` 메서드를 사용하여 모델 인스턴스에 추가 속성을 추가하도록 지시할 수 있습니다. 또는 `setAppends` 메서드를 사용하여 특정 모델 인스턴스에 대해 추가된 속성의 전체 배열을 재정의할 수 있습니다.
 
 ```php
 return $user->append('is_admin')->toArray();
 
+return $user->mergeAppends(['is_admin', 'status'])->toArray();
+
 return $user->setAppends(['is_admin'])->toArray();
+```
+
+마찬가지로, 모델에서 모든 추가된 속성을 제거하려면 `withoutAppends` 메서드를 사용할 수 있습니다.
+
+```php
+return $user->withoutAppends()->toArray();
 ```
 
 <a name="date-serialization"></a>

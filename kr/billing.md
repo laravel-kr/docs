@@ -52,17 +52,17 @@
     - [인보이스와 함께 결제하기](#charge-with-invoice)
     - [결제 인텐트(Payment Intent) 생성하기](#creating-payment-intents)
     - [결제 환불하기](#refunding-charges)
+- [인보이스](#invoices)
+    - [인보이스 조회하기](#retrieving-invoices)
+    - [예정된 인보이스](#upcoming-invoices)
+    - [구독 인보이스 미리보기](#previewing-subscription-invoices)
+    - [인보이스 PDF 생성하기](#generating-invoice-pdfs)
 - [체크아웃](#checkout)
     - [상품 체크아웃](#product-checkouts)
     - [단건 결제 체크아웃](#single-charge-checkouts)
     - [구독 체크아웃](#subscription-checkouts)
     - [세금 ID 수집하기](#collecting-tax-ids)
     - [게스트 체크아웃](#guest-checkouts)
-- [인보이스](#invoices)
-    - [인보이스 조회하기](#retrieving-invoices)
-    - [예정된 인보이스](#upcoming-invoices)
-    - [구독 인보이스 미리보기](#previewing-subscription-invoices)
-    - [인보이스 PDF 생성하기](#generating-invoice-pdfs)
 - [결제 실패 처리하기](#handling-failed-payments)
     - [결제 확인하기](#confirming-payments)
 - [강력한 고객 인증(SCA)](#strong-customer-authentication)
@@ -82,7 +82,7 @@
 Cashier의 새 버전으로 업그레이드할 때는 [업그레이드 가이드](https://github.com/laravel/cashier-stripe/blob/master/UPGRADE.md)를 주의 깊게 검토하는 것이 중요합니다.
 
 > [!WARNING]
-> 호환성이 깨지는 변경을 방지하기 위해 Cashier는 고정된 Stripe API 버전을 사용합니다. Cashier 15는 Stripe API 버전 `2023-10-16`을 사용합니다. Stripe API 버전은 새로운 Stripe 기능과 개선 사항을 활용하기 위해 마이너 릴리스에서 업데이트됩니다.
+> 호환성이 깨지는 변경을 방지하기 위해 Cashier는 고정된 Stripe API 버전을 사용합니다. Cashier 16은 Stripe API 버전 `2025-06-30.basil`을 사용합니다. Stripe API 버전은 새로운 Stripe 기능과 개선 사항을 활용하기 위해 마이너 릴리스에서 업데이트됩니다.
 
 <a name="installation"></a>
 ## 설치
@@ -613,7 +613,7 @@ public function stripeName(): string|null
 }
 ```
 
-마찬가지로 `stripeEmail`, `stripePhone`, `stripeAddress`, `stripePreferredLocales` 메서드를 재정의할 수 있습니다. 이러한 메서드는 [Stripe 고객 객체를 업데이트](https://stripe.com/docs/api/customers/update)할 때 해당 고객 매개변수에 정보를 동기화합니다. 고객 정보 동기화 프로세스를 완전히 제어하려면 `syncStripeCustomerDetails` 메서드를 재정의할 수 있습니다.
+마찬가지로 `stripeEmail`, `stripePhone` (최대 20자), `stripeAddress`, `stripePreferredLocales` 메서드를 재정의할 수 있습니다. 이러한 메서드는 [Stripe 고객 객체를 업데이트](https://stripe.com/docs/api/customers/update)할 때 해당 고객 매개변수에 정보를 동기화합니다. 고객 정보 동기화 프로세스를 완전히 제어하려면 `syncStripeCustomerDetails` 메서드를 재정의할 수 있습니다.
 
 <a name="billing-portal"></a>
 ### 빌링 포탈(Billing Portal)
@@ -1705,7 +1705,7 @@ $user->subscription('default')->cancelNowAndInvoice();
 
 ```php
 $user->subscription('default')->cancelAt(
-    now()->addDays(10)
+    now()->plus(days: 10)
 );
 ```
 
@@ -1756,10 +1756,10 @@ Route::post('/user/subscribe', function (Request $request) {
 `trialUntil` 메서드를 사용하면 체험 기간이 언제 종료되어야 하는지 지정하는 `DateTime` 인스턴스를 제공할 수 있습니다:
 
 ```php
-use Carbon\Carbon;
+use Illuminate\Support\Carbon;
 
 $user->newSubscription('default', 'price_monthly')
-    ->trialUntil(Carbon::now()->addDays(10))
+    ->trialUntil(Carbon::now()->plus(days: 10))
     ->create($paymentMethod);
 ```
 
@@ -1808,7 +1808,7 @@ use App\Models\User;
 
 $user = User::create([
     // ...
-    'trial_ends_at' => now()->addDays(10),
+    'trial_ends_at' => now()->plus(days: 10),
 ]);
 ```
 
@@ -1859,12 +1859,12 @@ $subscription = User::find(1)->subscription('default');
 
 // 지금부터 7일 후에 체험 종료...
 $subscription->extendTrial(
-    now()->addDays(7)
+    now()->plus(days: 7)
 );
 
 // 체험에 5일 추가...
 $subscription->extendTrial(
-    $subscription->trial_ends_at->addDays(5)
+    $subscription->trial_ends_at->plus(days: 5)
 );
 ```
 
@@ -1922,7 +1922,7 @@ php artisan cashier:webhook --disabled
 Stripe 웹훅은 Laravel의 [CSRF 보호](/docs/{{version}}/csrf)를 우회해야 하므로, Laravel이 들어오는 Stripe 웹훅에 대해 CSRF 토큰의 유효성을 검사하지 않도록 해야 합니다. 이를 위해 애플리케이션의 `bootstrap/app.php` 파일에서 `stripe/*`를 CSRF 보호에서 제외해야 합니다:
 
 ```php
-->withMiddleware(function (Middleware $middleware) {
+->withMiddleware(function (Middleware $middleware): void {
     $middleware->validateCsrfTokens(except: [
         'stripe/*',
     ]);

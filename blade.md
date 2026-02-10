@@ -138,7 +138,7 @@ Since many JavaScript frameworks also use "curly" braces to indicate a given exp
 Hello, @{{ name }}.
 ```
 
-In this example, the `@` symbol will be removed by Blade; however, `{{ name }}` expression will remain untouched by the Blade engine, allowing it to be rendered by your JavaScript framework.
+In this example, the `@` symbol will be removed by Blade; however, the `{{ name }}` expression will remain untouched by the Blade engine, allowing it to be rendered by your JavaScript framework.
 
 The `@` symbol may also be used to escape Blade directives:
 
@@ -161,7 +161,7 @@ Sometimes you may pass an array to your view with the intention of rendering it 
 </script>
 ```
 
-However, instead of manually calling `json_encode`, you may use the `Illuminate\Support\Js::from` method directive. The `from` method accepts the same arguments as PHP's `json_encode` function; however, it will ensure that the resulting JSON is properly escaped for inclusion within HTML quotes. The `from` method will return a string `JSON.parse` JavaScript statement that will convert the given object or array into a valid JavaScript object:
+However, instead of manually calling `json_encode`, you may use the `Illuminate\Support\Js::from` method. The `from` method accepts the same arguments as PHP's `json_encode` function; however, it will ensure that the resulting JSON has been properly escaped for inclusion within HTML quotes. The `from` method will return a string `JSON.parse` JavaScript statement that will convert the given object or array into a valid JavaScript object:
 
 ```blade
 <script>
@@ -319,6 +319,17 @@ The `@session` directive may be used to determine if a [session](/docs/{{version
         {{ $value }}
     </div>
 @endsession
+```
+
+<a name="context-directives"></a>
+#### Context Directives
+
+The `@context` directive may be used to determine if a [context](/docs/{{version}}/context) value exists. If the context value exists, the template contents within the `@context` and `@endcontext` directives will be evaluated. Within the `@context` directive's contents, you may echo the `$value` variable to display the context value:
+
+```blade
+@context('canonical')
+    <link href="{{ $value }}" rel="canonical">
+@endcontext
 ```
 
 <a name="switch-statements"></a>
@@ -581,6 +592,12 @@ To include the first view that exists from a given array of views, you may use t
 @includeFirst(['custom.admin', 'admin'], ['status' => 'complete'])
 ```
 
+If you would like to include a view without inheriting any variables from the parent view, you may use the `@includeIsolated` directive. The included view will only have access to variables you explicitly pass:
+
+```blade
+@includeIsolated('view.name', ['user' => $user])
+```
+
 > [!WARNING]
 > You should avoid using the `__DIR__` and `__FILE__` constants in your Blade views, since they will refer to the location of the cached, compiled view.
 
@@ -629,6 +646,20 @@ Since the `@once` directive is often used in conjunction with the `@push` or `@p
 @endPushOnce
 ```
 
+If you are pushing duplicate content from two separate Blade templates, you should provide a unique identifier as the second argument to the `@pushOnce` directive to ensure the content is only rendered once:
+
+```blade
+<!-- pie-chart.blade.php -->
+@pushOnce('scripts', 'chart.js')
+    <script src="/chart.js"></script>
+@endPushOnce
+
+<!-- line-chart.blade.php -->
+@pushOnce('scripts', 'chart.js')
+    <script src="/chart.js"></script>
+@endPushOnce
+```
+
 <a name="raw-php"></a>
 ### Raw PHP
 
@@ -662,6 +693,7 @@ The `@use` directive also supports importing PHP functions and constants by pref
 
 ```blade
 @use(function App\Helpers\format_currency)
+@use(const App\Constants\MAX_ATTEMPTS)
 ```
 
 Just like class imports, aliases are supported for functions and constants as well:
@@ -690,9 +722,9 @@ Blade also allows you to define comments in your views. However, unlike HTML com
 <a name="components"></a>
 ## Components
 
-Components and slots provide similar benefits to sections, layouts, and includes; however, some may find the mental model of components and slots easier to understand. There are two approaches to writing components: class based components and anonymous components.
+Components and slots provide similar benefits to sections, layouts, and includes; however, some may find the mental model of components and slots easier to understand. There are two approaches to writing components: class-based components and anonymous components.
 
-To create a class based component, you may use the `make:component` Artisan command. To illustrate how to use components, we will create a simple `Alert` component. The `make:component` command will place the component in the `app/View/Components` directory:
+To create a class-based component, you may use the `make:component` Artisan command. To illustrate how to use components, we will create a simple `Alert` component. The `make:component` command will place the component in the `app/View/Components` directory:
 
 ```shell
 php artisan make:component Alert
@@ -707,14 +739,6 @@ php artisan make:component Forms/Input
 ```
 
 The command above will create an `Input` component in the `app/View/Components/Forms` directory and the view will be placed in the `resources/views/components/forms` directory.
-
-If you would like to create an anonymous component (a component with only a Blade template and no class), you may use the `--view` flag when invoking the `make:component` command:
-
-```shell
-php artisan make:component forms.input --view
-```
-
-The command above will create a Blade file at `resources/views/components/forms/input.blade.php` which can be rendered as a component via `<x-forms.input />`.
 
 <a name="manually-registering-package-components"></a>
 #### Manually Registering Package Components
@@ -1203,6 +1227,7 @@ By default, some keywords are reserved for Blade's internal use in order to rend
 
 - `data`
 - `render`
+- `resolve`
 - `resolveView`
 - `shouldRender`
 - `view`
@@ -1441,6 +1466,14 @@ You may use the `.` character to indicate if a component is nested deeper inside
 <x-inputs.button/>
 ```
 
+To create an anonymous component via Artisan, you may use the `--view` flag when invoking the `make:component` command:
+
+```shell
+php artisan make:component forms.input --view
+```
+
+The command above will create a Blade file at `resources/views/components/forms/input.blade.php` which can be rendered as a component via `<x-forms.input />`.
+
 <a name="anonymous-index-components"></a>
 ### Anonymous Index Components
 
@@ -1561,7 +1594,7 @@ Prefix "namespaces" may be provided as the second argument to the `anonymousComp
 Blade::anonymousComponentPath(__DIR__.'/../components', 'dashboard');
 ```
 
-When a prefix is provided, components within that "namespace" may be rendered by prefixing to the component's namespace to the component name when the component is rendered:
+When a prefix is provided, components within that "namespace" may be rendered by prefixing the component's namespace to the component name when the component is rendered:
 
 ```blade
 <x-dashboard::panel />
@@ -1826,6 +1859,16 @@ If you would like to prepend content onto the beginning of a stack, you should u
 @prepend('scripts')
     This will be first...
 @endprepend
+```
+
+The `@hasstack` directive may be used to determine if a stack is empty:
+
+```blade
+@hasstack('list')
+    <ul>
+        @stack('list')
+    </ul>
+@endif
 ```
 
 <a name="service-injection"></a>

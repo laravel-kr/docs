@@ -12,6 +12,7 @@
 - [파일 업로드 테스트](#testing-file-uploads)
 - [뷰 테스트](#testing-views)
     - [Blade와 컴포넌트 렌더링](#rendering-blade-and-components)
+- [라우트 캐싱](#caching-routes)
 - [사용 가능한 Assertions](#available-assertions)
     - [응답 Assertions](#response-assertions)
     - [인증 Assertions](#authentication-assertions)
@@ -258,7 +259,13 @@ class ExampleTest extends TestCase
 `actingAs` 메소드의 두 번째 인수로 가드 이름을 전달하여 주어진 사용자를 인증하는 데 사용할 가드를 지정할 수도 있습니다. `actingAs` 메소드에 제공된 가드는 테스트 기간 동안 기본 가드가 됩니다.
 
 ```php
-$this->actingAs($user, 'web')
+$this->actingAs($user, 'web');
+```
+
+요청이 인증되지 않은 상태인지 확인하려면 `actingAsGuest` 메서드를 사용할 수 있습니다.
+
+```php
+$this->actingAsGuest();
 ```
 
 <a name="debugging-responses"></a>
@@ -272,11 +279,9 @@ $this->actingAs($user, 'web')
 test('basic test', function () {
     $response = $this->get('/');
 
-    $response->dumpHeaders();
-
-    $response->dumpSession();
-
     $response->dump();
+    $response->dumpHeaders();
+    $response->dumpSession();
 });
 ```
 
@@ -296,11 +301,9 @@ class ExampleTest extends TestCase
     {
         $response = $this->get('/');
 
-        $response->dumpHeaders();
-
-        $response->dumpSession();
-
         $response->dump();
+        $response->dumpHeaders();
+        $response->dumpSession();
     }
 }
 ```
@@ -936,6 +939,51 @@ $view = $this->component(Profile::class, ['name' => 'Taylor']);
 $view->assertSee('Taylor');
 ```
 
+<a name="caching-routes"></a>
+## 라우트 캐싱(Caching Routes)
+
+테스트가 실행되기 전에 Laravel은 정의된 모든 라우트를 수집하는 것을 포함하여 애플리케이션의 새 인스턴스를 부팅합니다. 애플리케이션에 라우트 파일이 많은 경우, 테스트 케이스에 `Illuminate\Foundation\Testing\WithCachedRoutes` 트레이트(trait)를 추가할 수 있습니다. 이 트레이트를 사용하는 테스트에서는 라우트가 한 번만 빌드되어 메모리에 저장되므로, 라우트 수집 프로세스가 테스트 스위트(suite)의 모든 테스트에 대해 한 번만 실행됩니다.
+
+```php tab=Pest
+<?php
+
+use App\Http\Controllers\UserController;
+use Illuminate\Foundation\Testing\WithCachedRoutes;
+
+pest()->use(WithCachedRoutes::class);
+
+test('basic example', function () {
+    $this->get(action([UserController::class, 'index']));
+
+    // ...
+});
+```
+
+```php tab=PHPUnit
+<?php
+
+namespace Tests\Feature;
+
+use App\Http\Controllers\UserController;
+use Illuminate\Foundation\Testing\WithCachedRoutes;
+use Tests\TestCase;
+
+class BasicTest extends TestCase
+{
+    use WithCachedRoutes;
+
+    /**
+     * 기본 기능 테스트 예제.
+     */
+    public function test_basic_example(): void
+    {
+        $response = $this->get(action([UserController::class, 'index']));
+
+        // ...
+    }
+}
+```
+
 <a name="available-assertions"></a>
 ## 사용 가능한 Assertions
 
@@ -961,6 +1009,7 @@ Laravel의 `Illuminate\Testing\TestResponse` 클래스는 애플리케이션을 
 
 [assertAccepted](#assert-accepted)
 [assertBadRequest](#assert-bad-request)
+[assertClientError](#assert-client-error)
 [assertConflict](#assert-conflict)
 [assertCookie](#assert-cookie)
 [assertCookieExpired](#assert-cookie-expired)
@@ -976,6 +1025,7 @@ Laravel의 `Illuminate\Testing\TestResponse` 클래스는 애플리케이션을 
 [assertFound](#assert-found)
 [assertGone](#assert-gone)
 [assertHeader](#assert-header)
+[assertHeaderContains](#assert-header-contains)
 [assertHeaderMissing](#assert-header-missing)
 [assertInternalServerError](#assert-internal-server-error)
 [assertJson](#assert-json)
@@ -1004,6 +1054,8 @@ Laravel의 `Illuminate\Testing\TestResponse` 클래스는 애플리케이션을 
 [assertPlainCookie](#assert-plain-cookie)
 [assertRedirect](#assert-redirect)
 [assertRedirectBack](#assert-redirect-back)
+[assertRedirectBackWithErrors](#assert-redirect-back-with-errors)
+[assertRedirectBackWithoutErrors](#assert-redirect-back-without-errors)
 [assertRedirectContains](#assert-redirect-contains)
 [assertRedirectToRoute](#assert-redirect-to-route)
 [assertRedirectToSignedRoute](#assert-redirect-to-signed-route)
@@ -1037,6 +1089,15 @@ Laravel의 `Illuminate\Testing\TestResponse` 클래스는 애플리케이션을 
 
 </div>
 
+<a name="assert-accepted"></a>
+#### assertAccepted
+
+응답이 수락됨(202) HTTP 상태 코드를 가지고 있는지 검증합니다.
+
+```php
+$response->assertAccepted();
+```
+
 <a name="assert-bad-request"></a>
 #### assertBadRequest
 
@@ -1046,13 +1107,13 @@ Laravel의 `Illuminate\Testing\TestResponse` 클래스는 애플리케이션을 
 $response->assertBadRequest();
 ```
 
-<a name="assert-accepted"></a>
-#### assertAccepted
+<a name="assert-client-error"></a>
+#### assertClientError
 
-응답이 수락됨(202) HTTP 상태 코드를 가지고 있는지 검증합니다.
+응답이 클라이언트 오류(>= 400, < 500) HTTP 상태 코드를 가지고 있는지 검증합니다.
 
 ```php
-$response->assertAccepted();
+$response->assertClientError();
 ```
 
 <a name="assert-conflict"></a>
@@ -1196,6 +1257,15 @@ $response->assertGone();
 
 ```php
 $response->assertHeader($headerName, $value = null);
+```
+
+<a name="assert-header-contains"></a>
+#### assertHeaderContains
+
+주어진 헤더에 주어진 부분 문자열 값이 포함되어 있는지 검증합니다.
+
+```php
+$response->assertHeaderContains($headerName, $value);
 ```
 
 <a name="assert-header-missing"></a>
@@ -1549,6 +1619,26 @@ $response->assertRedirect($uri = null);
 
 ```php
 $response->assertRedirectBack();
+```
+
+<a name="assert-redirect-back-with-errors"></a>
+#### assertRedirectBackWithErrors
+
+응답이 이전 페이지로 리다이렉트되며 [세션에 주어진 오류가 있는지](#assert-session-has-errors) 검증합니다.
+
+```php
+$response->assertRedirectBackWithErrors(
+    array $keys = [], $format = null, $errorBag = 'default'
+);
+```
+
+<a name="assert-redirect-back-without-errors"></a>
+#### assertRedirectBackWithoutErrors
+
+응답이 이전 페이지로 리다이렉트되며 세션에 오류 메시지가 없는지 검증합니다.
+
+```php
+$response->assertRedirectBackWithoutErrors();
 ```
 
 <a name="assert-redirect-contains"></a>

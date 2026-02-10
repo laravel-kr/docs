@@ -293,12 +293,12 @@ Recorders\CacheInteractions::class => [
 
 `Exceptions` 레코더는 [예외](#exceptions-card) 카드에 표시하기 위해 애플리케이션에서 발생하는 보고 가능한 예외에 대한 정보를 캡처합니다.
 
-선택적으로 [샘플 레이트](#sampling)와 무시할 예외 패턴을 조정할 수 있습니다. 또한 예외가 발생한 위치를 캡처할지 여부를 설정할 수 있습니다. 캡처된 위치는 Pulse 대시보드에 표시되어 예외 원인을 추적하는 데 도움이 될 수 있습니다. 그러나 동일한 예외가 여러 위치에서 발생하면 각 고유 위치에 대해 여러 번 나타납니다.
+선택적으로 [샘플 레이트](#sampling)와 무시할 예외(exception) 패턴을 조정할 수 있습니다. 또한 예외가 발생한 위치를 캡처할지 여부를 설정할 수 있습니다. 캡처된 위치는 Pulse 대시보드에 표시되어 예외 원인을 추적하는 데 도움이 될 수 있습니다. 그러나 동일한 예외가 여러 위치에서 발생하면 각 고유 위치에 대해 여러 번 나타납니다.
 
 <a name="queues-recorder"></a>
 #### 큐
 
-`Queues` 레코더는 [큐](#queues-card) 카드에 표시하기 위해 애플리케이션 큐에 대한 정보를 캡처합니다.
+`Queues` 레코더는 [큐](#queues-card) 카드에 표시하기 위해 애플리케이션의 큐에 대한 정보를 캡처합니다.
 
 선택적으로 [샘플 레이트](#sampling)와 무시할 작업(Job) 패턴을 조정할 수 있습니다.
 
@@ -486,6 +486,9 @@ Pulse는 기본적으로 기본 [Redis 연결](/docs/{{version}}/redis#configura
 PULSE_REDIS_CONNECTION=pulse
 ```
 
+> [!WARNING]
+> Redis 인제스트 드라이버를 사용할 때, Pulse 설치는 해당하는 경우 Redis 기반 큐와 항상 다른 Redis 연결을 사용해야 합니다.
+
 Redis 인제스트를 사용할 때는 스트림을 모니터링하고 Redis에서 Pulse의 데이터베이스 테이블로 엔트리를 이동하기 위해 `pulse:work` 명령어를 실행해야 합니다.
 
 ```php
@@ -647,31 +650,24 @@ class TopSellers extends Card
 <a name="custom-card-styling-tailwind"></a>
 #### Tailwind CSS
 
-Tailwind CSS를 사용할 때는 불필요한 CSS 로딩이나 Pulse의 Tailwind 클래스와의 충돌을 방지하기 위해 전용 Tailwind 설정 파일을 생성해야 합니다.
-
-```js
-export default {
-    darkMode: 'class',
-    important: '#top-sellers',
-    content: [
-        './resources/views/livewire/pulse/top-sellers.blade.php',
-    ],
-    corePlugins: {
-        preflight: false,
-    },
-};
-```
-
-그런 다음 CSS 엔트리포인트에서 설정 파일을 지정할 수 있습니다.
+Tailwind CSS를 사용할 때는 전용 CSS 엔트리포인트를 생성해야 합니다. 다음 예제는 Pulse에서 이미 포함된 Tailwind의 [Preflight](https://tailwindcss.com/docs/preflight) 기본 스타일을 제외하고, Pulse의 Tailwind 클래스와의 충돌을 방지하기 위해 CSS 셀렉터를 사용하여 Tailwind의 범위를 지정합니다.
 
 ```css
-@config "../../tailwind.top-sellers.config.js";
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss/theme.css";
+
+@custom-variant dark (&:where(.dark, .dark *));
+@source "./../../views/livewire/pulse/top-sellers.blade.php";
+
+@theme {
+  /* ... */
+}
+
+#top-sellers {
+  @import "tailwindcss/utilities.css" source(none);
+}
 ```
 
-또한 Tailwind의 [important 셀렉터 전략](https://tailwindcss.com/docs/configuration#selector-strategy)에 전달된 셀렉터와 일치하는 `id` 또는 `class` 속성을 카드 뷰에 포함해야 합니다.
+또한 엔트리포인트의 CSS 셀렉터와 일치하는 `id` 또는 `class` 속성을 카드 뷰에 포함해야 합니다.
 
 ```blade
 <x-pulse::card id="top-sellers" :cols="$cols" :rows="$rows" class="$class">

@@ -1040,8 +1040,10 @@ The credit card number field is required when payment type is credit card.
 [Array](#rule-array)
 [Between](#rule-between)
 [Contains](#rule-contains)
+[Doesnt Contain](#rule-doesnt-contain)
 [Distinct](#rule-distinct)
 [In Array](#rule-in-array)
+[In Array Keys](#rule-in-array-keys)
 [List](#rule-list)
 [Max](#rule-max)
 [Min](#rule-min)
@@ -1071,6 +1073,7 @@ The credit card number field is required when payment type is credit card.
 
 [Between](#rule-between)
 [Dimensions](#rule-dimensions)
+[Encoding](#rule-encoding)
 [Extensions](#rule-extensions)
 [File](#rule-file)
 [Image](#rule-image)
@@ -1174,7 +1177,7 @@ use Illuminate\Validation\Rule;
 ],
 ```
 
-`afterToday`와 `todayOrAfter` 메서드를 사용하면 날짜가 오늘 이후이거나 오늘 또는 그 이후임을 플루언트하게 표현할 수 있습니다:
+`afterToday`와 `todayOrAfter` 메서드를 사용하면 날짜가 오늘 이후여야 하거나, 오늘 또는 그 이후여야 함을 각각 플루언트하게 표현할 수 있습니다:
 
 ```php
 'start_date' => [
@@ -1308,7 +1311,7 @@ use Illuminate\Validation\Rule;
 ],
 ```
 
-`beforeToday`와 `todayOrBefore` 메서드를 사용하면 날짜가 오늘 이전이거나 오늘 또는 그 이전임을 플루언트하게 표현할 수 있습니다:
+`beforeToday`와 `todayOrBefore` 메서드를 사용하면 날짜가 오늘 이전이어야 하거나, 오늘 또는 그 이전이어야 함을 각각 플루언트하게 표현할 수 있습니다:
 
 ```php
 'start_date' => [
@@ -1343,6 +1346,12 @@ use Illuminate\Validation\Rule;
 
 유효성 검사 중인 필드는 불리언(boolean)으로 캐스팅할 수 있어야 합니다. 허용되는 입력은 `true`, `false`, `1`, `0`, `"1"`, `"0"`입니다.
 
+`strict` 매개변수를 사용하면 값이 `true` 또는 `false`일 때만 유효한 것으로 간주할 수 있습니다.
+
+```php
+'foo' => 'boolean:strict'
+```
+
 <a name="rule-confirmed"></a>
 #### confirmed
 
@@ -1353,7 +1362,38 @@ use Illuminate\Validation\Rule;
 <a name="rule-contains"></a>
 #### contains:_foo_,_bar_,...
 
-유효성 검사 중인 필드는 주어진 모든 매개변수 값을 포함하는 배열이어야 합니다.
+유효성 검사 중인 필드는 주어진 모든 매개변수 값을 포함하는 배열이어야 합니다. 이 규칙은 종종 배열을 `implode`해야 하므로, `Rule::contains` 메서드를 사용하여 규칙을 플루언트하게 구성할 수 있습니다.
+
+```php
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule;
+
+Validator::make($data, [
+    'roles' => [
+        'required',
+        'array',
+        Rule::contains(['admin', 'editor']),
+    ],
+]);
+```
+
+<a name="rule-doesnt-contain"></a>
+#### doesnt_contain:_foo_,_bar_,...
+
+유효성 검사 중인 필드는 주어진 매개변수 값을 포함하지 않는 배열이어야 합니다. 이 규칙은 종종 배열을 `implode`해야 하므로, `Rule::doesntContain` 메서드를 사용하여 규칙을 플루언트하게 구성할 수 있습니다.
+
+```php
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule;
+
+Validator::make($data, [
+    'roles' => [
+        'required',
+        'array',
+        Rule::doesntContain(['admin', 'editor']),
+    ],
+]);
+```
 
 <a name="rule-current-password"></a>
 #### current_password
@@ -1426,7 +1466,7 @@ use Illuminate\Validation\Rule;
 <a name="rule-digits-between"></a>
 #### digits_between:_min_,_max_
 
-유효성 검사 중인 정수는 주어진 _min_과 _max_ 사이의 길이를 가져야 합니다.
+유효성 검사 대상 정수는 주어진 _min_과 _max_ 사이의 길이를 가져야 합니다.
 
 <a name="rule-dimensions"></a>
 #### dimensions
@@ -1533,6 +1573,24 @@ $request->validate([
 > [!WARNING]
 > `dns`와 `spoof` 유효성 검사기는 PHP `intl` 확장을 필요로 합니다.
 
+<a name="rule-encoding"></a>
+#### encoding:*encoding_type*
+
+유효성 검사 대상 필드는 지정된 문자 인코딩(character encoding)과 일치해야 합니다. 이 규칙은 PHP의 `mb_check_encoding` 함수를 사용하여 주어진 파일 또는 문자열 값의 인코딩을 확인합니다. 편의를 위해, `encoding` 규칙은 Laravel의 플루언트(fluent) 파일 규칙 빌더를 사용하여 구성할 수 있습니다.
+
+```php
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rules\File;
+
+Validator::validate($input, [
+    'attachment' => [
+        'required',
+        File::types(['csv'])
+            ->encoding('utf-8'),
+    ],
+]);
+```
+
 <a name="rule-ends-with"></a>
 #### ends_with:_foo_,_bar_,...
 
@@ -1541,7 +1599,7 @@ $request->validate([
 <a name="rule-enum"></a>
 #### enum
 
-`Enum` 규칙은 유효성 검사 대상 필드에 유효한 enum 값이 포함되어 있는지 검증하는 클래스 기반 규칙입니다. `Enum` 규칙은 생성자 인수로 enum의 이름만 받습니다. 기본 값(primitive values)을 검증할 때는 backed Enum을 `Enum` 규칙에 제공해야 합니다.
+`Enum` 규칙은 유효성 검사 대상 필드에 유효한 enum 값이 포함되어 있는지 검증하는 클래스 기반(class-based) 규칙입니다. `Enum` 규칙은 생성자 인수로 enum의 이름만 받습니다. 기본 값(primitive values)을 검증할 때는 backed Enum을 `Enum` 규칙에 제공해야 합니다.
 
 ```php
 use App\Enums\ServerStatus;
@@ -1768,10 +1826,25 @@ Validator::make($input, [
 
 유효성 검사 대상 필드는 _anotherfield_의 값에 존재해야 합니다.
 
+<a name="rule-in-array-keys"></a>
+#### in_array_keys:_value_.*
+
+유효성 검사 대상 필드는 배열이어야 하며, 주어진 _값_ 중 하나 이상을 배열 내의 키로 포함해야 합니다.
+
+```php
+'config' => 'array|in_array_keys:timezone'
+```
+
 <a name="rule-integer"></a>
 #### integer
 
 유효성 검사 대상 필드는 정수여야 합니다.
+
+`strict` 매개변수를 사용하면 필드의 타입이 `integer`일 때만 유효한 것으로 간주할 수 있습니다. 정수 값을 가진 문자열은 유효하지 않은 것으로 처리됩니다.
+
+```php
+'age' => 'integer:strict'
+```
 
 > [!WARNING]
 > 이 유효성 검사 규칙은 입력이 "integer" 변수 타입인지 확인하지 않으며, PHP의 `FILTER_VALIDATE_INT` 규칙에서 허용하는 타입인지만 확인합니다. 입력이 숫자인지 확인해야 하는 경우 이 규칙을 [`numeric` 유효성 검사 규칙](#rule-numeric)과 함께 사용하세요.
@@ -1935,6 +2008,12 @@ Validator::make($data, [
 #### numeric
 
 유효성 검사 대상 필드는 [숫자](https://www.php.net/manual/en/function.is-numeric.php)여야 합니다.
+
+`strict` 매개변수를 사용하면 필드의 값이 정수(integer) 또는 부동 소수점(float) 타입일 때만 유효한 것으로 간주할 수 있습니다. 숫자 문자열은 유효하지 않은 것으로 처리됩니다.
+
+```php
+'amount' => 'numeric:strict'
+```
 
 <a name="rule-present"></a>
 #### present
@@ -2446,8 +2525,8 @@ $validator = Validator::make($request->all(), [
 
 ```php
 $validator = Validator::make($request->all(), [
-    'person.*.email' => 'email|unique:users',
-    'person.*.first_name' => 'required_with:person.*.last_name',
+    'users.*.email' => 'email|unique:users',
+    'users.*.first_name' => 'required_with:users.*.last_name',
 ]);
 ```
 
@@ -2455,8 +2534,8 @@ $validator = Validator::make($request->all(), [
 
 ```php
 'custom' => [
-    'person.*.email' => [
-        'unique' => 'Each person must have a unique email address',
+    'users.*.email' => [
+        'unique' => 'Each user must have a unique email address',
     ]
 ],
 ```
@@ -2484,7 +2563,7 @@ $validator = Validator::make($request->all(), [
 <a name="error-message-indexes-and-positions"></a>
 ### 오류 메시지 인덱스 및 위치
 
-배열의 유효성을 검사할 때, 애플리케이션에서 표시하는 오류 메시지 내에서 유효성 검사에 실패한 특정 항목의 인덱스 또는 위치를 참조하고 싶을 수 있습니다. 이를 위해 [사용자 지정 유효성 검사 메시지](#manual-customizing-the-error-messages) 내에 `:index`(`0`부터 시작) 및 `:position`(`1`부터 시작) 플레이스홀더를 포함할 수 있습니다.
+배열의 유효성을 검사할 때, 애플리케이션에서 표시하는 오류 메시지 내에서 유효성 검사에 실패한 특정 항목의 인덱스 또는 위치를 참조하고 싶을 수 있습니다. 이를 위해 [사용자 지정 유효성 검사 메시지](#manual-customizing-the-error-messages) 내에 `:index`(`0`부터 시작), `:position`(`1`부터 시작), 또는 `:ordinal-position`(`1st`부터 시작) 플레이스홀더를 포함할 수 있습니다.
 
 ```php
 use Illuminate\Support\Facades\Validator;

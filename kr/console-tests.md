@@ -203,7 +203,7 @@ $this->artisan('users:all')
 
 use Illuminate\Foundation\Testing\WithConsoleEvents;
 
-uses(WithConsoleEvents::class);
+pest()->use(WithConsoleEvents::class);
 
 // ...
 ```

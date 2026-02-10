@@ -21,7 +21,7 @@ Laravel은 데이터베이스 기반 애플리케이션을 쉽게 테스트할 �
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
-uses(RefreshDatabase::class);
+pest()->use(RefreshDatabase::class);
 
 test('basic example', function () {
     $response = $this->get('/');
@@ -98,7 +98,7 @@ use Database\Seeders\OrderStatusSeeder;
 use Database\Seeders\TransactionStatusSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
-uses(RefreshDatabase::class);
+pest()->use(RefreshDatabase::class);
 
 test('orders can be created', function () {
     // DatabaseSeeder 실행...
@@ -254,7 +254,7 @@ $this->assertNotSoftDeleted($user);
 <a name="assert-model-exists"></a>
 #### assertModelExists
 
-주어진 모델이 데이터베이스에 존재하는지 확인합니다.
+주어진 모델 또는 모델 컬렉션이 데이터베이스에 존재하는지 확인합니다.
 
 ```php
 use App\Models\User;
@@ -267,7 +267,7 @@ $this->assertModelExists($user);
 <a name="assert-model-missing"></a>
 #### assertModelMissing
 
-주어진 모델이 데이터베이스에 존재하지 않는지 확인합니다.
+주어진 모델 또는 모델 컬렉션이 데이터베이스에 존재하지 않는지 확인합니다.
 
 ```php
 use App\Models\User;

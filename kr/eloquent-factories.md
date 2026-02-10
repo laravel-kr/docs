@@ -95,7 +95,20 @@ php artisan make:factory PostFactory
 
 팩토리를 정의한 후에는 해당 모델에 대한 팩토리 인스턴스를 생성하기 위해 `Illuminate\Database\Eloquent\Factories\HasFactory` 트레이트가 모델에 제공하는 정적 `factory` 메서드를 사용할 수 있습니다.
 
-`HasFactory` 트레이트의 `factory` 메서드는 규칙을 사용하여 트레이트가 할당된 모델에 대한 적절한 팩토리를 결정합니다. 구체적으로, 이 메서드는 `Database\Factories` 네임스페이스에서 모델 이름과 일치하고 `Factory`로 끝나는 클래스 이름을 가진 팩토리를 찾습니다. 이러한 규칙이 특정 애플리케이션이나 팩토리에 적용되지 않는 경우, 모델에서 `newFactory` 메서드를 오버라이드하여 모델의 해당 팩토리 인스턴스를 직접 반환할 수 있습니다.
+`HasFactory` 트레이트의 `factory` 메서드는 규칙을 사용하여 트레이트가 할당된 모델에 대한 적절한 팩토리를 결정합니다. 구체적으로, 이 메서드는 `Database\Factories` 네임스페이스에서 모델 이름과 일치하고 `Factory`로 끝나는 클래스 이름을 가진 팩토리를 찾습니다. 이러한 규칙이 특정 애플리케이션이나 팩토리에 적용되지 않는 경우, 모델에 `UseFactory` 속성(attribute)을 추가하여 모델의 팩토리를 수동으로 지정할 수 있습니다.
+
+```php
+use Illuminate\Database\Eloquent\Attributes\UseFactory;
+use Database\Factories\Administration\FlightFactory;
+
+#[UseFactory(FlightFactory::class)]
+class Flight extends Model
+{
+    // ...
+}
+```
+
+또는 모델에서 `newFactory` 메서드를 오버라이드하여 모델의 해당 팩토리 인스턴스를 직접 반환할 수 있습니다.
 
 ```php
 use Database\Factories\Administration\FlightFactory;
@@ -319,12 +332,14 @@ $users = User::factory()
     ->create();
 ```
 
-시퀀스 클로저 내에서 클로저에 주입된 시퀀스 인스턴스의 `$index` 또는 `$count` 속성에 접근할 수 있습니다. `$index` 속성은 지금까지 발생한 시퀀스 반복 횟수를 포함하고, `$count` 속성은 시퀀스가 호출될 총 횟수를 포함합니다.
+시퀀스 클로저 내에서 클로저에 주입된 시퀀스 인스턴스의 `$index` 속성에 접근할 수 있습니다. `$index` 속성은 지금까지 발생한 시퀀스 반복 횟수를 포함합니다.
 
 ```php
 $users = User::factory()
     ->count(10)
-    ->sequence(fn (Sequence $sequence) => ['name' => 'Name '.$sequence->index])
+    ->state(new Sequence(
+        fn (Sequence $sequence) => ['name' => 'Name '.$sequence->index],
+    ))
     ->create();
 ```
 
@@ -375,7 +390,7 @@ $user = User::factory()
             ->state(function (array $attributes, User $user) {
                 return ['user_type' => $user->type];
             })
-        )
+    )
     ->create();
 ```
 
@@ -503,7 +518,7 @@ $user = User::factory()
 ```php
 $roles = Role::factory()->count(3)->create();
 
-$user = User::factory()
+$users = User::factory()
     ->count(3)
     ->hasAttached($roles, ['active' => true])
     ->create();
@@ -553,7 +568,7 @@ $comments = Comment::factory()->count(3)->for(
 use App\Models\Tag;
 use App\Models\Video;
 
-$videos = Video::factory()
+$video = Video::factory()
     ->hasAttached(
         Tag::factory()->count(3),
         ['public' => true]
@@ -564,7 +579,7 @@ $videos = Video::factory()
 물론, 다형성 "다대다" 관계를 생성하기 위해 매직 `has` 메서드도 사용할 수 있습니다.
 
 ```php
-$videos = Video::factory()
+$video = Video::factory()
     ->hasTags(3, ['public' => true])
     ->create();
 ```

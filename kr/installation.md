@@ -13,6 +13,8 @@
     - [macOS에서 Herd 사용하기](#herd-on-macos)
     - [Windows에서 Herd 사용하기](#herd-on-windows)
 - [IDE 지원](#ide-support)
+- [Laravel과 AI](#laravel-and-ai)
+    - [Laravel Boost 설치하기](#installing-laravel-boost)
 - [다음 단계](#next-steps)
     - [풀스택 프레임워크로서의 Laravel](#laravel-the-fullstack-framework)
     - [API 백엔드로서의 Laravel](#laravel-the-api-backend)
@@ -35,13 +37,21 @@ PHP 웹 프레임워크를 처음 접하시든 수년간의 경험이 있으시�
 
 우리는 Laravel을 "점진적인" 프레임워크라고 부르고 싶습니다. 이는 Laravel이 여러분과 함께 성장한다는 것을 의미합니다. 웹 개발의 첫 발을 막 내딛는 중이라면, Laravel의 방대한 문서 라이브러리, 가이드, [비디오 튜토리얼](https://laracasts.com)이 부담스럽지 않게 기초를 배울 수 있도록 도와줄 것입니다.
 
-시니어 개발자라면, Laravel은 [의존성 주입](/docs/{{version}}/container), [단위 테스트](/docs/{{version}}/testing), [큐](/docs/{{version}}/queues), [실시간 이벤트](/docs/{{version}}/broadcasting) 등을 위한 강력한 도구를 제공합니다. Laravel은 전문적인 웹 애플리케이션 구축에 최적화되어 있으며, 엔터프라이즈급 작업 부하를 처리할 준비가 되어 있습니다.
+시니어 개발자라면, Laravel은 [의존성 주입](/docs/{{version}}/container), [단위 테스트](/docs/{{version}}/testing), [큐](/docs/{{version}}/queues), [실시간 이벤트](/docs/{{version}}/broadcasting) 등을 위한 강력한 도구를 제공합니다. Laravel은 전문적인 웹 애플리케이션 구축에 최적화되어 있으며, 엔터프라이즈급 워크로드를 처리할 준비가 되어 있습니다.
 
 #### 확장 가능한 프레임워크
 
 Laravel은 놀라울 정도로 확장 가능합니다. PHP의 확장 친화적인 특성과 Redis와 같은 빠른 분산 캐시 시스템에 대한 Laravel의 내장 지원 덕분에, Laravel을 사용한 수평적 확장은 매우 쉽습니다. 실제로 Laravel 애플리케이션은 월간 수억 건의 요청을 처리할 수 있도록 쉽게 확장되었습니다.
 
 극한의 확장이 필요하신가요? [Laravel Cloud](https://cloud.laravel.com)와 같은 플랫폼을 사용하면 거의 무제한적인 규모로 Laravel 애플리케이션을 실행할 수 있습니다.
+
+#### 에이전트 레디 프레임워크(Agent Ready Framework)
+
+Laravel의 의견이 반영된 규칙과 잘 정의된 구조는 Cursor나 Claude Code와 같은 도구를 사용한 [AI 지원 개발](/docs/{{version}}/ai)에 이상적인 프레임워크입니다. AI 에이전트에게 컨트롤러를 추가하라고 요청하면, 정확히 어디에 배치해야 하는지 알고 있습니다. 새로운 마이그레이션이 필요할 때, 이름 규칙과 파일 위치가 예측 가능합니다. 이러한 일관성은 더 유연한 프레임워크에서 AI 도구가 종종 겪는 혼란을 제거합니다.
+
+파일 구성을 넘어서, Laravel의 표현력 있는 문법과 포괄적인 문서는 AI 에이전트에게 정확하고 관용적인 코드를 생성하는 데 필요한 컨텍스트를 제공합니다. Eloquent 관계, 폼 리퀘스트, 미들웨어와 같은 기능은 에이전트가 안정적으로 이해하고 재현할 수 있는 패턴을 따릅니다. 그 결과, AI가 생성한 코드는 일반적인 PHP 스니펫을 짜맞춘 것이 아니라 숙련된 Laravel 개발자가 작성한 것처럼 보입니다.
+
+Laravel이 AI 지원 개발에 완벽한 선택인 이유에 대해 더 알아보려면 [에이전트 개발](/docs/{{version}}/ai) 문서를 확인하세요.
 
 #### 커뮤니티 프레임워크
 
@@ -205,11 +215,47 @@ Herd에 대해 더 자세히 알아보려면 [Windows용 Herd 문서](https://he
 <a name="ide-support"></a>
 ## IDE 지원
 
-Laravel 애플리케이션을 개발할 때 원하는 코드 에디터를 자유롭게 사용할 수 있습니다. 그러나 [PhpStorm](https://www.jetbrains.com/phpstorm/laravel/)은 [Laravel Pint](https://www.jetbrains.com/help/phpstorm/using-laravel-pint.html)를 포함하여 Laravel과 그 생태계에 대한 광범위한 지원을 제공합니다.
+Laravel 애플리케이션을 개발할 때 원하는 코드 에디터를 자유롭게 사용할 수 있습니다. 가볍고 확장 가능한 에디터를 찾고 있다면, [VS Code](https://code.visualstudio.com)나 [Cursor](https://cursor.com)에 공식 [Laravel VS Code 확장](https://marketplace.visualstudio.com/items?itemName=laravel.vscode-laravel)을 함께 사용하면 구문 하이라이팅, 스니펫, Artisan 명령어 통합, Eloquent 모델, 라우트, 미들웨어, 에셋, 설정, Inertia.js에 대한 스마트 자동 완성 등 탁월한 Laravel 지원을 제공합니다.
 
-또한, 커뮤니티에서 유지 관리하는 [Laravel Idea](https://laravel-idea.com/) PhpStorm 플러그인은 코드 생성, Eloquent 문법 완성, 유효성 검사 규칙 완성 등 다양한 유용한 IDE 기능을 제공합니다.
+Laravel에 대한 광범위하고 강력한 지원을 원한다면, JetBrains IDE인 [PhpStorm](https://www.jetbrains.com/phpstorm/laravel/?utm_source=laravel.com&utm_medium=link&utm_campaign=laravel-2025&utm_content=partner&ref=laravel-2025)을 살펴보세요. PhpStorm의 내장 Laravel 프레임워크 지원에는 Blade 템플릿, Eloquent 모델, 라우트, 뷰, 번역, 컴포넌트에 대한 스마트 자동 완성과 Laravel 프로젝트 전반에 걸친 강력한 코드 생성 및 네비게이션이 포함되어 있습니다.
 
-[Visual Studio Code (VS Code)](https://code.visualstudio.com)에서 개발하는 경우, 이제 공식 [Laravel VS Code 확장](https://marketplace.visualstudio.com/items?itemName=laravel.vscode-laravel)을 사용할 수 있습니다. 이 확장은 Laravel 전용 도구를 VS Code 환경에 직접 가져와 생산성을 향상시킵니다.
+클라우드 기반 개발 경험을 원하시는 분들을 위해, [Firebase Studio](https://firebase.studio/)는 브라우저에서 직접 Laravel로 빌드할 수 있는 즉각적인 접근을 제공합니다. 별도의 설정 없이 Firebase Studio를 사용하면 어떤 디바이스에서든 Laravel 애플리케이션을 쉽게 시작할 수 있습니다.
+
+<a name="laravel-and-ai"></a>
+## Laravel과 AI
+
+[Laravel Boost](https://github.com/laravel/boost)는 AI 코딩 에이전트와 Laravel 애플리케이션 사이의 격차를 해소하는 강력한 도구입니다. Boost는 AI 에이전트에게 Laravel 전용 컨텍스트, 도구, 가이드라인을 제공하여 Laravel 규칙을 따르는 더 정확한 버전별 코드를 생성할 수 있게 합니다.
+
+Laravel 애플리케이션에 Boost를 설치하면, AI 에이전트는 사용 중인 패키지 확인, 데이터베이스 쿼리, Laravel 문서 검색, 브라우저 로그 읽기, 테스트 생성, Tinker를 통한 코드 실행 등 15가지 이상의 전문 도구에 접근할 수 있게 됩니다.
+
+또한, Boost는 AI 에이전트에게 설치된 패키지 버전에 맞는 17,000개 이상의 벡터화된 Laravel 생태계 문서에 대한 접근을 제공합니다. 이는 에이전트가 프로젝트에서 사용하는 정확한 버전에 맞춘 가이드를 제공할 수 있음을 의미합니다.
+
+Boost에는 또한 에이전트가 프레임워크 규칙을 따르고, 적절한 테스트를 작성하며, Laravel 코드를 생성할 때 일반적인 함정을 피하도록 돕는 Laravel에서 관리하는 AI 가이드라인이 포함되어 있습니다.
+
+<a name="installing-laravel-boost"></a>
+### Laravel Boost 설치하기
+
+Boost는 PHP 8.1 이상을 실행하는 Laravel 10, 11, 12 애플리케이션에 설치할 수 있습니다. 시작하려면 Boost를 개발 의존성으로 설치하세요:
+
+```shell
+composer require laravel/boost --dev
+```
+
+설치 후, 대화형 설치 프로그램을 실행하세요:
+
+```shell
+php artisan boost:install
+```
+
+설치 프로그램은 IDE와 AI 에이전트를 자동으로 감지하여 프로젝트에 적합한 기능을 선택할 수 있게 합니다. Boost는 기존 프로젝트 규칙을 존중하며 기본적으로 강제적인 스타일 규칙을 적용하지 않습니다.
+
+> [!NOTE]
+> Boost에 대해 더 알아보려면 [GitHub의 Laravel Boost 저장소](https://github.com/laravel/boost)를 확인하세요.
+
+<a name="adding-custom-ai-guidelines"></a>
+#### 커스텀 AI 가이드라인 추가하기
+
+Laravel Boost에 커스텀 AI 가이드라인을 추가하려면 애플리케이션의 `.ai/guidelines/*` 디렉토리에 `.blade.php` 또는 `.md` 파일을 추가하세요. 이 파일들은 `boost:install`을 실행할 때 Laravel Boost의 가이드라인에 자동으로 포함됩니다.
 
 <a name="next-steps"></a>
 ## 다음 단계

@@ -50,7 +50,7 @@ use Illuminate\Contracts\Redis\Factory;
 class CacheOrderInformation
 {
     /**
-     * 새로운 이벤트 핸들러 인스턴스를 생성합니다.
+     * 이벤트 리스너를 생성합니다.
      */
     public function __construct(
         protected Factory $redis,

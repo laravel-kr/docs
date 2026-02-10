@@ -92,7 +92,7 @@ php artisan migrate
 <a name="paddle-sandbox"></a>
 ### Paddle 샌드박스
 
-로컬 및 스테이징 개발 중에는 [Paddle 샌드박스 계정을 등록](https://sandbox-login.paddle.com/signup)해야 합니다. 이 계정은 실제 결제 없이 애플리케이션을 테스트하고 개발할 수 있는 샌드박스 환경을 제공합니다. Paddle의 [테스트 카드 번호](https://developer.paddle.com/concepts/payment-methods/credit-debit-card)를 사용하여 다양한 결제 시나리오를 시뮬레이션할 수 있습니다.
+로컬 및 스테이징 개발 중에는 [Paddle 샌드박스 계정을 등록](https://sandbox-login.paddle.com/signup)해야 합니다. 이 계정은 실제 결제 없이 애플리케이션을 테스트하고 개발할 수 있는 샌드박스 환경을 제공합니다. Paddle의 [테스트 카드 번호](https://developer.paddle.com/concepts/payment-methods/credit-debit-card#test-payment-method)를 사용하여 다양한 결제 시나리오를 시뮬레이션할 수 있습니다.
 
 Paddle 샌드박스 환경을 사용할 때는 애플리케이션의 `.env` 파일에서 `PADDLE_SANDBOX` 환경 변수를 `true`로 설정해야 합니다.
 
@@ -146,7 +146,7 @@ PADDLE_SANDBOX=true
 
 [Paddle의 샌드박스 환경](#paddle-sandbox)을 사용할 때는 `PADDLE_SANDBOX` 환경 변수를 `true`로 설정해야 합니다. 애플리케이션을 프로덕션에 배포하고 Paddle의 실제 벤더 환경을 사용하는 경우 `PADDLE_SANDBOX` 변수는 `false`로 설정해야 합니다.
 
-`PADDLE_RETAIN_KEY`는 선택 사항이며 [Retain](https://developer.paddle.com/paddlejs/retain)과 함께 Paddle을 사용하는 경우에만 설정해야 합니다.
+`PADDLE_RETAIN_KEY`는 선택 사항이며 [Retain](https://developer.paddle.com/concepts/retain/overview)과 함께 Paddle을 사용하는 경우에만 설정해야 합니다.
 
 <a name="paddle-js"></a>
 ### Paddle JS
@@ -212,7 +212,7 @@ public function boot(): void
 > [!NOTE]
 > Paddle 결제를 사용하기 전에 Paddle 대시보드에서 고정 가격이 있는 제품을 정의해야 합니다. 또한 [Paddle의 웹훅 처리를 구성](#handling-paddle-webhooks)해야 합니다.
 
-애플리케이션을 통해 제품 및 구독 결제를 제공하는 것은 어려울 수 있습니다. 그러나 Cashier와 [Paddle의 결제 오버레이](https://www.paddle.com/billing/checkout) 덕분에 현대적이고 강력한 결제 통합을 쉽게 구축할 수 있습니다.
+애플리케이션을 통해 제품 및 구독 결제를 제공하는 것은 어려울 수 있습니다. 그러나 Cashier와 [Paddle의 결제 오버레이](https://developer.paddle.com/concepts/sell/overlay-checkout) 덕분에 현대적이고 강력한 결제 통합을 쉽게 구축할 수 있습니다.
 
 반복되지 않는 일회성 제품에 대해 고객에게 청구하려면 Cashier를 사용하여 Paddle의 결제 오버레이로 고객에게 청구합니다. 여기서 고객은 결제 세부 정보를 제공하고 구매를 확인합니다. 결제 오버레이를 통해 결제가 완료되면 고객은 애플리케이션 내에서 선택한 성공 URL로 리디렉션됩니다.
 
@@ -318,9 +318,9 @@ class CompleteOrder
 > [!NOTE]
 > Paddle 결제를 사용하기 전에 Paddle 대시보드에서 고정 가격이 있는 제품을 정의해야 합니다. 또한 [Paddle의 웹훅 처리를 구성](#handling-paddle-webhooks)해야 합니다.
 
-애플리케이션을 통해 제품 및 구독 결제를 제공하는 것은 어려울 수 있습니다. 그러나 Cashier와 [Paddle의 결제 오버레이](https://www.paddle.com/billing/checkout) 덕분에 현대적이고 강력한 결제 통합을 쉽게 구축할 수 있습니다.
+애플리케이션을 통해 제품 및 구독 결제를 제공하는 것은 어려울 수 있습니다. 그러나 Cashier와 [Paddle의 결제 오버레이](https://developer.paddle.com/concepts/sell/overlay-checkout) 덕분에 현대적이고 강력한 결제 통합을 쉽게 구축할 수 있습니다.
 
-Cashier와 Paddle의 결제 오버레이를 사용하여 구독을 판매하는 방법을 알아보기 위해 기본 월간(`price_basic_monthly`) 및 연간(`price_basic_yearly`) 플랜이 있는 구독 서비스의 간단한 시나리오를 고려해 보겠습니다. 이 두 가격은 Paddle 대시보드에서 "Basic" 제품(`pro_basic`) 아래에 그룹화될 수 있습니다. 또한 구독 서비스는 Expert 플랜을 `pro_expert`로 제공할 수 있습니다.
+Cashier와 Paddle의 결제 오버레이를 사용하여 구독을 판매하는 방법을 알아보기 위해 기본 월간(`price_basic_monthly`) 및 연간(`price_basic_yearly`) 플랜이 있는 구독 서비스의 간단한 시나리오를 고려해 보겠습니다. 이 두 가격은 Paddle 대시보드에서 "Basic" 제품(`pro_basic`) 아래에 그룹화될 수 있습니다. 또한 구독 서비스는 "Expert" 플랜을 `pro_expert`로 제공할 수 있습니다.
 
 먼저 고객이 서비스에 구독하는 방법을 살펴보겠습니다. 물론 고객이 애플리케이션의 가격 페이지에서 Basic 플랜의 "구독" 버튼을 클릭할 수 있다고 상상할 수 있습니다. 이 버튼은 선택한 플랜에 대한 Paddle 결제 오버레이를 호출합니다. 시작하려면 `checkout` 메서드를 통해 결제 세션을 시작합니다.
 
@@ -1150,13 +1150,13 @@ $user->subscription()->pauseNow();
 `pauseUntil` 메서드를 사용하여 특정 시점까지 구독을 일시 정지할 수 있습니다.
 
 ```php
-$user->subscription()->pauseUntil(now()->addMonth());
+$user->subscription()->pauseUntil(now()->plus(months: 1));
 ```
 
 또는 `pauseNowUntil` 메서드를 사용하여 주어진 시점까지 구독을 즉시 일시 정지할 수 있습니다.
 
 ```php
-$user->subscription()->pauseNowUntil(now()->addMonth());
+$user->subscription()->pauseNowUntil(now()->plus(months: 1));
 ```
 
 `onPausedGracePeriod` 메서드를 사용하여 사용자가 구독을 일시 정지했지만 여전히 "유예 기간" 중인지 확인할 수 있습니다.
@@ -1276,7 +1276,7 @@ $user = User::create([
 ]);
 
 $user->createAsCustomer([
-    'trial_ends_at' => now()->addDays(10)
+    'trial_ends_at' => now()->plus(days: 10)
 ]);
 ```
 
@@ -1324,7 +1324,7 @@ if ($user->onGenericTrial()) {
 `extendTrial` 메서드를 호출하고 체험이 종료되어야 하는 시점을 지정하여 구독의 기존 체험 기간을 연장할 수 있습니다.
 
 ```php
-$user->subscription()->extendTrial(now()->addDays(5));
+$user->subscription()->extendTrial(now()->plus(days: 5));
 ```
 
 또는 구독에서 `activate` 메서드를 호출하여 체험을 종료하고 구독을 즉시 활성화할 수 있습니다.
@@ -1340,7 +1340,7 @@ Paddle은 웹훅을 통해 다양한 이벤트를 애플리케이션에 알릴 �
 
 기본적으로 이 컨트롤러는 실패한 청구가 너무 많은 구독 취소, 구독 업데이트 및 결제 수단 변경을 자동으로 처리합니다. 그러나 곧 알게 되겠지만 이 컨트롤러를 확장하여 원하는 Paddle 웹훅 이벤트를 처리할 수 있습니다.
 
-애플리케이션이 Paddle 웹훅을 처리할 수 있도록 [Paddle 제어판에서 웹훅 URL을 구성](https://vendors.paddle.com/alerts-webhooks)해야 합니다. 기본적으로 Cashier의 웹훅 컨트롤러는 `/paddle/webhook` URL 경로에 응답합니다. Paddle 제어판에서 활성화해야 하는 모든 웹훅의 전체 목록은 다음과 같습니다.
+애플리케이션이 Paddle 웹훅을 처리할 수 있도록 [Paddle 제어판에서 웹훅 URL을 구성](https://vendors.paddle.com/notifications-v2)해야 합니다. 기본적으로 Cashier의 웹훅 컨트롤러는 `/paddle/webhook` URL 경로에 응답합니다. Paddle 제어판에서 활성화해야 하는 모든 웹훅의 전체 목록은 다음과 같습니다.
 
 - Customer Updated
 - Transaction Completed
@@ -1359,7 +1359,7 @@ Paddle은 웹훅을 통해 다양한 이벤트를 애플리케이션에 알릴 �
 Paddle 웹훅은 Laravel의 [CSRF 보호](/docs/{{version}}/csrf)를 우회해야 하므로 Laravel이 들어오는 Paddle 웹훅에 대해 CSRF 토큰을 확인하지 않도록 해야 합니다. 이를 위해 애플리케이션의 `bootstrap/app.php` 파일에서 CSRF 보호에서 `paddle/*`을 제외해야 합니다.
 
 ```php
-->withMiddleware(function (Middleware $middleware) {
+->withMiddleware(function (Middleware $middleware): void {
     $middleware->validateCsrfTokens(except: [
         'paddle/*',
     ]);
@@ -1425,7 +1425,7 @@ CASHIER_WEBHOOK=https://example.com/my-paddle-webhook-url
 <a name="verifying-webhook-signatures"></a>
 ### 웹훅 서명 검증
 
-웹훅을 보호하려면 [Paddle의 웹훅 서명](https://developer.paddle.com/webhook-reference/verifying-webhooks)을 사용할 수 있습니다. 편의를 위해 Cashier에는 들어오는 Paddle 웹훅 요청이 유효한지 검증하는 미들웨어가 자동으로 포함됩니다.
+웹훅을 보호하려면 [Paddle의 웹훅 서명](https://developer.paddle.com/webhooks/signature-verification)을 사용할 수 있습니다. 편의를 위해 Cashier에는 들어오는 Paddle 웹훅 요청이 유효한지 검증하는 미들웨어가 자동으로 포함됩니다.
 
 웹훅 검증을 활성화하려면 `PADDLE_WEBHOOK_SECRET` 환경 변수가 애플리케이션의 `.env` 파일에 정의되어 있는지 확인하세요. 웹훅 시크릿은 Paddle 계정 대시보드에서 검색할 수 있습니다.
 

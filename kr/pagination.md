@@ -108,7 +108,7 @@ $users = User::where('votes', '>', 100)->cursorPaginate(15);
 <a name="multiple-paginator-instances-per-page"></a>
 #### 페이지당 여러 페이지네이터 인스턴스
 
-때로는 애플리케이션이 렌더링하는 단일 화면에 두 개의 별도 페이지네이터를 렌더링해야 할 수 있습니다. 그러나 두 페이지네이터 인스턴스가 모두 `page` 쿼리 문자열 매개변수를 사용하여 현재 페이지를 저장하는 경우, 두 페이지네이터가 충돌하게 됩니다. 이 충돌을 해결하려면 `paginate`, `simplePaginate`, `cursorPaginate` 메서드에 제공되는 세 번째 인수를 통해 페이지네이터의 현재 페이지를 저장하는 데 사용할 쿼리 문자열 매개변수의 이름을 전달할 수 있습니다.
+때로는 애플리케이션이 렌더링하는 단일 화면에 두 개의 별도 페이지네이터를 렌더링해야 할 수 있습니다. 그러나 두 페이지네이터 인스턴스가 모두 `page` 쿼리 문자열 매개변수를 사용하여 현재 페이지를 저장하는 경우, 두 페이지네이터는 충돌하게 됩니다. 이 충돌을 해결하려면 `paginate`, `simplePaginate`, `cursorPaginate` 메서드에 제공되는 세 번째 인수를 통해 페이지네이터의 현재 페이지를 저장하는 데 사용할 쿼리 문자열 매개변수의 이름을 전달할 수 있습니다.
 
 ```php
 use App\Models\User;
@@ -123,13 +123,13 @@ $users = User::where('votes', '>', 100)->paginate(
 
 `paginate`와 `simplePaginate`는 SQL "offset" 절을 사용하여 쿼리를 생성하는 반면, 커서 페이지네이션은 쿼리에 포함된 정렬된 컬럼의 값을 비교하는 "where" 절을 구성하여 작동하며, Laravel의 모든 페이지네이션 메서드 중 가장 효율적인 데이터베이스 성능을 제공합니다. 이 페이지네이션 방식은 대규모 데이터셋과 "무한" 스크롤 사용자 인터페이스에 특히 적합합니다.
 
-페이지네이터가 생성하는 URL의 쿼리 문자열에 페이지 번호를 포함하는 오프셋 기반 페이지네이션과 달리, 커서 기반 페이지네이션은 쿼리 문자열에 "커서" 문자열을 배치합니다. 커서는 다음 페이지네이션 쿼리가 시작해야 하는 위치와 페이지네이션 방향을 포함하는 인코딩된 문자열입니다.
+페이지네이터가 생성하는 URL의 쿼리 문자열에 페이지 번호를 포함하는 오프셋 기반 페이지네이션과 달리, 커서 기반(cursor-based) 페이지네이션은 쿼리 문자열에 "커서" 문자열을 배치합니다. 커서는 다음 페이지네이션 쿼리가 시작해야 하는 위치와 페이지네이션 방향을 포함하는 인코딩된 문자열입니다.
 
 ```text
 http://localhost/users?cursor=eyJpZCI6MTUsIl9wb2ludHNUb05leHRJdGVtcyI6dHJ1ZX0
 ```
 
-쿼리 빌더가 제공하는 `cursorPaginate` 메서드를 통해 커서 기반 페이지네이터 인스턴스를 생성할 수 있습니다. 이 메서드는 `Illuminate\Pagination\CursorPaginator` 인스턴스를 반환합니다.
+쿼리 빌더가 제공하는 `cursorPaginate` 메서드를 통해 커서 기반(cursor-based) 페이지네이터 인스턴스를 생성할 수 있습니다. 이 메서드는 `Illuminate\Pagination\CursorPaginator` 인스턴스를 반환합니다.
 
 ```php
 $users = DB::table('users')->orderBy('id')->cursorPaginate(15);
@@ -275,6 +275,7 @@ Route::get('/users', function () {
    "per_page": 15,
    "current_page": 1,
    "last_page": 4,
+   "current_page_url": "http://laravel.app?page=1",
    "first_page_url": "http://laravel.app?page=1",
    "last_page_url": "http://laravel.app?page=4",
    "next_page_url": "http://laravel.app?page=2",
@@ -362,28 +363,28 @@ public function boot(): void
 
 <div class="overflow-auto">
 
-| 메서드 | 설명 |
-| --- | --- |
-| `$paginator->count()` | 현재 페이지의 아이템 수를 가져옵니다. |
-| `$paginator->currentPage()` | 현재 페이지 번호를 가져옵니다. |
-| `$paginator->firstItem()` | 결과에서 첫 번째 아이템의 결과 번호를 가져옵니다. |
-| `$paginator->getOptions()` | 페이지네이터 옵션을 가져옵니다. |
-| `$paginator->getUrlRange($start, $end)` | 페이지네이션 URL 범위를 생성합니다. |
-| `$paginator->hasPages()` | 여러 페이지로 분할할 만큼 충분한 아이템이 있는지 확인합니다. |
-| `$paginator->hasMorePages()` | 데이터 저장소에 더 많은 아이템이 있는지 확인합니다. |
-| `$paginator->items()` | 현재 페이지의 아이템을 가져옵니다. |
-| `$paginator->lastItem()` | 결과에서 마지막 아이템의 결과 번호를 가져옵니다. |
-| `$paginator->lastPage()` | 마지막으로 사용 가능한 페이지의 페이지 번호를 가져옵니다. (`simplePaginate` 사용 시 사용 불가). |
-| `$paginator->nextPageUrl()` | 다음 페이지의 URL을 가져옵니다. |
-| `$paginator->onFirstPage()` | 페이지네이터가 첫 번째 페이지에 있는지 확인합니다. |
-| `$paginator->onLastPage()` | 페이지네이터가 마지막 페이지에 있는지 확인합니다. |
-| `$paginator->perPage()` | 페이지당 표시할 아이템 수입니다. |
-| `$paginator->previousPageUrl()` | 이전 페이지의 URL을 가져옵니다. |
-| `$paginator->total()` | 데이터 저장소에서 일치하는 아이템의 총 수를 확인합니다. (`simplePaginate` 사용 시 사용 불가). |
-| `$paginator->url($page)` | 지정된 페이지 번호의 URL을 가져옵니다. |
-| `$paginator->getPageName()` | 페이지를 저장하는 데 사용되는 쿼리 문자열 변수를 가져옵니다. |
-| `$paginator->setPageName($name)` | 페이지를 저장하는 데 사용되는 쿼리 문자열 변수를 설정합니다. |
-| `$paginator->through($callback)` | 콜백을 사용하여 각 아이템을 변환합니다. |
+| 메서드                                  | 설명                                                                                                         |
+| --------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| `$paginator->count()`                   | 현재 페이지의 아이템 수를 가져옵니다.                                                                        |
+| `$paginator->currentPage()`             | 현재 페이지 번호를 가져옵니다.                                                                               |
+| `$paginator->firstItem()`               | 결과에서 첫 번째 아이템의 결과 번호를 가져옵니다.                                                            |
+| `$paginator->getOptions()`              | 페이지네이터 옵션을 가져옵니다.                                                                              |
+| `$paginator->getUrlRange($start, $end)` | 페이지네이션 URL 범위를 생성합니다.                                                                          |
+| `$paginator->hasPages()`                | 여러 페이지로 분할할 만큼 충분한 아이템이 있는지 확인합니다.                                                  |
+| `$paginator->hasMorePages()`            | 데이터 저장소에 더 많은 아이템이 있는지 확인합니다.                                                           |
+| `$paginator->items()`                   | 현재 페이지의 아이템을 가져옵니다.                                                                           |
+| `$paginator->lastItem()`                | 결과에서 마지막 아이템의 결과 번호를 가져옵니다.                                                             |
+| `$paginator->lastPage()`                | 마지막으로 사용 가능한 페이지의 페이지 번호를 가져옵니다. (`simplePaginate` 사용 시 사용 불가).               |
+| `$paginator->nextPageUrl()`             | 다음 페이지의 URL을 가져옵니다.                                                                              |
+| `$paginator->onFirstPage()`             | 페이지네이터가 첫 번째 페이지에 있는지 확인합니다.                                                           |
+| `$paginator->onLastPage()`              | 페이지네이터가 마지막 페이지에 있는지 확인합니다.                                                            |
+| `$paginator->perPage()`                 | 페이지당 표시할 아이템 수입니다.                                                                             |
+| `$paginator->previousPageUrl()`         | 이전 페이지의 URL을 가져옵니다.                                                                              |
+| `$paginator->total()`                   | 데이터 저장소에서 일치하는 아이템의 총 수를 확인합니다. (`simplePaginate` 사용 시 사용 불가).                  |
+| `$paginator->url($page)`               | 지정된 페이지 번호의 URL을 가져옵니다.                                                                       |
+| `$paginator->getPageName()`             | 페이지를 저장하는 데 사용되는 쿼리 문자열 변수를 가져옵니다.                                                  |
+| `$paginator->setPageName($name)`        | 페이지를 저장하는 데 사용되는 쿼리 문자열 변수를 설정합니다.                                                  |
+| `$paginator->through($callback)`        | 콜백을 사용하여 각 아이템을 변환합니다.                                                                      |
 
 </div>
 

@@ -1675,7 +1675,7 @@ Of course, like calls to the query builder's `where` method, you may also specif
 
 ```php
 $posts = Post::whereRelation(
-    'comments', 'created_at', '>=', now()->subHour()
+    'comments', 'created_at', '>=', now()->minus(hours: 1)
 )->get();
 ```
 
@@ -1700,13 +1700,13 @@ $posts = Post::whereDoesntHave('comments', function (Builder $query) {
 })->get();
 ```
 
-You may use "dot" notation to execute a query against a nested relationship. For example, the following query will retrieve all posts that do not have comments; however, posts that have comments from authors that are not banned will be included in the results:
+You may use "dot" notation to execute a query against a nested relationship. For example, the following query will retrieve all posts that do not have comments as well as posts that have comments where none of the comments are from banned users:
 
 ```php
 use Illuminate\Database\Eloquent\Builder;
 
 $posts = Post::whereDoesntHave('comments.author', function (Builder $query) {
-    $query->where('banned', 0);
+    $query->where('banned', 1);
 })->get();
 ```
 
@@ -2127,9 +2127,8 @@ Sometimes you may wish to eager load a relationship but also specify additional 
 
 ```php
 use App\Models\User;
-use Illuminate\Contracts\Database\Eloquent\Builder;
 
-$users = User::with(['posts' => function (Builder $query) {
+$users = User::with(['posts' => function ($query) {
     $query->where('title', 'like', '%code%');
 }])->get();
 ```
@@ -2137,7 +2136,7 @@ $users = User::with(['posts' => function (Builder $query) {
 In this example, Eloquent will only eager load posts where the post's `title` column contains the word `code`. You may call other [query builder](/docs/{{version}}/queries) methods to further customize the eager loading operation:
 
 ```php
-$users = User::with(['posts' => function (Builder $query) {
+$users = User::with(['posts' => function ($query) {
     $query->orderBy('created_at', 'desc');
 }])->get();
 ```
@@ -2187,7 +2186,7 @@ use App\Models\Book;
 
 $books = Book::all();
 
-if ($someCondition) {
+if ($condition) {
     $books->load('author', 'publisher');
 }
 ```
@@ -2195,7 +2194,7 @@ if ($someCondition) {
 If you need to set additional query constraints on the eager loading query, you may pass an array keyed by the relationships you wish to load. The array values should be closure instances which receive the query instance:
 
 ```php
-$author->load(['books' => function (Builder $query) {
+$author->load(['books' => function ($query) {
     $query->orderBy('published_date', 'asc');
 }]);
 ```

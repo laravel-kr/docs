@@ -53,6 +53,9 @@
 <a name="introduction"></a>
 ## 소개
 
+> [!WARNING]
+> [Pest 4](https://pestphp.com/)는 이제 Laravel Dusk에 비해 상당한 성능 및 사용성 개선을 제공하는 자동화된 브라우저 테스팅을 포함합니다. 새 프로젝트의 경우, 브라우저 테스팅에 Pest를 사용하는 것을 권장합니다.
+
 [Laravel Dusk](https://github.com/laravel/dusk)는 표현력이 뛰어나고 사용하기 쉬운 브라우저 자동화 및 테스팅 API를 제공합니다. 기본적으로 Dusk는 로컬 컴퓨터에 JDK나 Selenium을 설치할 필요가 없습니다. 대신 Dusk는 독립 실행형 [ChromeDriver](https://sites.google.com/chromium.org/driver) 설치를 사용합니다. 그러나 원하는 다른 Selenium 호환 드라이버를 자유롭게 사용할 수 있습니다.
 
 <a name="installation"></a>
@@ -163,7 +166,7 @@ php artisan dusk:make LoginTest
 use Illuminate\Foundation\Testing\DatabaseMigrations;
 use Laravel\Dusk\Browser;
 
-uses(DatabaseMigrations::class);
+pest()->use(DatabaseMigrations::class);
 
 //
 ```
@@ -199,7 +202,7 @@ class ExampleTest extends DuskTestCase
 use Illuminate\Foundation\Testing\DatabaseTruncation;
 use Laravel\Dusk\Browser;
 
-uses(DatabaseTruncation::class);
+pest()->use(DatabaseTruncation::class);
 
 //
 ```
@@ -357,7 +360,7 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\DatabaseMigrations;
 use Laravel\Dusk\Browser;
 
-uses(DatabaseMigrations::class);
+pest()->use(DatabaseMigrations::class);
 
 test('basic example', function () {
     $user = User::factory()->create([
@@ -1414,6 +1417,7 @@ Dusk는 애플리케이션에 대해 수행할 수 있는 다양한 assertion을
 [assertDontSeeIn](#assert-dont-see-in)
 [assertSeeAnythingIn](#assert-see-anything-in)
 [assertSeeNothingIn](#assert-see-nothing-in)
+[assertCount](#assert-count)
 [assertScript](#assert-script)
 [assertSourceHas](#assert-source-has)
 [assertSourceMissing](#assert-source-missing)
@@ -1755,6 +1759,15 @@ $browser->assertSeeAnythingIn($selector);
 
 ```php
 $browser->assertSeeNothingIn($selector);
+```
+
+<a name="assert-count"></a>
+#### assertCount
+
+주어진 셀렉터와 일치하는 요소가 지정된 횟수만큼 나타나는지 assertion합니다:
+
+```php
+$browser->assertCount($selector, $count);
 ```
 
 <a name="assert-script"></a>
@@ -2464,7 +2477,7 @@ use Illuminate\Foundation\Testing\DatabaseMigrations;
 use Laravel\Dusk\Browser;
 use Tests\Browser\Components\DatePicker;
 
-uses(DatabaseMigrations::class);
+pest()->use(DatabaseMigrations::class);
 
 test('basic example', function () {
     $this->browse(function (Browser $browser) {
@@ -2503,6 +2516,16 @@ class ExampleTest extends DuskTestCase
         });
     }
 }
+```
+
+`component` 메서드를 사용하여 주어진 컴포넌트로 범위가 지정된 브라우저 인스턴스를 가져올 수 있습니다:
+
+```php
+$datePicker = $browser->component(new DatePickerComponent);
+
+$datePicker->selectDate(2019, 1, 30);
+
+$datePicker->assertSee('January');
 ```
 
 <a name="continuous-integration"></a>
@@ -2579,7 +2602,7 @@ jobs:
       DB_PASSWORD: root
       MAIL_MAILER: log
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Prepare The Environment
         run: cp .env.example .env
       - name: Create Database

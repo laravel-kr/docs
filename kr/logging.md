@@ -529,12 +529,12 @@ Laravel Pail은 커맨드 라인에서 직접 Laravel 애플리케이션의 로�
 ### 설치
 
 > [!WARNING]
-> Laravel Pail은 [PHP 8.2+](https://php.net/releases/) 및 [PCNTL](https://www.php.net/manual/en/book.pcntl.php) 확장을 필요로 합니다.
+> Laravel Pail은 [PCNTL](https://www.php.net/manual/en/book.pcntl.php) PHP 확장을 필요로 합니다.
 
 시작하려면 Composer 패키지 관리자를 사용하여 프로젝트에 Pail을 설치하세요.
 
 ```shell
-composer require laravel/pail
+composer require --dev laravel/pail
 ```
 
 <a name="pail-usage"></a>

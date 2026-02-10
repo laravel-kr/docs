@@ -79,12 +79,16 @@ $names = User::all()->reject(function (User $user) {
 [modelKeys](#method-modelKeys)
 [makeVisible](#method-makeVisible)
 [makeHidden](#method-makeHidden)
+[mergeVisible](#method-mergeVisible)
+[mergeHidden](#method-mergeHidden)
 [only](#method-only)
 [partition](#method-partition)
+[setAppends](#method-setAppends)
 [setVisible](#method-setVisible)
 [setHidden](#method-setHidden)
 [toQuery](#method-toquery)
 [unique](#method-unique)
+[withoutAppends](#method-withoutAppends)
 
 </div>
 
@@ -229,6 +233,24 @@ $users = $users->makeVisible(['address', 'phone_number']);
 $users = $users->makeHidden(['address', 'phone_number']);
 ```
 
+<a name="method-mergeVisible"></a>
+#### `mergeVisible($attributes)` {.collection-method}
+
+`mergeVisible` 메서드는 기존의 보이는 속성을 유지하면서 [추가 속성을 보이게 만듭니다](/docs/{{version}}/eloquent-serialization#hiding-attributes-from-json).
+
+```php
+$users = $users->mergeVisible(['middle_name']);
+```
+
+<a name="method-mergeHidden"></a>
+#### `mergeHidden($attributes)` {.collection-method}
+
+`mergeHidden` 메서드는 기존의 숨겨진 속성을 유지하면서 [추가 속성을 숨깁니다](/docs/{{version}}/eloquent-serialization#hiding-attributes-from-json).
+
+```php
+$users = $users->mergeHidden(['last_login_at']);
+```
+
 <a name="method-only"></a>
 #### `only($keys)` {.collection-method}
 
@@ -249,6 +271,15 @@ $partition = $users->partition(fn ($user) => $user->age > 18);
 dump($partition::class);    // Illuminate\Support\Collection
 dump($partition[0]::class); // Illuminate\Database\Eloquent\Collection
 dump($partition[1]::class); // Illuminate\Database\Eloquent\Collection
+```
+
+<a name="method-setAppends"></a>
+#### `setAppends($attributes)` {.collection-method}
+
+`setAppends` 메서드는 컬렉션의 각 모델에서 모든 [추가 속성(appended attributes)](/docs/{{version}}/eloquent-serialization#appending-values-to-json)을 일시적으로 재정의합니다.
+
+```php
+$users = $users->setAppends(['is_admin']);
 ```
 
 <a name="method-setVisible"></a>
@@ -293,6 +324,15 @@ $users->toQuery()->update([
 $users = $users->unique();
 ```
 
+<a name="method-withoutAppends"></a>
+#### `withoutAppends()` {.collection-method}
+
+`withoutAppends` 메서드는 컬렉션의 각 모델에서 모든 [추가 속성(appended attributes)](/docs/{{version}}/eloquent-serialization#appending-values-to-json)을 일시적으로 제거합니다.
+
+```php
+$users = $users->withoutAppends();
+```
+
 <a name="custom-collections"></a>
 ## 커스텀 컬렉션
 
@@ -335,7 +375,13 @@ class User extends Model
      */
     public function newCollection(array $models = []): Collection
     {
-        return new UserCollection($models);
+        $collection = new UserCollection($models);
+
+        if (Model::isAutomaticallyEagerLoadingRelationships()) {
+            $collection->withRelationshipAutoloading();
+        }
+
+        return $collection;
     }
 }
 ```

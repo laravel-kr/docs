@@ -11,9 +11,13 @@
 - [대기열 이벤트 리스너](#queued-event-listeners)
     - [대기열과 수동으로 상호작용하기](#manually-interacting-with-the-queue)
     - [대기열 이벤트 리스너와 데이터베이스 트랜잭션](#queued-event-listeners-and-database-transactions)
+    - [대기열 리스너 미들웨어](#queued-listener-middleware)
+    - [암호화된 대기열 리스너](#encrypted-queued-listeners)
+    - [고유 이벤트 리스너](#unique-event-listeners)
     - [실패한 작업 처리하기](#handling-failed-jobs)
 - [이벤트 발송하기](#dispatching-events)
     - [데이터베이스 트랜잭션 후 이벤트 발송하기](#dispatching-events-after-database-transactions)
+    - [이벤트 지연 발송하기](#deferring-events)
 - [이벤트 구독자](#event-subscribers)
     - [이벤트 구독자 작성하기](#writing-event-subscribers)
     - [이벤트 구독자 등록하기](#registering-event-subscribers)
@@ -61,7 +65,7 @@ use App\Events\PodcastProcessed;
 class SendPodcastNotification
 {
     /**
-     * 주어진 이벤트를 처리합니다.
+     * 이벤트를 처리합니다.
      */
     public function handle(PodcastProcessed $event): void
     {
@@ -183,7 +187,7 @@ public function boot(): void
 ```php
 Event::listen(queueable(function (PodcastProcessed $event) {
     // ...
-})->onConnection('redis')->onQueue('podcasts')->delay(now()->addSeconds(10)));
+})->onConnection('redis')->onQueue('podcasts')->delay(now()->plus(seconds: 10)));
 ```
 
 익명 대기열 리스너 실패를 처리하려면, `queueable` 리스너를 정의할 때 `catch` 메서드에 클로저를 제공할 수 있습니다. 이 클로저는 리스너의 실패를 유발한 이벤트 인스턴스와 `Throwable` 인스턴스를 수신합니다.
@@ -424,7 +428,7 @@ class SendShipmentNotification implements ShouldQueue
      */
     public function handle(OrderShipped $event): void
     {
-        if (true) {
+        if ($condition) {
             $this->release(30);
         }
     }
@@ -454,6 +458,155 @@ class SendShipmentNotification implements ShouldQueueAfterCommit
 
 > [!NOTE]
 > 이러한 문제를 해결하는 방법에 대해 자세히 알아보려면 [큐 작업과 데이터베이스 트랜잭션](/docs/{{version}}/queues#jobs-and-database-transactions)에 관한 문서를 확인하세요.
+
+<a name="queued-listener-middleware"></a>
+### 대기열 리스너 미들웨어
+
+대기열 리스너는 [작업 미들웨어(Job Middleware)](/docs/{{version}}/queues#job-middleware)를 활용할 수도 있습니다. 작업 미들웨어를 사용하면 대기열 리스너의 실행을 감싸는 커스텀 로직을 작성하여, 리스너 자체의 보일러플레이트를 줄일 수 있습니다. 작업 미들웨어를 생성한 후, 리스너의 `middleware` 메서드에서 반환하여 리스너에 연결할 수 있습니다.
+
+```php
+<?php
+
+namespace App\Listeners;
+
+use App\Events\OrderShipped;
+use App\Jobs\Middleware\RateLimited;
+use Illuminate\Contracts\Queue\ShouldQueue;
+
+class SendShipmentNotification implements ShouldQueue
+{
+    /**
+     * 이벤트를 처리합니다.
+     */
+    public function handle(OrderShipped $event): void
+    {
+        // 이벤트를 처리합니다...
+    }
+
+    /**
+     * 리스너가 통과해야 하는 미들웨어를 가져옵니다.
+     *
+     * @return array<int, object>
+     */
+    public function middleware(OrderShipped $event): array
+    {
+        return [new RateLimited];
+    }
+}
+```
+
+<a name="encrypted-queued-listeners"></a>
+#### 암호화된 대기열 리스너
+
+Laravel은 [암호화(Encryption)](/docs/{{version}}/encryption)를 통해 대기열 리스너 데이터의 개인정보 보호 및 무결성을 보장할 수 있습니다. 시작하려면 리스너 클래스에 `ShouldBeEncrypted` 인터페이스를 추가하기만 하면 됩니다. 이 인터페이스가 클래스에 추가되면, Laravel은 리스너를 큐에 추가하기 전에 자동으로 암호화합니다.
+
+```php
+<?php
+
+namespace App\Listeners;
+
+use App\Events\OrderShipped;
+use Illuminate\Contracts\Queue\ShouldBeEncrypted;
+use Illuminate\Contracts\Queue\ShouldQueue;
+
+class SendShipmentNotification implements ShouldQueue, ShouldBeEncrypted
+{
+    // ...
+}
+```
+
+<a name="unique-event-listeners"></a>
+### 고유 이벤트 리스너
+
+> [!WARNING]
+> 고유 리스너는 [잠금(Locks)](/docs/{{version}}/cache#atomic-locks)을 지원하는 캐시 드라이버가 필요합니다. 현재 `memcached`, `redis`, `dynamodb`, `database`, `file`, `array` 캐시 드라이버가 원자적 잠금을 지원합니다.
+
+때로는 특정 시점에 특정 리스너의 인스턴스가 큐에 하나만 있도록 보장하고 싶을 수 있습니다. 리스너 클래스에 `ShouldBeUnique` 인터페이스를 구현하면 됩니다.
+
+```php
+<?php
+
+namespace App\Listeners;
+
+use App\Events\LicenseSaved;
+use Illuminate\Contracts\Queue\ShouldBeUnique;
+use Illuminate\Contracts\Queue\ShouldQueue;
+
+class AcquireProductKey implements ShouldQueue, ShouldBeUnique
+{
+    public function __invoke(LicenseSaved $event): void
+    {
+        // ...
+    }
+}
+```
+
+위 예에서 `AcquireProductKey` 리스너는 고유합니다. 따라서 리스너의 다른 인스턴스가 이미 큐에 있고 처리가 완료되지 않은 경우 리스너가 큐에 추가되지 않습니다. 이렇게 하면 라이선스가 빠르게 연속으로 여러 번 저장되더라도 각 라이선스에 대해 하나의 제품 키만 획득됩니다.
+
+특정 경우에 리스너를 고유하게 만드는 특정 "키"를 정의하거나, 리스너가 더 이상 고유하지 않게 되는 타임아웃을 지정하고 싶을 수 있습니다. 이를 위해 리스너 클래스에 `uniqueId` 및 `uniqueFor` 속성 또는 메서드를 정의할 수 있습니다. 메서드는 이벤트 인스턴스를 수신하므로, 이벤트 데이터를 사용하여 반환 값을 구성할 수 있습니다.
+
+```php
+<?php
+
+namespace App\Listeners;
+
+use App\Events\LicenseSaved;
+use Illuminate\Contracts\Queue\ShouldBeUnique;
+use Illuminate\Contracts\Queue\ShouldQueue;
+
+class AcquireProductKey implements ShouldQueue, ShouldBeUnique
+{
+    /**
+     * 리스너의 고유 잠금이 해제되기까지의 시간(초)입니다.
+     *
+     * @var int
+     */
+    public $uniqueFor = 3600;
+
+    public function __invoke(LicenseSaved $event): void
+    {
+        // ...
+    }
+
+    /**
+     * 리스너의 고유 ID를 가져옵니다.
+     */
+    public function uniqueId(LicenseSaved $event): string
+    {
+        return 'listener:'.$event->license->id;
+    }
+}
+```
+
+위 예에서 `AcquireProductKey` 리스너는 라이선스 ID별로 고유합니다. 따라서 동일한 라이선스에 대한 리스너의 새로운 발송은 기존 리스너의 처리가 완료될 때까지 무시됩니다. 이렇게 하면 동일한 라이선스에 대해 중복 제품 키가 획득되는 것을 방지합니다. 또한, 기존 리스너가 1시간 내에 처리되지 않으면 고유 잠금이 해제되고 동일한 고유 키를 가진 다른 리스너가 큐에 추가될 수 있습니다.
+
+> [!WARNING]
+> 애플리케이션이 여러 웹 서버 또는 컨테이너에서 이벤트를 발송하는 경우, Laravel이 리스너가 고유한지 정확하게 판단할 수 있도록 모든 서버가 동일한 중앙 캐시 서버와 통신하고 있는지 확인해야 합니다.
+
+기본적으로 Laravel은 기본 캐시 드라이버를 사용하여 고유 잠금을 획득합니다. 그러나 잠금을 획득하기 위해 다른 드라이버를 사용하려면 사용할 캐시 드라이버를 반환하는 `uniqueVia` 메서드를 정의할 수 있습니다.
+
+```php
+<?php
+
+namespace App\Listeners;
+
+use App\Events\LicenseSaved;
+use Illuminate\Contracts\Cache\Repository;
+use Illuminate\Support\Facades\Cache;
+
+class AcquireProductKey implements ShouldQueue, ShouldBeUnique
+{
+    // ...
+
+    /**
+     * 고유 리스너 잠금을 위한 캐시 드라이버를 가져옵니다.
+     */
+    public function uniqueVia(LicenseSaved $event): Repository
+    {
+        return Cache::driver('redis');
+    }
+}
+```
 
 <a name="handling-failed-jobs"></a>
 ### 실패한 작업 처리하기
@@ -497,7 +650,7 @@ class SendShipmentNotification implements ShouldQueue
 
 대기열 리스너 중 하나에 오류가 발생하는 경우, 무한정 재시도하는 것을 원하지 않을 것입니다. 따라서 Laravel은 리스너가 몇 번이나 또는 얼마 동안 시도될 수 있는지 지정하는 다양한 방법을 제공합니다.
 
-리스너 클래스에 `$tries` 속성을 정의하여 리스너가 실패로 간주되기 전에 몇 번 시도될 수 있는지 지정할 수 있습니다.
+리스너 클래스에 `tries` 속성 또는 메서드를 정의하여 리스너가 실패로 간주되기 전에 몇 번 시도될 수 있는지 지정할 수 있습니다.
 
 ```php
 <?php
@@ -531,9 +684,11 @@ use DateTime;
  */
 public function retryUntil(): DateTime
 {
-    return now()->addMinutes(5);
+    return now()->plus(minutes: 5);
 }
 ```
+
+`retryUntil`과 `tries`가 모두 정의된 경우, Laravel은 `retryUntil` 메서드를 우선시합니다.
 
 <a name="specifying-queued-listener-backoff"></a>
 #### 대기열 리스너 백오프 지정하기
@@ -555,7 +710,7 @@ public $backoff = 3;
 /**
  * 대기열 리스너를 재시도하기 전에 대기할 시간(초)을 계산합니다.
  */
-public function backoff(): int
+public function backoff(OrderShipped $event): int
 {
     return 3;
 }
@@ -567,11 +722,100 @@ public function backoff(): int
 /**
  * 대기열 리스너를 재시도하기 전에 대기할 시간(초)을 계산합니다.
  *
- * @return array<int, int>
+ * @return list<int>
  */
-public function backoff(): array
+public function backoff(OrderShipped $event): array
 {
     return [1, 5, 10];
+}
+```
+
+<a name="specifying-queued-listener-max-exceptions"></a>
+#### 대기열 리스너 최대 예외 횟수 지정하기
+
+때로는 대기열 리스너가 여러 번 시도될 수 있지만, (`release` 메서드에 의해 직접 릴리스되는 것과는 달리) 주어진 횟수의 처리되지 않은 예외에 의해 재시도가 트리거되는 경우 실패해야 한다고 지정하고 싶을 수 있습니다. 이를 위해 리스너 클래스에 `maxExceptions` 속성을 정의할 수 있습니다.
+
+```php
+<?php
+
+namespace App\Listeners;
+
+use App\Events\OrderShipped;
+use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Queue\InteractsWithQueue;
+
+class SendShipmentNotification implements ShouldQueue
+{
+    use InteractsWithQueue;
+
+    /**
+     * 대기열 리스너가 시도될 수 있는 횟수입니다.
+     *
+     * @var int
+     */
+    public $tries = 25;
+
+    /**
+     * 실패 전에 허용되는 처리되지 않은 예외의 최대 횟수입니다.
+     *
+     * @var int
+     */
+    public $maxExceptions = 3;
+
+    /**
+     * 이벤트를 처리합니다.
+     */
+    public function handle(OrderShipped $event): void
+    {
+        // 이벤트를 처리합니다...
+    }
+}
+```
+
+이 예에서 리스너는 최대 25번까지 재시도됩니다. 그러나 리스너에서 처리되지 않은 예외가 3번 발생하면 리스너는 실패합니다.
+
+<a name="specifying-queued-listener-timeout"></a>
+#### 대기열 리스너 타임아웃 지정하기
+
+대기열 리스너가 대략 얼마나 걸릴지 알고 있는 경우가 많습니다. 이러한 이유로 Laravel은 "타임아웃" 값을 지정할 수 있습니다. 리스너가 타임아웃 값에 지정된 초 수보다 오래 처리되면, 리스너를 처리하는 워커가 오류와 함께 종료됩니다. 리스너 클래스에 `timeout` 속성을 정의하여 리스너가 실행될 수 있는 최대 시간(초)을 정의할 수 있습니다.
+
+```php
+<?php
+
+namespace App\Listeners;
+
+use App\Events\OrderShipped;
+use Illuminate\Contracts\Queue\ShouldQueue;
+
+class SendShipmentNotification implements ShouldQueue
+{
+    /**
+     * 리스너가 타임아웃되기 전에 실행할 수 있는 시간(초)입니다.
+     *
+     * @var int
+     */
+    public $timeout = 120;
+}
+```
+
+타임아웃 시 리스너가 실패로 표시되어야 한다고 지정하려면 리스너 클래스에 `failOnTimeout` 속성을 정의할 수 있습니다.
+
+```php
+<?php
+
+namespace App\Listeners;
+
+use App\Events\OrderShipped;
+use Illuminate\Contracts\Queue\ShouldQueue;
+
+class SendShipmentNotification implements ShouldQueue
+{
+    /**
+     * 타임아웃 시 리스너를 실패로 표시할지 여부를 나타냅니다.
+     *
+     * @var bool
+     */
+    public $failOnTimeout = true;
 }
 ```
 
@@ -650,13 +894,46 @@ class OrderShipped implements ShouldDispatchAfterCommit
 }
 ```
 
+<a name="deferring-events"></a>
+### 이벤트 지연 발송하기
+
+지연 이벤트(Deferred Events)를 사용하면 특정 코드 블록이 완료된 후에 모델 이벤트의 발송과 이벤트 리스너의 실행을 지연시킬 수 있습니다. 이는 이벤트 리스너가 트리거되기 전에 모든 관련 레코드가 생성되었는지 확인해야 할 때 특히 유용합니다.
+
+이벤트를 지연시키려면 `Event::defer()` 메서드에 클로저를 전달합니다.
+
+```php
+use App\Models\User;
+use Illuminate\Support\Facades\Event;
+
+Event::defer(function () {
+    $user = User::create(['name' => 'Victoria Otwell']);
+
+    $user->posts()->create(['title' => 'My first post!']);
+});
+```
+
+클로저 내에서 트리거된 모든 이벤트는 클로저가 실행된 후에 발송됩니다. 이렇게 하면 이벤트 리스너가 지연 실행 중에 생성된 모든 관련 레코드에 접근할 수 있습니다. 클로저 내에서 예외가 발생하면 지연된 이벤트는 발송되지 않습니다.
+
+특정 이벤트만 지연시키려면 `defer` 메서드의 두 번째 인수로 이벤트 배열을 전달합니다.
+
+```php
+use App\Models\User;
+use Illuminate\Support\Facades\Event;
+
+Event::defer(function () {
+    $user = User::create(['name' => 'Victoria Otwell']);
+
+    $user->posts()->create(['title' => 'My first post!']);
+}, ['eloquent.created: '.User::class]);
+```
+
 <a name="event-subscribers"></a>
 ## 이벤트 구독자
 
 <a name="writing-event-subscribers"></a>
 ### 이벤트 구독자 작성하기
 
-이벤트 구독자는 구독자 클래스 자체 내에서 여러 이벤트를 구독할 수 있는 클래스로, 단일 클래스 내에서 여러 이벤트 핸들러를 정의할 수 있습니다. 구독자는 이벤트 디스패처 인스턴스가 전달되는 `subscribe` 메서드를 정의해야 합니다. 주어진 디스패처에서 `listen` 메서드를 호출하여 이벤트 리스너를 등록할 수 있습니다.
+이벤트 구독자는 구독자 클래스 자체 내에서 여러 이벤트를 구독할 수 있는 클래스로, 단일 클래스 내에서 여러 이벤트 핸들러를 정의할 수 있습니다. 구독자는 이벤트 디스패처 인스턴스를 수신하는 `subscribe` 메서드를 정의해야 합니다. 주어진 디스패처에서 `listen` 메서드를 호출하여 이벤트 리스너를 등록할 수 있습니다.
 
 ```php
 <?php
@@ -786,6 +1063,9 @@ test('orders can be shipped', function () {
     // 이벤트가 두 번 발송되었는지 확인...
     Event::assertDispatched(OrderShipped::class, 2);
 
+    // 이벤트가 한 번만 발송되었는지 확인...
+    Event::assertDispatchedOnce(OrderShipped::class);
+
     // 이벤트가 발송되지 않았는지 확인...
     Event::assertNotDispatched(OrderFailedToShip::class);
 
@@ -820,6 +1100,9 @@ class ExampleTest extends TestCase
 
         // 이벤트가 두 번 발송되었는지 확인...
         Event::assertDispatched(OrderShipped::class, 2);
+
+        // 이벤트가 한 번만 발송되었는지 확인...
+        Event::assertDispatchedOnce(OrderShipped::class);
 
         // 이벤트가 발송되지 않았는지 확인...
         Event::assertNotDispatched(OrderFailedToShip::class);
@@ -866,7 +1149,9 @@ test('orders can be processed', function () {
     Event::assertDispatched(OrderCreated::class);
 
     // 다른 이벤트는 정상적으로 발송됩니다...
-    $order->update([...]);
+    $order->update([
+        // ...
+    ]);
 });
 ```
 
@@ -885,7 +1170,9 @@ public function test_orders_can_be_processed(): void
     Event::assertDispatched(OrderCreated::class);
 
     // 다른 이벤트는 정상적으로 발송됩니다...
-    $order->update([...]);
+    $order->update([
+        // ...
+    ]);
 }
 ```
 
@@ -918,8 +1205,10 @@ test('orders can be processed', function () {
         return $order;
     });
 
-    // 이벤트는 정상적으로 발송되고 옵저버가 실행됩니다 ...
-    $order->update([...]);
+    // 이벤트는 정상적으로 발송되고 옵저버가 실행됩니다...
+    $order->update([
+        // ...
+    ]);
 });
 ```
 
@@ -948,8 +1237,10 @@ class ExampleTest extends TestCase
             return $order;
         });
 
-        // 이벤트는 정상적으로 발송되고 옵저버가 실행됩니다 ...
-        $order->update([...]);
+        // 이벤트는 정상적으로 발송되고 옵저버가 실행됩니다...
+        $order->update([
+            // ...
+        ]);
     }
 }
 ```

@@ -11,6 +11,7 @@
     - [이벤트 캐싱](#caching-events)
     - [라우트 캐싱](#optimizing-route-loading)
     - [뷰 캐싱](#optimizing-view-loading)
+- [서비스 리로드](#reloading-services)
 - [디버그 모드](#debug-mode)
 - [헬스 체크 라우트](#the-health-route)
 - [Laravel Cloud 또는 Forge를 사용한 배포](#deploying-with-cloud-or-forge)
@@ -167,6 +168,20 @@ php artisan view:cache
 ```
 
 이 명령은 모든 Blade 뷰를 미리 컴파일하여 요청 시 컴파일되지 않도록 하며, 뷰를 반환하는 각 요청의 성능을 향상시킵니다.
+
+<a name="reloading-services"></a>
+## 서비스 리로드
+
+> [!NOTE]
+> [Laravel Cloud](https://cloud.laravel.com)에 배포할 때는 `reload` 명령을 사용할 필요가 없습니다. 모든 서비스의 정상적인(graceful) 리로드가 자동으로 처리됩니다.
+
+애플리케이션의 새 버전을 배포한 후에는 큐 워커(queue worker), Laravel Reverb, 또는 Laravel Octane과 같은 장기 실행 서비스를 새 코드를 사용하도록 리로드/재시작해야 합니다. Laravel은 이러한 서비스를 종료하는 단일 `reload` Artisan 명령을 제공합니다.
+
+```shell
+php artisan reload
+```
+
+[Laravel Cloud](https://cloud.laravel.com)를 사용하지 않는 경우, 리로드 가능한 프로세스가 종료될 때 이를 감지하고 자동으로 재시작할 수 있는 프로세스 모니터를 수동으로 구성해야 합니다.
 
 <a name="debug-mode"></a>
 ## 디버그 모드

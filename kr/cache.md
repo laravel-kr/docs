@@ -10,9 +10,12 @@
     - [캐시에서 아이템 삭제하기](#removing-items-from-the-cache)
     - [캐시 메모이제이션](#cache-memoization)
     - [캐시 헬퍼](#the-cache-helper)
+- [캐시 태그](#cache-tags)
 - [원자적 잠금(Atomic Locks)](#atomic-locks)
     - [잠금 관리하기](#managing-locks)
     - [프로세스 간 잠금 관리하기](#managing-locks-across-processes)
+    - [잠금과 함수 호출](#locks-and-function-invocations)
+- [캐시 장애 조치(Cache Failover)](#cache-failover)
 - [커스텀 캐시 드라이버 추가하기](#adding-custom-cache-drivers)
     - [드라이버 작성하기](#writing-the-driver)
     - [드라이버 등록하기](#registering-the-driver)
@@ -202,7 +205,7 @@ if (Cache::has('key')) {
 
 ```php
 // 값이 존재하지 않으면 초기화...
-Cache::add('key', 0, now()->addHours(4));
+Cache::add('key', 0, now()->plus(hours: 4));
 
 // 값 증가 또는 감소...
 Cache::increment('key');
@@ -237,7 +240,7 @@ $value = Cache::rememberForever('users', function () {
 
 `Cache::remember` 메서드를 사용할 때 캐시된 값이 만료되면 일부 사용자가 느린 응답 시간을 경험할 수 있습니다. 특정 유형의 데이터에서는 캐시된 값이 백그라운드에서 재계산되는 동안 부분적으로 오래된 데이터를 제공하여 일부 사용자가 캐시 값이 계산되는 동안 느린 응답 시간을 경험하지 않도록 하는 것이 유용할 수 있습니다. 이것을 흔히 "stale-while-revalidate" 패턴이라고 하며, `Cache::flexible` 메서드가 이 패턴의 구현을 제공합니다.
 
-flexible 메서드는 캐시된 값이 "신선한" 것으로 간주되는 기간과 "오래된" 것이 되는 시점을 지정하는 배열을 받습니다. 배열의 첫 번째 값은 캐시가 신선한 것으로 간주되는 초 수를 나타내고, 두 번째 값은 재계산이 필요하기 전에 오래된 데이터로 제공될 수 있는 기간을 정의합니다.
+flexible 메서드는 캐시된 값이 "신선한" 것으로 간주되는 기간과 "오래된" 것이 되는 시점을 지정하는 배열을 받습니다. 배열의 첫 번째 값은 캐시가 신선한 것으로 간주되는 초 수를 나타내며, 두 번째 값은 재계산이 필요하기 전에 오래된 데이터로 제공될 수 있는 기간을 정의합니다.
 
 신선한 기간(첫 번째 값 이전) 내에 요청이 이루어지면 캐시가 재계산 없이 즉시 반환됩니다. 오래된 기간(두 값 사이) 동안 요청이 이루어지면 오래된 값이 사용자에게 제공되고, 응답이 사용자에게 전송된 후 캐시된 값을 새로 고치기 위해 [지연 함수](/docs/{{version}}/helpers#deferred-functions)가 등록됩니다. 두 번째 값 이후에 요청이 이루어지면 캐시가 만료된 것으로 간주되어 값이 즉시 재계산되므로 사용자에게 더 느린 응답이 발생할 수 있습니다.
 
@@ -276,7 +279,7 @@ Cache::put('key', 'value');
 초 수를 정수로 전달하는 대신 캐시된 아이템의 원하는 만료 시간을 나타내는 `DateTime` 인스턴스를 전달할 수도 있습니다.
 
 ```php
-Cache::put('key', 'value', now()->addMinutes(10));
+Cache::put('key', 'value', now()->plus(minutes: 10));
 ```
 
 <a name="store-if-not-present"></a>
@@ -384,7 +387,7 @@ $value = cache('key');
 ```php
 cache(['key' => 'value'], $seconds);
 
-cache(['key' => 'value'], now()->addMinutes(10));
+cache(['key' => 'value'], now()->plus(minutes: 10));
 ```
 
 `cache` 함수가 인수 없이 호출되면 `Illuminate\Contracts\Cache\Factory` 구현의 인스턴스를 반환하여 다른 캐싱 메서드를 호출할 수 있습니다.
@@ -397,6 +400,50 @@ cache()->remember('users', $seconds, function () {
 
 > [!NOTE]
 > 전역 `cache` 함수에 대한 호출을 테스트할 때 [파사드 테스트](/docs/{{version}}/mocking#mocking-facades)와 마찬가지로 `Cache::shouldReceive` 메서드를 사용할 수 있습니다.
+
+<a name="cache-tags"></a>
+## 캐시 태그
+
+> [!WARNING]
+> 캐시 태그는 `file`, `dynamodb` 또는 `database` 캐시 드라이버를 사용할 때는 지원되지 않습니다.
+
+<a name="storing-tagged-cache-items"></a>
+### 태그된 캐시 아이템 저장하기
+
+캐시 태그를 사용하면 캐시에 있는 관련 아이템에 태그를 지정하고, 특정 태그가 할당된 모든 캐시 값을 플러시(삭제)할 수 있습니다. 태그 이름의 순서가 있는 배열을 전달하여 태그된 캐시에 접근할 수 있습니다. 예를 들어, 태그된 캐시에 접근하여 값을 `put`해 보겠습니다.
+
+```php
+use Illuminate\Support\Facades\Cache;
+
+Cache::tags(['people', 'artists'])->put('John', $john, $seconds);
+Cache::tags(['people', 'authors'])->put('Anne', $anne, $seconds);
+```
+
+<a name="accessing-tagged-cache-items"></a>
+### 태그된 캐시 아이템 접근하기
+
+태그를 통해 저장된 아이템은 저장할 때 사용한 태그를 함께 제공하지 않으면 접근할 수 없습니다. 태그된 캐시 아이템을 조회하려면 동일한 순서의 태그 목록을 `tags` 메서드에 전달한 다음 조회하려는 키로 `get` 메서드를 호출합니다.
+
+```php
+$john = Cache::tags(['people', 'artists'])->get('John');
+
+$anne = Cache::tags(['people', 'authors'])->get('Anne');
+```
+
+<a name="removing-tagged-cache-items"></a>
+### 태그된 캐시 아이템 삭제하기
+
+태그 또는 태그 목록에 할당된 모든 아이템을 플러시(삭제)할 수 있습니다. 예를 들어, 다음 코드는 `people`, `authors` 또는 두 태그 모두가 지정된 모든 캐시를 삭제합니다. 따라서 `Anne`과 `John` 모두 캐시에서 삭제됩니다.
+
+```php
+Cache::tags(['people', 'authors'])->flush();
+```
+
+반대로 아래 코드는 `authors`로만 태그된 캐시 값만 삭제하므로 `Anne`은 삭제되지만 `John`은 삭제되지 않습니다.
+
+```php
+Cache::tags('authors')->flush();
+```
 
 <a name="atomic-locks"></a>
 ## 원자적 잠금(Atomic Locks)
@@ -483,6 +530,52 @@ Cache::restoreLock('processing', $this->owner)->release();
 ```php
 Cache::lock('processing')->forceRelease();
 ```
+
+<a name="locks-and-function-invocations"></a>
+### 잠금과 함수 호출
+
+`withoutOverlapping` 메서드는 원자적 잠금을 유지하면서 주어진 클로저를 실행하기 위한 간단한 구문을 제공하며, 전체 인프라에서 한 번에 하나의 클로저 인스턴스만 실행되도록 보장합니다.
+
+```php
+Cache::withoutOverlapping('foo', function () {
+    // 최대 10초 대기 후 잠금 획득...
+});
+```
+
+기본적으로 잠금은 클로저가 실행을 완료할 때까지 해제되지 않으며, 메서드는 잠금을 획득하기 위해 최대 10초까지 대기합니다. 추가 인수를 메서드에 전달하여 이 값들을 커스터마이즈할 수 있습니다.
+
+```php
+Cache::withoutOverlapping('foo', function () {
+    // 최대 5초 대기 후 120초 동안 잠금 획득...
+}, lockFor: 120, waitFor: 5);
+```
+
+지정된 대기 시간 내에 잠금을 획득할 수 없으면 `Illuminate\Contracts\Cache\LockTimeoutException`이 발생합니다.
+
+<a name="cache-failover"></a>
+## 캐시 장애 조치(Cache Failover)
+
+`failover` 캐시 드라이버는 캐시와 상호작용할 때 자동 장애 조치(failover) 기능을 제공합니다. `failover` 저장소의 기본 캐시 저장소가 어떤 이유로든 실패하면 Laravel은 자동으로 목록에서 다음으로 설정된 저장소를 사용하려고 시도합니다. 이는 캐시 안정성이 중요한 프로덕션 환경에서 고가용성을 보장하는 데 특히 유용합니다.
+
+장애 조치 캐시 저장소를 구성하려면 `failover` 드라이버를 지정하고 순서대로 시도할 저장소 이름의 배열을 제공합니다. 기본적으로 Laravel은 애플리케이션의 `config/cache.php` 설정 파일에 예제 장애 조치 구성을 포함하고 있습니다.
+
+```php
+'failover' => [
+    'driver' => 'failover',
+    'stores' => [
+        'database',
+        'array',
+    ],
+],
+```
+
+`failover` 드라이버를 사용하는 저장소를 구성한 후에는 장애 조치 기능을 활용하기 위해 애플리케이션의 `.env` 파일에서 장애 조치 저장소를 기본 캐시 저장소로 설정해야 합니다.
+
+```ini
+CACHE_STORE=failover
+```
+
+캐시 저장소 작업이 실패하고 장애 조치가 활성화되면 Laravel은 `Illuminate\Cache\Events\CacheFailedOver` 이벤트를 디스패치하여 캐시 저장소가 실패했음을 보고하거나 기록할 수 있도록 합니다.
 
 <a name="adding-custom-cache-drivers"></a>
 ## 커스텀 캐시 드라이버 추가하기

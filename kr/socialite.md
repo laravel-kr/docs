@@ -11,6 +11,7 @@
     - [Slack 봇 스코프](#slack-bot-scopes)
     - [선택적 매개변수](#optional-parameters)
 - [사용자 정보 조회](#retrieving-user-details)
+- [테스팅](#testing)
 
 <a name="introduction"></a>
 ## 소개
@@ -61,7 +62,7 @@ Socialite를 사용하기 전에, 애플리케이션에서 사용할 OAuth 제�
 OAuth 제공자를 사용하여 사용자를 인증하려면 두 개의 라우트가 필요합니다. 하나는 사용자를 OAuth 제공자로 리디렉션하는 것이고, 다른 하나는 인증 후 제공자로부터 콜백을 받는 것입니다. 아래 예제 라우트는 두 라우트의 구현을 보여줍니다.
 
 ```php
-use Laravel\Socialite\Facades\Socialite;
+use Laravel\Socialite\Socialite;
 
 Route::get('/auth/redirect', function () {
     return Socialite::driver('github')->redirect();
@@ -84,7 +85,7 @@ OAuth 제공자로부터 사용자를 조회한 후, 해당 사용자가 애플�
 ```php
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
-use Laravel\Socialite\Facades\Socialite;
+use Laravel\Socialite\Socialite;
 
 Route::get('/auth/callback', function () {
     $githubUser = Socialite::driver('github')->user();
@@ -113,7 +114,7 @@ Route::get('/auth/callback', function () {
 사용자를 리디렉션하기 전에, `scopes` 메서드를 사용하여 인증 요청에 포함되어야 할 "스코프(scopes)"를 지정할 수 있습니다. 이 메서드는 이전에 지정된 모든 스코프를 여러분이 지정한 스코프와 병합합니다.
 
 ```php
-use Laravel\Socialite\Facades\Socialite;
+use Laravel\Socialite\Socialite;
 
 return Socialite::driver('github')
     ->scopes(['read:user', 'public_repo'])
@@ -165,7 +166,7 @@ $user = Socialite::driver('slack')->asBotUser()->user();
 많은 OAuth 제공자가 리디렉션 요청에서 다른 선택적 매개변수를 지원합니다. 요청에 선택적 매개변수를 포함하려면, 연관 배열과 함께 `with` 메서드를 호출하세요.
 
 ```php
-use Laravel\Socialite\Facades\Socialite;
+use Laravel\Socialite\Socialite;
 
 return Socialite::driver('google')
     ->with(['hd' => 'example.com'])
@@ -183,7 +184,7 @@ return Socialite::driver('google')
 인증하는 OAuth 제공자가 OAuth 1.0 또는 OAuth 2.0을 지원하는지에 따라 이 객체에서 사용할 수 있는 속성과 메서드가 다를 수 있습니다.
 
 ```php
-use Laravel\Socialite\Facades\Socialite;
+use Laravel\Socialite\Socialite;
 
 Route::get('/auth/callback', function () {
     $user = Socialite::driver('github')->user();
@@ -212,7 +213,7 @@ Route::get('/auth/callback', function () {
 사용자에 대한 유효한 액세스 토큰이 이미 있는 경우, Socialite의 `userFromToken` 메서드를 사용하여 사용자 정보를 조회할 수 있습니다.
 
 ```php
-use Laravel\Socialite\Facades\Socialite;
+use Laravel\Socialite\Socialite;
 
 $user = Socialite::driver('github')->userFromToken($token);
 ```
@@ -225,7 +226,70 @@ iOS 애플리케이션을 통해 Facebook Limited Login을 사용하는 경우, 
 `stateless` 메서드는 세션 상태 확인을 비활성화하는 데 사용할 수 있습니다. 이는 쿠키 기반 세션을 사용하지 않는 상태 비저장 API에 소셜 인증을 추가할 때 유용합니다.
 
 ```php
-use Laravel\Socialite\Facades\Socialite;
+use Laravel\Socialite\Socialite;
 
 return Socialite::driver('google')->stateless()->user();
+```
+
+<a name="testing"></a>
+## 테스팅
+
+Laravel Socialite는 실제 OAuth 제공자에 요청을 보내지 않고도 OAuth 인증 흐름을 테스트할 수 있는 편리한 방법을 제공합니다. `fake` 메서드를 사용하면 OAuth 제공자의 동작을 모킹하고 반환되어야 할 사용자 데이터를 정의할 수 있습니다.
+
+<a name="faking-the-redirect"></a>
+#### 리디렉트 페이킹(Faking the Redirect)
+
+애플리케이션이 사용자를 OAuth 제공자로 올바르게 리디렉션하는지 테스트하려면 리디렉트 라우트에 요청을 보내기 전에 `fake` 메서드를 호출하면 됩니다. 이렇게 하면 Socialite가 실제 OAuth 제공자로 리디렉션하는 대신 가짜 인증 URL로의 리디렉션을 반환합니다.
+
+```php
+use Laravel\Socialite\Socialite;
+
+test('user is redirected to github', function () {
+    Socialite::fake('github');
+
+    $response = $this->get('/auth/github/redirect');
+
+    $response->assertRedirect();
+});
+```
+
+<a name="faking-the-callback"></a>
+#### 콜백 페이킹(Faking the Callback)
+
+애플리케이션의 콜백 라우트를 테스트하려면 `fake` 메서드를 호출하고 애플리케이션이 제공자로부터 사용자 정보를 요청할 때 반환되어야 할 `User` 인스턴스를 제공하면 됩니다. `User` 인스턴스는 `map` 메서드를 사용하여 생성할 수 있습니다.
+
+```php
+use Laravel\Socialite\Socialite;
+use Laravel\Socialite\Two\User;
+
+test('user can login with github', function () {
+    Socialite::fake('github', (new User)->map([
+        'id' => 'github-123',
+        'name' => 'Jason Beggs',
+        'email' => 'jason@example.com',
+    ]));
+
+    $response = $this->get('/auth/github/callback');
+
+    $response->assertRedirect('/dashboard');
+
+    $this->assertDatabaseHas('users', [
+        'name' => 'Jason Beggs',
+        'email' => 'jason@example.com',
+        'github_id' => 'github-123',
+    ]);
+});
+```
+
+기본적으로 `User` 인스턴스에는 `token` 속성도 포함됩니다. 필요한 경우 `User` 인스턴스에 추가 속성을 수동으로 지정할 수 있습니다.
+
+```php
+$fakeUser = (new User)->map([
+    'id' => 'github-123',
+    'name' => 'Jason Beggs',
+    'email' => 'jason@example.com',
+])->setToken('fake-token')
+  ->setRefreshToken('fake-refresh-token')
+  ->setExpiresIn(3600)
+  ->setApprovedScopes(['read', 'write'])
 ```

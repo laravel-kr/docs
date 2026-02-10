@@ -6,6 +6,7 @@
     - [Defining a Mutator](#defining-a-mutator)
 - [Attribute Casting](#attribute-casting)
     - [Array and JSON Casting](#array-and-json-casting)
+    - [Binary Casting](#binary-casting)
     - [Date Casting](#date-casting)
     - [Enum Casting](#enum-casting)
     - [Encrypted Casting](#encrypted-casting)
@@ -15,6 +16,7 @@
     - [Array / JSON Serialization](#array-json-serialization)
     - [Inbound Casting](#inbound-casting)
     - [Cast Parameters](#cast-parameters)
+    - [Comparing Cast Values](#comparing-cast-values)
     - [Castables](#castables)
 
 <a name="introduction"></a>
@@ -213,7 +215,9 @@ The `casts` method should return an array where the key is the name of the attri
 <div class="content-list" markdown="1">
 
 - `array`
+- `AsFluent::class`
 - `AsStringable::class`
+- `AsUri::class`
 - `boolean`
 - `collection`
 - `date`
@@ -520,6 +524,40 @@ class Option implements Arrayable, JsonSerializable
 }
 ```
 
+<a name="binary-casting"></a>
+### Binary Casting
+
+If your Eloquent model has a [binary type](/docs/{{version}}/migrations#column-method-binary) `uuid` or `ulid` column in addition to your model's auto-incrementing ID column, you may use the `AsBinary` cast to automatically cast the value to and from its binary representation:
+
+```php
+use Illuminate\Database\Eloquent\Casts\AsBinary;
+
+/**
+ * Get the attributes that should be cast.
+ *
+ * @return array<string, string>
+ */
+protected function casts(): array
+{
+    return [
+        'uuid' => AsBinary::uuid(),
+        'ulid' => AsBinary::ulid(),
+    ];
+}
+```
+
+Once the cast has been defined on the model, you may set the UUID / ULID attribute value to an object instance or a string. Eloquent will automatically cast the value to its binary representation. When retrieving the attribute's value, you will always receive a plain-text string value:
+
+```php
+use Illuminate\Support\Str;
+
+$user->uuid = Str::uuid();
+
+return $user->uuid;
+
+// "6e8cdeed-2f32-40bd-b109-1e4405be2140"
+```
+
 <a name="date-casting"></a>
 ### Date Casting
 
@@ -636,7 +674,7 @@ As the final length of the encrypted text is not predictable and is longer than 
 <a name="key-rotation"></a>
 #### Key Rotation
 
-As you may know, Laravel encrypts strings using the `key` configuration value specified in your application's `app` configuration file. Typically, this value corresponds to the value of the `APP_KEY` environment variable. If you need to rotate your application's encryption key, you will need to manually re-encrypt your encrypted attributes using the new key.
+As you may know, Laravel encrypts strings using the `key` configuration value specified in your application's `app` configuration file. Typically, this value corresponds to the value of the `APP_KEY` environment variable. If you need to rotate your application's encryption key, you may [gracefully do so](/docs/{{version}}/encryption#gracefully-rotating-encryption-keys).
 
 <a name="query-time-casting"></a>
 ### Query Time Casting
@@ -922,6 +960,33 @@ protected function casts(): array
     return [
         'secret' => AsHash::class.':sha256',
     ];
+}
+```
+
+<a name="comparing-cast-values"></a>
+### Comparing Cast Values
+
+If you would like to define how two given cast values should be compared to determine if they have been changed, your custom cast class may implement the `Illuminate\Contracts\Database\Eloquent\ComparesCastableAttributes` interface. This allows you to have fine-grained control over which values Eloquent considers changed and thus saves to the database when a model is updated.
+
+This interface states that your class should contain a `compare` method which should return `true` if the given values are considered equal:
+
+```php
+/**
+ * Determine if the given values are equal.
+ *
+ * @param  \Illuminate\Database\Eloquent\Model  $model
+ * @param  string  $key
+ * @param  mixed  $firstValue
+ * @param  mixed  $secondValue
+ * @return bool
+ */
+public function compare(
+    Model $model,
+    string $key,
+    mixed $firstValue,
+    mixed $secondValue
+): bool {
+    return $firstValue === $secondValue;
 }
 ```
 

@@ -3,9 +3,15 @@
 - [소개](#introduction)
 - [설치](#installation)
     - [설정](#configuration)
-    - [밸런싱 전략](#balancing-strategies)
     - [대시보드 인가](#dashboard-authorization)
+    - [최대 작업 시도 횟수](#max-job-attempts)
+    - [작업 타임아웃](#job-timeout)
+    - [작업 백오프](#job-backoff)
     - [무시되는 작업](#silenced-jobs)
+- [밸런싱 전략](#balancing-strategies)
+    - [자동 밸런싱](#auto-balancing)
+    - [단순 밸런싱](#simple-balancing)
+    - [밸런싱 없음](#no-balancing)
 - [Horizon 업그레이드](#upgrading-horizon)
 - [Horizon 실행](#running-horizon)
     - [Horizon 배포](#deploying-horizon)
@@ -31,7 +37,7 @@ Horizon을 사용하면 모든 큐 워커 설정이 단일하고 간단한 설�
 ## 설치
 
 > [!WARNING]
-> 라라벨 Horizon은 큐를 구동하기 위해 [Redis](https://redis.io)를 사용해야 합니다. 따라서 애플리케이션의 `config/queue.php` 설정 파일에서 큐 연결이 `redis`로 설정되어 있는지 확인해야 합니다.
+> 라라벨 Horizon은 큐를 구동하기 위해 [Redis](https://redis.io)를 사용해야 합니다. 따라서 애플리케이션의 `config/queue.php` 설정 파일에서 큐 연결이 `redis`로 설정되어 있는지 확인해야 합니다. Horizon은 현재 Redis Cluster와 호환되지 않습니다.
 
 Composer 패키지 관리자를 사용하여 프로젝트에 Horizon을 설치할 수 있습니다:
 
@@ -123,41 +129,6 @@ Horizon의 기본 설정 파일에서 볼 수 있듯이, 각 환경은 하나 �
 
 Horizon의 기본 설정 파일 내에서 `defaults` 설정 옵션을 볼 수 있습니다. 이 설정 옵션은 애플리케이션의 [슈퍼바이저](#supervisors)에 대한 기본값을 지정합니다. 슈퍼바이저의 기본 설정 값은 각 환경의 슈퍼바이저 설정에 병합되어, 슈퍼바이저를 정의할 때 불필요한 반복을 피할 수 있습니다.
 
-<a name="balancing-strategies"></a>
-### 밸런싱 전략
-
-라라벨의 기본 큐 시스템과 달리, Horizon은 `simple`, `auto`, `false` 세 가지 워커 밸런싱 전략 중에서 선택할 수 있습니다. `simple` 전략은 들어오는 작업을 워커 프로세스 간에 균등하게 분배합니다:
-
-    'balance' => 'simple',
-
-설정 파일의 기본값인 `auto` 전략은 큐의 현재 작업량에 따라 큐당 워커 프로세스 수를 조정합니다. 예를 들어, `notifications` 큐에 1,000개의 대기 중인 작업이 있고 `render` 큐가 비어 있다면, Horizon은 큐가 비워질 때까지 `notifications` 큐에 더 많은 워커를 할당합니다.
-
-`auto` 전략을 사용할 때, `minProcesses`와 `maxProcesses` 설정 옵션을 정의하여 큐당 최소 프로세스 수와 Horizon이 스케일 업 및 다운할 총 최대 워커 프로세스 수를 제어할 수 있습니다:
-
-```php
-'environments' => [
-    'production' => [
-        'supervisor-1' => [
-            'connection' => 'redis',
-            'queue' => ['default'],
-            'balance' => 'auto',
-            'autoScalingStrategy' => 'time',
-            'minProcesses' => 1,
-            'maxProcesses' => 10,
-            'balanceMaxShift' => 1,
-            'balanceCooldown' => 3,
-            'tries' => 3,
-        ],
-    ],
-],
-```
-
-`autoScalingStrategy` 설정 값은 Horizon이 큐를 비우는 데 걸리는 총 시간(`time` 전략)을 기준으로 할지, 큐의 총 작업 수(`size` 전략)를 기준으로 할지에 따라 큐에 더 많은 워커 프로세스를 할당할지 결정합니다.
-
-`balanceMaxShift`와 `balanceCooldown` 설정 값은 Horizon이 워커 수요에 맞춰 얼마나 빠르게 스케일링할지 결정합니다. 위의 예에서는 3초마다 최대 하나의 새 프로세스가 생성되거나 삭제됩니다. 애플리케이션의 필요에 따라 이 값들을 자유롭게 조정할 수 있습니다.
-
-`balance` 옵션이 `false`로 설정되면, 기본 라라벨 동작이 사용되며, 큐는 설정에 나열된 순서대로 처리됩니다.
-
 <a name="dashboard-authorization"></a>
 ### 대시보드 인가
 
@@ -184,6 +155,82 @@ protected function gate(): void
 
 라라벨은 인증된 사용자를 게이트 클로저에 자동으로 주입한다는 점을 기억하세요. 애플리케이션이 IP 제한과 같은 다른 방법으로 Horizon 보안을 제공하는 경우, Horizon 사용자는 "로그인"할 필요가 없을 수 있습니다. 따라서 라라벨이 인증을 요구하지 않도록 위의 `function (User $user)` 클로저 시그니처를 `function (User $user = null)`로 변경해야 합니다.
 
+<a name="max-job-attempts"></a>
+### 최대 작업 시도 횟수
+
+> [!NOTE]
+> 이 옵션들을 조정하기 전에, 라라벨의 기본 [큐 서비스](/docs/{{version}}/queues#max-job-attempts-and-timeout)와 '시도(attempts)' 개념에 대해 숙지하시기 바랍니다.
+
+슈퍼바이저 설정 내에서 작업이 소비할 수 있는 최대 시도 횟수를 정의할 수 있습니다:
+
+```php
+'environments' => [
+    'production' => [
+        'supervisor-1' => [
+            // ...
+            'tries' => 10,
+        ],
+    ],
+],
+```
+
+> [!NOTE]
+> 이 옵션은 Artisan 명령을 사용하여 큐를 처리할 때의 `--tries` 옵션과 유사합니다.
+
+`tries` 옵션을 조정하는 것은 `WithoutOverlapping`이나 `RateLimited`와 같은 미들웨어를 사용할 때 필수적입니다. 이러한 미들웨어는 시도 횟수를 소비하기 때문입니다. 이를 처리하려면 슈퍼바이저 수준에서 `tries` 설정 값을 조정하거나 작업 클래스에 `$tries` 속성을 정의하세요.
+
+`tries` 옵션을 설정하지 않으면, Horizon은 기본적으로 단일 시도만 허용합니다. 단, 작업 클래스에 `$tries`가 정의되어 있으면 Horizon 설정보다 우선합니다.
+
+`tries` 또는 `$tries`를 0으로 설정하면 무제한 시도가 허용되며, 시도 횟수가 불확실한 경우에 적합합니다. 끝없는 실패를 방지하려면 작업 클래스에 `$maxExceptions` 속성을 설정하여 허용되는 예외 수를 제한할 수 있습니다.
+
+<a name="job-timeout"></a>
+### 작업 타임아웃
+
+마찬가지로, 슈퍼바이저 수준에서 `timeout` 값을 설정할 수 있으며, 이는 워커 프로세스가 작업을 실행할 수 있는 최대 시간(초)을 지정합니다. 시간이 초과되면 작업은 강제로 종료됩니다. 종료된 후, 큐 설정에 따라 작업은 재시도되거나 실패로 표시됩니다:
+
+```php
+'environments' => [
+    'production' => [
+        'supervisor-1' => [
+            // ...
+            'timeout' => 60,
+        ],
+    ],
+],
+```
+
+> [!WARNING]
+> `auto` 밸런싱 전략을 사용할 때, Horizon은 스케일 다운 시 진행 중인 워커를 "중단(hanging)"으로 간주하고 Horizon 타임아웃 이후 강제 종료합니다. Horizon 타임아웃이 항상 작업 수준의 타임아웃보다 크도록 해야 합니다. 그렇지 않으면 작업이 실행 중간에 종료될 수 있습니다. 또한, `timeout` 값은 항상 `config/queue.php` 설정 파일에 정의된 `retry_after` 값보다 최소 몇 초 짧아야 합니다. 그렇지 않으면 작업이 두 번 처리될 수 있습니다.
+
+<a name="job-backoff"></a>
+### 작업 백오프
+
+슈퍼바이저 수준에서 `backoff` 값을 정의하여 처리되지 않은 예외가 발생한 작업을 재시도하기 전에 Horizon이 얼마나 오래 기다릴지 지정할 수 있습니다:
+
+```php
+'environments' => [
+    'production' => [
+        'supervisor-1' => [
+            // ...
+            'backoff' => 10,
+        ],
+    ],
+],
+```
+
+`backoff` 값에 배열을 사용하여 "지수(exponential)" 백오프를 설정할 수도 있습니다. 이 예에서 재시도 지연은 첫 번째 재시도에서 1초, 두 번째 재시도에서 5초, 세 번째 재시도에서 10초이며, 남은 시도가 있는 경우 이후 모든 재시도에서 10초입니다:
+
+```php
+'environments' => [
+    'production' => [
+        'supervisor-1' => [
+            // ...
+            'backoff' => [1, 5, 10],
+        ],
+    ],
+],
+```
+
 <a name="silenced-jobs"></a>
 ### 무시되는 작업
 
@@ -192,6 +239,14 @@ protected function gate(): void
 ```php
 'silenced' => [
     App\Jobs\ProcessPodcast::class,
+],
+```
+
+개별 작업 클래스를 무시하는 것 외에도, Horizon은 [태그](#tags)를 기반으로 작업을 무시하는 기능도 지원합니다. 공통 태그를 공유하는 여러 작업을 숨기고 싶을 때 유용할 수 있습니다:
+
+```php
+'silenced_tags' => [
+    'notifications'
 ],
 ```
 
@@ -207,6 +262,174 @@ class ProcessPodcast implements ShouldQueue, Silenced
     // ...
 }
 ```
+
+<a name="balancing-strategies"></a>
+## 밸런싱 전략
+
+각 슈퍼바이저는 하나 이상의 큐를 처리할 수 있지만, 라라벨의 기본 큐 시스템과 달리, Horizon은 `auto`, `simple`, `false` 세 가지 워커 밸런싱 전략(balancing strategies) 중에서 선택할 수 있습니다.
+
+<a name="auto-balancing"></a>
+### 자동 밸런싱
+
+기본 전략인 `auto` 전략은 큐의 현재 작업량에 따라 큐당 워커 프로세스 수를 조정합니다. 예를 들어, `notifications` 큐에 1,000개의 대기 중인 작업이 있고 `default` 큐가 비어 있다면, Horizon은 큐가 비워질 때까지 `notifications` 큐에 더 많은 워커를 할당합니다.
+
+`auto` 전략을 사용할 때, `minProcesses`와 `maxProcesses` 설정 옵션도 설정할 수 있습니다:
+
+<div class="content-list" markdown="1">
+
+- `minProcesses`는 큐당 최소 워커 프로세스 수를 정의합니다. 이 값은 1 이상이어야 합니다.
+- `maxProcesses`는 Horizon이 모든 큐에 걸쳐 스케일 업할 수 있는 최대 총 워커 프로세스 수를 정의합니다. 이 값은 일반적으로 큐 수에 `minProcesses` 값을 곱한 것보다 커야 합니다. 슈퍼바이저가 프로세스를 전혀 생성하지 못하게 하려면 이 값을 0으로 설정할 수 있습니다.
+
+</div>
+
+예를 들어, 큐당 최소 하나의 프로세스를 유지하고 총 10개의 워커 프로세스까지 스케일 업하도록 Horizon을 설정할 수 있습니다:
+
+```php
+'environments' => [
+    'production' => [
+        'supervisor-1' => [
+            'connection' => 'redis',
+            'queue' => ['default', 'notifications'],
+            'balance' => 'auto',
+            'autoScalingStrategy' => 'time',
+            'minProcesses' => 1,
+            'maxProcesses' => 10,
+            'balanceMaxShift' => 1,
+            'balanceCooldown' => 3,
+        ],
+    ],
+],
+```
+
+`autoScalingStrategy` 설정 옵션은 Horizon이 큐에 더 많은 워커 프로세스를 어떻게 할당할지 결정합니다. 두 가지 전략 중에서 선택할 수 있습니다:
+
+<div class="content-list" markdown="1">
+
+- `time` 전략은 큐를 비우는 데 걸리는 총 예상 시간을 기반으로 워커를 할당합니다.
+- `size` 전략은 큐의 총 작업 수를 기반으로 워커를 할당합니다.
+
+</div>
+
+`balanceMaxShift`와 `balanceCooldown` 설정 값은 Horizon이 워커 수요에 맞춰 얼마나 빠르게 스케일링할지 결정합니다. 위의 예에서는 3초마다 최대 하나의 새 프로세스가 생성되거나 삭제됩니다. 애플리케이션의 필요에 따라 이 값들을 자유롭게 조정할 수 있습니다.
+
+<a name="auto-queue-priorities"></a>
+#### 큐 우선순위와 자동 밸런싱
+
+`auto` 밸런싱 전략을 사용할 때, Horizon은 큐 간에 엄격한 우선순위를 적용하지 않습니다. 슈퍼바이저 설정에서 큐의 순서는 워커 프로세스 할당 방식에 영향을 미치지 않습니다. 대신, Horizon은 선택된 `autoScalingStrategy`에 의존하여 큐 부하에 따라 워커 프로세스를 동적으로 할당합니다.
+
+예를 들어, 다음 설정에서 `high` 큐는 목록에서 먼저 나타남에도 불구하고 `default` 큐보다 우선순위가 높지 않습니다:
+
+```php
+'environments' => [
+    'production' => [
+        'supervisor-1' => [
+            // ...
+            'queue' => ['high', 'default'],
+            'minProcesses' => 1,
+            'maxProcesses' => 10,
+        ],
+    ],
+],
+```
+
+큐 간에 상대적 우선순위를 적용해야 한다면, 여러 슈퍼바이저를 정의하고 처리 리소스를 명시적으로 할당할 수 있습니다:
+
+```php
+'environments' => [
+    'production' => [
+        'supervisor-1' => [
+            // ...
+            'queue' => ['default'],
+            'minProcesses' => 1,
+            'maxProcesses' => 10,
+        ],
+        'supervisor-2' => [
+            // ...
+            'queue' => ['images'],
+            'minProcesses' => 1,
+            'maxProcesses' => 1,
+        ],
+    ],
+],
+```
+
+이 예에서 `default` 큐는 최대 10개의 프로세스까지 스케일 업할 수 있고, `images` 큐는 하나의 프로세스로 제한됩니다. 이 설정은 각 큐가 독립적으로 스케일링할 수 있도록 보장합니다.
+
+> [!NOTE]
+> 리소스 집약적인 작업을 디스패치할 때, 제한된 `maxProcesses` 값을 가진 전용 큐에 할당하는 것이 가장 좋을 수 있습니다. 그렇지 않으면 이러한 작업이 과도한 CPU 리소스를 소비하여 시스템에 과부하를 줄 수 있습니다.
+
+<a name="simple-balancing"></a>
+### 단순 밸런싱
+
+`simple` 전략은 지정된 큐에 워커 프로세스를 균등하게 분배합니다. 이 전략을 사용하면 Horizon은 워커 프로세스 수를 자동으로 스케일링하지 않습니다. 대신 고정된 수의 프로세스를 사용합니다:
+
+```php
+'environments' => [
+    'production' => [
+        'supervisor-1' => [
+            // ...
+            'queue' => ['default', 'notifications'],
+            'balance' => 'simple',
+            'processes' => 10,
+        ],
+    ],
+],
+```
+
+위의 예에서 Horizon은 총 10개를 균등하게 나누어 각 큐에 5개의 프로세스를 할당합니다.
+
+각 큐에 할당되는 워커 프로세스 수를 개별적으로 제어하려면 여러 슈퍼바이저를 정의할 수 있습니다:
+
+```php
+'environments' => [
+    'production' => [
+        'supervisor-1' => [
+            // ...
+            'queue' => ['default'],
+            'balance' => 'simple',
+            'processes' => 10,
+        ],
+        'supervisor-notifications' => [
+            // ...
+            'queue' => ['notifications'],
+            'balance' => 'simple',
+            'processes' => 2,
+        ],
+    ],
+],
+```
+
+이 설정으로 Horizon은 `default` 큐에 10개의 프로세스를, `notifications` 큐에 2개의 프로세스를 할당합니다.
+
+<a name="no-balancing"></a>
+### 밸런싱 없음
+
+`balance` 옵션이 `false`로 설정되면, Horizon은 라라벨의 기본 큐 시스템과 유사하게 나열된 순서대로 큐를 엄격하게 처리합니다. 그러나 작업이 축적되기 시작하면 여전히 워커 프로세스 수를 스케일링합니다:
+
+```php
+'environments' => [
+    'production' => [
+        'supervisor-1' => [
+            // ...
+            'queue' => ['default', 'notifications'],
+            'balance' => false,
+            'minProcesses' => 1,
+            'maxProcesses' => 10,
+        ],
+    ],
+],
+```
+
+위의 예에서 `default` 큐의 작업은 항상 `notifications` 큐의 작업보다 우선순위가 높습니다. 예를 들어, `default`에 1,000개의 작업이 있고 `notifications`에 10개만 있다면, Horizon은 `notifications`의 작업을 처리하기 전에 `default`의 모든 작업을 완전히 처리합니다.
+
+`minProcesses`와 `maxProcesses` 옵션을 사용하여 Horizon의 워커 프로세스 스케일링 능력을 제어할 수 있습니다:
+
+<div class="content-list" markdown="1">
+
+- `minProcesses`는 총 워커 프로세스의 최소 수를 정의합니다. 이 값은 1 이상이어야 합니다.
+- `maxProcesses`는 Horizon이 스케일 업할 수 있는 최대 총 워커 프로세스 수를 정의합니다.
+
+</div>
 
 <a name="upgrading-horizon"></a>
 ## Horizon 업그레이드
@@ -254,6 +477,43 @@ php artisan horizon:supervisor-status supervisor-1
 
 ```shell
 php artisan horizon:terminate
+```
+
+<a name="automatically-restarting-horizon"></a>
+#### Horizon 자동 재시작
+
+로컬 개발 중에 `horizon:listen` 명령을 실행할 수 있습니다. `horizon:listen` 명령을 사용하면, 업데이트된 코드를 다시 로드하고 싶을 때 수동으로 Horizon을 재시작할 필요가 없습니다. 이 기능을 사용하기 전에 로컬 개발 환경에 [Node](https://nodejs.org)가 설치되어 있는지 확인해야 합니다. 또한, 프로젝트 내에 [Chokidar](https://github.com/paulmillr/chokidar) 파일 감시 라이브러리를 설치해야 합니다:
+
+```shell
+npm install --save-dev chokidar
+```
+
+Chokidar가 설치되면, `horizon:listen` 명령을 사용하여 Horizon을 시작할 수 있습니다:
+
+```shell
+php artisan horizon:listen
+```
+
+Docker 또는 Vagrant 내에서 실행하는 경우, `--poll` 옵션을 사용해야 합니다:
+
+```shell
+php artisan horizon:listen --poll
+```
+
+애플리케이션의 `config/horizon.php` 설정 파일 내 `watch` 설정 옵션을 사용하여 감시할 디렉토리와 파일을 설정할 수 있습니다:
+
+```php
+'watch' => [
+    'app',
+    'bootstrap',
+    'config',
+    'database',
+    'public/**/*.php',
+    'resources/**/*.php',
+    'routes',
+    'composer.lock',
+    '.env',
+],
 ```
 
 <a name="deploying-horizon"></a>
@@ -438,6 +698,8 @@ public function boot(): void
 ],
 ```
 
+큐의 임계값을 `0`으로 설정하면 해당 큐에 대한 긴 대기 알림이 비활성화됩니다.
+
 <a name="metrics"></a>
 ## 메트릭
 
@@ -447,6 +709,12 @@ Horizon은 작업 및 큐 대기 시간과 처리량에 대한 정보를 제공�
 use Illuminate\Support\Facades\Schedule;
 
 Schedule::command('horizon:snapshot')->everyFiveMinutes();
+```
+
+모든 메트릭 데이터를 삭제하려면 `horizon:clear-metrics` Artisan 명령을 실행할 수 있습니다:
+
+```shell
+php artisan horizon:clear-metrics
 ```
 
 <a name="deleting-failed-jobs"></a>

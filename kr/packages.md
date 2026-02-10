@@ -6,14 +6,15 @@
 - [서비스 프로바이더](#service-providers)
 - [리소스](#resources)
     - [설정](#configuration)
-    - [마이그레이션](#migrations)
     - [라우트](#routes)
+    - [마이그레이션](#migrations)
     - [언어 파일](#language-files)
     - [뷰](#views)
     - [뷰 컴포넌트](#view-components)
     - ["About" 아티즌 명령어](#about-artisan-command)
 - [명령어](#commands)
     - [최적화 명령어](#optimize-commands)
+    - [리로드 명령어](#reload-commands)
 - [퍼블릭 에셋](#public-assets)
 - [파일 그룹 퍼블리싱](#publishing-file-groups)
 
@@ -123,7 +124,7 @@ $value = config('courier.option');
 
 ```php
 /**
- * 애플리케이션 서비스를 등록합니다.
+ * 패키지 서비스를 등록합니다.
  */
 public function register(): void
 {
@@ -339,7 +340,7 @@ Laravel의 내장 `about` 아티즌 명령어는 애플리케이션의 환경과
 use Illuminate\Foundation\Console\AboutCommand;
 
 /**
- * 애플리케이션 서비스를 부트스트랩합니다.
+ * 패키지 서비스를 부트스트랩합니다.
  */
 public function boot(): void
 {
@@ -390,6 +391,23 @@ public function boot(): void
 }
 ```
 
+<a name="reload-commands"></a>
+### 리로드 명령어(Reload Commands)
+
+Laravel의 [reload 명령어](/docs/{{version}}/deployment#reloading-services)는 실행 중인 서비스를 종료하여 시스템 프로세스 모니터에 의해 자동으로 재시작되도록 합니다. `reloads` 메서드를 사용하여 `reload` 명령어가 실행될 때 호출되어야 하는 패키지의 자체 Artisan 명령어를 등록할 수 있습니다.
+
+```php
+/**
+ * 패키지 서비스를 부트스트랩합니다.
+ */
+public function boot(): void
+{
+    if ($this->app->runningInConsole()) {
+        $this->reloads('package:reload');
+    }
+}
+```
+
 <a name="public-assets"></a>
 ## 퍼블릭 에셋(Public Assets)
 
@@ -407,7 +425,7 @@ public function boot(): void
 }
 ```
 
-이제 패키지 사용자가 `vendor:publish` 명령어를 실행하면, 에셋이 지정된 퍼블리시 위치로 복사됩니다. 사용자는 일반적으로 패키지가 업데이트될 때마다 에셋을 덮어써야 하므로 `--force` 플래그를 사용할 수 있습니다:
+이제 패키지 사용자가 `vendor:publish` 명령어를 실행하면, 에셋이 지정된 퍼블리시 위치로 복사됩니다. 사용자는 일반적으로 패키지가 업데이트될 때마다 에셋을 덮어써야 하므로, `--force` 플래그를 사용할 수 있습니다:
 
 ```shell
 php artisan vendor:publish --tag=public --force

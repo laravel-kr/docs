@@ -278,7 +278,7 @@ $article->id; // "01gd4d3tgrrfqeda94gdbtdk5c"
 <a name="timestamps"></a>
 ### Timestamps
 
-By default, Eloquent expects `created_at` and `updated_at` columns to exist on your model's corresponding database table.  Eloquent will automatically set these column's values when models are created or updated. If you do not want these columns to be automatically managed by Eloquent, you should define a `$timestamps` property on your model with a value of `false`:
+By default, Eloquent expects `created_at` and `updated_at` columns to exist on your model's corresponding database table. Eloquent will automatically set these column's values when models are created or updated. If you do not want these columns to be automatically managed by Eloquent, you should define a `$timestamps` property on your model with a value of `false`:
 
 ```php
 <?php
@@ -325,8 +325,19 @@ If you need to customize the names of the columns used to store the timestamps, 
 
 class Flight extends Model
 {
-    const CREATED_AT = 'creation_date';
-    const UPDATED_AT = 'updated_date';
+    /**
+     * The name of the "created at" column.
+     *
+     * @var string|null
+     */
+    public const CREATED_AT = 'creation_date';
+
+    /**
+     * The name of the "updated at" column.
+     *
+     * @var string|null
+     */
+    public const UPDATED_AT = 'updated_date';
 }
 ```
 
@@ -431,7 +442,7 @@ The Eloquent `all` method will return all of the results in the model's table. H
 ```php
 $flights = Flight::where('active', 1)
     ->orderBy('name')
-    ->take(10)
+    ->limit(10)
     ->get();
 ```
 
@@ -676,7 +687,7 @@ Route::get('/api/flights/{id}', function (string $id) {
 <a name="retrieving-or-creating-models"></a>
 ### Retrieving or Creating Models
 
-The `firstOrCreate` method will attempt to locate a database record using the given column / value pairs. If the model cannot be found in the database, a record will be inserted with the attributes resulting from merging the first array argument with the optional second array argument:
+The `firstOrCreate` method will attempt to locate a database record using the given column / value pairs. If the model cannot be found in the database, a record will be inserted with the attributes resulting from merging the first array argument with the optional second array argument.
 
 The `firstOrNew` method, like `firstOrCreate`, will attempt to locate a record in the database matching the given attributes. However, if a model is not found, a new model instance will be returned. Note that the model returned by `firstOrNew` has not yet been persisted to the database. You will need to manually call the `save` method to persist it:
 
@@ -794,6 +805,18 @@ $flight = Flight::updateOrCreate(
 );
 ```
 
+When using methods such as `firstOrCreate` or `updateOrCreate`, you may not know whether a new model has been created or an existing one has been updated. The `wasRecentlyCreated` property indicates if the model was created during its current lifecycle:
+
+```php
+$flight = Flight::updateOrCreate(
+    // ...
+);
+
+if ($flight->wasRecentlyCreated) {
+    // New flight record was inserted...
+}
+```
+
 <a name="mass-updates"></a>
 #### Mass Updates
 
@@ -879,7 +902,7 @@ $user->getOriginal('name'); // John
 $user->getOriginal(); // Array of original attributes...
 ```
 
-The `getChanges` method returns an array containing the attributes that changed when the model was last saved:
+The `getChanges` method returns an array containing the attributes that changed when the model was last saved, while the `getPrevious` method returns an array containing the original attribute values before the model was last saved:
 
 ```php
 $user = User::find(1);
@@ -898,6 +921,15 @@ $user->getChanges();
     [
         'name' => 'Jack',
         'email' => 'jack@example.com',
+    ]
+*/
+
+$user->getPrevious();
+
+/*
+    [
+        'name' => 'John',
+        'email' => 'john@example.com',
     ]
 */
 ```
@@ -1031,7 +1063,7 @@ $flight->delete();
 <a name="deleting-an-existing-model-by-its-primary-key"></a>
 #### Deleting an Existing Model by its Primary Key
 
-In the example above, we are retrieving the model from the database before calling the `delete` method. However, if you know the primary key of the model, you may delete the model without explicitly retrieving it by calling the `destroy` method.  In addition to accepting the single primary key, the `destroy` method will accept multiple primary keys, an array of primary keys, or a [collection](/docs/{{version}}/collections) of primary keys:
+In the example above, we are retrieving the model from the database before calling the `delete` method. However, if you know the primary key of the model, you may delete the model without explicitly retrieving it by calling the `destroy` method. In addition to accepting the single primary key, the `destroy` method will accept multiple primary keys, an array of primary keys, or a [collection](/docs/{{version}}/collections) of primary keys:
 
 ```php
 Flight::destroy(1);
@@ -1211,7 +1243,7 @@ class Flight extends Model
      */
     public function prunable(): Builder
     {
-        return static::where('created_at', '<=', now()->subMonth());
+        return static::where('created_at', '<=', now()->minus(months: 1));
     }
 }
 ```
@@ -1284,7 +1316,7 @@ class Flight extends Model
      */
     public function prunable(): Builder
     {
-        return static::where('created_at', '<=', now()->subMonth());
+        return static::where('created_at', '<=', now()->minus(months: 1));
     }
 }
 ```
@@ -1366,7 +1398,7 @@ class AncientScope implements Scope
      */
     public function apply(Builder $builder, Model $model): void
     {
-        $builder->where('created_at', '<', now()->subYears(2000));
+        $builder->where('created_at', '<', now()->minus(years: 2000));
     }
 }
 ```
@@ -1443,7 +1475,7 @@ class User extends Model
     protected static function booted(): void
     {
         static::addGlobalScope('ancient', function (Builder $builder) {
-            $builder->where('created_at', '<', now()->subYears(2000));
+            $builder->where('created_at', '<', now()->minus(years: 2000));
         });
     }
 }
@@ -1464,7 +1496,7 @@ Or, if you defined the global scope using a closure, you should pass the string 
 User::withoutGlobalScope('ancient')->get();
 ```
 
-If you would like to remove several or even all of the query's global scopes, you may use the `withoutGlobalScopes` method:
+If you would like to remove several or even all of the query's global scopes, you may use the `withoutGlobalScopes` and `withoutGlobalScopesExcept` methods:
 
 ```php
 // Remove all of the global scopes...
@@ -1473,6 +1505,11 @@ User::withoutGlobalScopes()->get();
 // Remove some of the global scopes...
 User::withoutGlobalScopes([
     FirstScope::class, SecondScope::class
+])->get();
+
+// Remove all global scopes except the given ones...
+User::withoutGlobalScopesExcept([
+    SecondScope::class,
 ])->get();
 ```
 
@@ -1582,7 +1619,7 @@ If you would like to use scopes to create models that have the same attributes a
 
 namespace App\Models;
 
-use Illuminate\Database\Attributes\Scope;
+use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 

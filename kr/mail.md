@@ -48,7 +48,7 @@ Laravel의 이메일 서비스는 애플리케이션의 `config/mail.php` 설정
 <a name="driver-prerequisites"></a>
 ### 드라이버 / 전송 방식 사전 준비사항
 
-Mailgun, Postmark, Resend, MailerSend와 같은 API 기반 드라이버는 SMTP 서버를 통한 메일 발송보다 더 간단하고 빠른 경우가 많습니다. 가능하다면 이러한 드라이버 중 하나를 사용하는 것을 권장합니다.
+Mailgun, Postmark, Resend와 같은 API 기반 드라이버는 SMTP 서버를 통한 메일 발송보다 더 간단하고 빠른 경우가 많습니다. 가능하다면 이러한 드라이버 중 하나를 사용하는 것을 권장합니다.
 
 <a name="mailgun-driver"></a>
 #### Mailgun 드라이버
@@ -87,7 +87,7 @@ composer require symfony/mailgun-mailer symfony/http-client
 ],
 ```
 
-미국 [Mailgun 지역](https://documentation.mailgun.com/en/latest/api-intro.html#mailgun-regions)을 사용하지 않는 경우, `services` 설정 파일에서 해당 지역의 엔드포인트를 정의할 수 있습니다:
+미국 [Mailgun 지역](https://documentation.mailgun.com/docs/mailgun/api-reference/#mailgun-regions)을 사용하지 않는 경우, `services` 설정 파일에서 해당 지역의 엔드포인트를 정의할 수 있습니다:
 
 ```php
 'mailgun' => [
@@ -111,7 +111,7 @@ composer require symfony/postmark-mailer symfony/http-client
 
 ```php
 'postmark' => [
-    'token' => env('POSTMARK_TOKEN'),
+    'key' => env('POSTMARK_API_KEY'),
 ],
 ```
 
@@ -142,7 +142,7 @@ composer require resend/resend-php
 
 ```php
 'resend' => [
-    'key' => env('RESEND_KEY'),
+    'key' => env('RESEND_API_KEY'),
 ],
 ```
 
@@ -208,35 +208,6 @@ public function headers(): Headers
 ],
 ```
 
-<a name="mailersend-driver"></a>
-#### MailerSend 드라이버
-
-트랜잭션 이메일 및 SMS 서비스인 [MailerSend](https://www.mailersend.com/)는 Laravel용 자체 API 기반 메일 드라이버를 유지 관리합니다. 드라이버가 포함된 패키지는 Composer 패키지 관리자를 통해 설치할 수 있습니다:
-
-```shell
-composer require mailersend/laravel-driver
-```
-
-패키지가 설치되면, 애플리케이션의 `.env` 파일에 `MAILERSEND_API_KEY` 환경 변수를 추가하세요. 또한 `MAIL_MAILER` 환경 변수를 `mailersend`로 정의해야 합니다:
-
-```ini
-MAIL_MAILER=mailersend
-MAIL_FROM_ADDRESS=app@yourdomain.com
-MAIL_FROM_NAME="App Name"
-
-MAILERSEND_API_KEY=your-api-key
-```
-
-마지막으로, 애플리케이션의 `config/mail.php` 설정 파일에 있는 `mailers` 배열에 MailerSend를 추가합니다:
-
-```php
-'mailersend' => [
-    'transport' => 'mailersend',
-],
-```
-
-호스팅된 템플릿 사용 방법을 포함한 MailerSend에 대해 더 알아보려면 [MailerSend 드라이버 문서](https://github.com/mailersend/mailersend-laravel-driver#usage)를 참조하세요.
-
 <a name="failover-configuration"></a>
 ### 장애 조치 설정
 
@@ -253,16 +224,17 @@ MAILERSEND_API_KEY=your-api-key
             'mailgun',
             'sendmail',
         ],
+        'retry_after' => 60,
     ],
 
     // ...
 ],
 ```
 
-장애 조치 메일러를 정의한 후, 애플리케이션의 `mail` 설정 파일 내에서 `default` 설정 키의 값으로 이름을 지정하여 이 메일러를 애플리케이션에서 사용하는 기본 메일러로 설정해야 합니다:
+`failover` 전송 방식을 사용하는 메일러를 설정한 후, 장애 조치 기능을 활용하려면 애플리케이션의 `.env` 파일에서 장애 조치 메일러를 기본 메일러로 설정해야 합니다:
 
-```php
-'default' => env('MAIL_MAILER', 'failover'),
+```ini
+MAIL_MAILER=failover
 ```
 
 <a name="round-robin-configuration"></a>
@@ -278,6 +250,7 @@ MAILERSEND_API_KEY=your-api-key
             'ses',
             'postmark',
         ],
+        'retry_after' => 60,
     ],
 
     // ...
@@ -359,7 +332,10 @@ return new Envelope(
 또한, `config/mail.php` 설정 파일 내에서 전역 "reply_to" 주소를 정의할 수 있습니다:
 
 ```php
-'reply_to' => ['address' => 'example@example.com', 'name' => 'App Name'],
+'reply_to' => [
+    'address' => 'example@example.com',
+    'name' => 'App Name',
+],
 ```
 
 <a name="configuring-the-view"></a>
@@ -380,7 +356,7 @@ public function content(): Content
 ```
 
 > [!NOTE]
-> 모든 이메일 템플릿을 보관하기 위해 `resources/views/emails` 디렉토리를 생성할 수 있습니다. 그러나 `resources/views` 디렉토리 내 어디에나 자유롭게 배치할 수 있습니다.
+> 모든 이메일 템플릿을 보관하기 위해 `resources/views/mail` 디렉토리를 생성할 수 있습니다. 그러나 `resources/views` 디렉토리 내 어디에나 자유롭게 배치할 수 있습니다.
 
 <a name="plain-text-emails"></a>
 #### 일반 텍스트 이메일
@@ -502,7 +478,7 @@ class OrderShipped extends Mailable
 }
 ```
 
-데이터가 `with` 메소드에 전달되면, 뷰에서 자동으로 사용할 수 있으므로 Blade 템플릿의 다른 데이터에 접근하는 것처럼 접근할 수 있습니다:
+데이터가 `with` 매개변수를 통해 전달되면, 뷰에서 자동으로 사용할 수 있으므로 Blade 템플릿의 다른 데이터에 접근하는 것처럼 접근할 수 있습니다:
 
 ```blade
 <div>
@@ -769,7 +745,7 @@ public function envelope(): Envelope
 }
 ```
 
-애플리케이션이 Mailgun 드라이버를 사용하는 경우, [태그](https://documentation.mailgun.com/docs/mailgun/user-manual/tracking-messages/#tagging) 및 [메타데이터](https://documentation.mailgun.com/docs/mailgun/user-manual/tracking-messages/#attaching-data-to-messages)에 대한 자세한 정보는 Mailgun 문서를 참조할 수 있습니다. 마찬가지로, [태그](https://postmarkapp.com/blog/tags-support-for-smtp) 및 [메타데이터](https://postmarkapp.com/support/article/1125-custom-metadata-faq) 지원에 대한 자세한 정보는 Postmark 문서를 참조할 수 있습니다.
+애플리케이션이 Mailgun 드라이버를 사용하는 경우, [태그](https://documentation.mailgun.com/docs/mailgun/user-manual/tracking-messages/#tags) 및 [메타데이터](https://documentation.mailgun.com/docs/mailgun/user-manual/sending-messages/#attaching-metadata-to-messages)에 대한 자세한 정보는 Mailgun 문서를 참조할 수 있습니다. 마찬가지로, [태그](https://postmarkapp.com/blog/tags-support-for-smtp) 및 [메타데이터](https://postmarkapp.com/support/article/1125-custom-metadata-faq) 지원에 대한 자세한 정보는 Postmark 문서를 참조할 수 있습니다.
 
 애플리케이션이 Amazon SES를 사용하여 이메일을 발송하는 경우, `metadata` 메소드를 사용하여 메시지에 [SES "태그"](https://docs.aws.amazon.com/ses/latest/APIReference/API_MessageTag.html)를 첨부해야 합니다.
 
@@ -1001,7 +977,7 @@ Mail::to($request->user())
 Mail::to($request->user())
     ->cc($moreUsers)
     ->bcc($evenMoreUsers)
-    ->later(now()->addMinutes(10), new OrderShipped($order));
+    ->later(now()->plus(minutes: 10), new OrderShipped($order));
 ```
 
 <a name="pushing-to-specific-queues"></a>
@@ -1076,6 +1052,35 @@ class OrderShipped extends Mailable implements ShouldQueue
 > [!NOTE]
 > 이러한 문제에 대한 해결 방법에 대해 더 알아보려면, [큐에 넣은 작업과 데이터베이스 트랜잭션](/docs/{{version}}/queues#jobs-and-database-transactions) 관련 문서를 참조하세요.
 
+<a name="queued-email-failures"></a>
+#### 큐에 넣은 이메일 실패
+
+큐에 넣은 이메일이 실패하면, 정의되어 있는 경우 큐에 넣은 mailable 클래스의 `failed` 메서드가 호출됩니다. 큐에 넣은 이메일이 실패하게 한 `Throwable` 인스턴스가 `failed` 메서드에 전달됩니다.
+
+```php
+<?php
+
+namespace App\Mail;
+
+use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Mail\Mailable;
+use Illuminate\Queue\SerializesModels;
+use Throwable;
+
+class OrderDelayed extends Mailable implements ShouldQueue
+{
+    use SerializesModels;
+
+    /**
+     * 큐에 넣은 이메일의 실패를 처리합니다.
+     */
+    public function failed(Throwable $exception): void
+    {
+        // ...
+    }
+}
+```
+
 <a name="rendering-mailables"></a>
 ## Mailable 렌더링
 
@@ -1117,7 +1122,7 @@ Mail::to($request->user())->locale('es')->send(
 ```
 
 <a name="user-preferred-locales"></a>
-### 사용자 선호 로케일
+#### 사용자 선호 로케일
 
 때때로 애플리케이션은 각 사용자의 선호 로케일을 저장합니다. 하나 이상의 모델에 `HasLocalePreference` 계약을 구현함으로써, Laravel이 메일을 발송할 때 이 저장된 로케일을 사용하도록 지시할 수 있습니다:
 
@@ -1148,9 +1153,7 @@ Mail::to($request->user())->send(new OrderShipped($order));
 <a name="testing-mailable-content"></a>
 ### Mailable 내용 테스트
 
-Laravel은 mailable의 구조를 검사하기 위한 다양한 메소드를 제공합니다. 또한 Laravel은 mailable에 예상한 콘텐츠가 포함되어 있는지 테스트하기 위한 여러 편리한 메소드를 제공합니다. 이러한 메소드는: `assertSeeInHtml`, `assertDontSeeInHtml`, `assertSeeInOrderInHtml`, `assertSeeInText`, `assertDontSeeInText`, `assertSeeInOrderInText`, `assertHasAttachment`, `assertHasAttachedData`, `assertHasAttachmentFromStorage`, `assertHasAttachmentFromStorageDisk`입니다.
-
-예상대로, "HTML" 어설션은 mailable의 HTML 버전에 주어진 문자열이 포함되어 있음을 확인하고, "text" 어설션은 mailable의 일반 텍스트 버전에 주어진 문자열이 포함되어 있음을 확인합니다:
+Laravel은 mailable의 구조를 검사하기 위한 다양한 메소드를 제공합니다. 또한 Laravel은 mailable에 예상한 콘텐츠가 포함되어 있는지 테스트하기 위한 여러 편리한 메소드를 제공합니다:
 
 ```php tab=Pest
 use App\Mail\InvoicePaid;
@@ -1171,10 +1174,11 @@ test('mailable content', function () {
     $mailable->assertHasMetadata('key', 'value');
 
     $mailable->assertSeeInHtml($user->email);
-    $mailable->assertSeeInHtml('Invoice Paid');
+    $mailable->assertDontSeeInHtml('Invoice Not Paid');
     $mailable->assertSeeInOrderInHtml(['Invoice Paid', 'Thanks']);
 
     $mailable->assertSeeInText($user->email);
+    $mailable->assertDontSeeInText('Invoice Not Paid');
     $mailable->assertSeeInOrderInText(['Invoice Paid', 'Thanks']);
 
     $mailable->assertHasAttachment('/path/to/file');
@@ -1205,10 +1209,11 @@ public function test_mailable_content(): void
     $mailable->assertHasMetadata('key', 'value');
 
     $mailable->assertSeeInHtml($user->email);
-    $mailable->assertSeeInHtml('Invoice Paid');
+    $mailable->assertDontSeeInHtml('Invoice Not Paid');
     $mailable->assertSeeInOrderInHtml(['Invoice Paid', 'Thanks']);
 
     $mailable->assertSeeInText($user->email);
+    $mailable->assertDontSeeInText('Invoice Not Paid');
     $mailable->assertSeeInOrderInText(['Invoice Paid', 'Thanks']);
 
     $mailable->assertHasAttachment('/path/to/file');
@@ -1218,6 +1223,8 @@ public function test_mailable_content(): void
     $mailable->assertHasAttachmentFromStorageDisk('s3', '/path/to/file', 'name.pdf', ['mime' => 'application/pdf']);
 }
 ```
+
+예상대로, "HTML" 어설션은 mailable의 HTML 버전에 주어진 문자열이 포함되어 있음을 확인하고, "text" 어설션은 mailable의 일반 텍스트 버전에 주어진 문자열이 포함되어 있음을 확인합니다.
 
 <a name="testing-mailable-sending"></a>
 ### Mailable 발송 테스트
@@ -1254,6 +1261,9 @@ test('orders can be shipped', function () {
 
     // mailable이 발송되지 않았는지 확인...
     Mail::assertNotSent(AnotherMailable::class);
+
+    // mailable이 두 번 발송되었는지 확인...
+    Mail::assertSentTimes(OrderShipped::class, 2);
 
     // 총 3개의 mailable이 발송되었는지 확인...
     Mail::assertSentCount(3);
@@ -1295,6 +1305,9 @@ class ExampleTest extends TestCase
         // mailable이 발송되지 않았는지 확인...
         Mail::assertNotSent(AnotherMailable::class);
 
+        // mailable이 두 번 발송되었는지 확인...
+        Mail::assertSentTimes(OrderShipped::class, 2);
+
         // 총 3개의 mailable이 발송되었는지 확인...
         Mail::assertSentCount(3);
     }
@@ -1308,6 +1321,12 @@ Mail::assertQueued(OrderShipped::class);
 Mail::assertNotQueued(OrderShipped::class);
 Mail::assertNothingQueued();
 Mail::assertQueuedCount(3);
+```
+
+`assertOutgoingCount` 메소드를 사용하여 발송되거나 큐에 넣은 mailable의 총 수를 어설션할 수도 있습니다:
+
+```php
+Mail::assertOutgoingCount(3);
 ```
 
 주어진 "진실 테스트"를 통과하는 mailable이 발송되었는지 확인하기 위해 `assertSent`, `assertNotSent`, `assertQueued`, `assertNotQueued` 메소드에 클로저를 전달할 수 있습니다. 주어진 진실 테스트를 통과하는 mailable이 하나 이상 발송되면 어설션이 성공합니다:
@@ -1327,7 +1346,9 @@ Mail::assertSent(OrderShipped::class, function (OrderShipped $mail) use ($user) 
            $mail->hasBcc('...') &&
            $mail->hasReplyTo('...') &&
            $mail->hasFrom('...') &&
-           $mail->hasSubject('...');
+           $mail->hasSubject('...') &&
+           $mail->hasMetadata('order_id', $mail->order->id);
+           $mail->usesMailer('ses');
 });
 ```
 
@@ -1403,6 +1424,8 @@ public function boot(): void
 }
 ```
 
+`alwaysTo` 메소드를 사용할 때, 메일 메시지의 추가 "cc" 또는 "bcc" 주소는 제거됩니다.
+
 <a name="events"></a>
 ## 이벤트
 
@@ -1415,7 +1438,7 @@ use Illuminate\Mail\Events\MessageSending;
 class LogMessage
 {
     /**
-     * 주어진 이벤트를 처리합니다.
+     * 이벤트를 처리합니다.
      */
     public function handle(MessageSending $event): void
     {
@@ -1427,9 +1450,13 @@ class LogMessage
 <a name="custom-transports"></a>
 ## 커스텀 전송 방식
 
-Laravel에는 다양한 메일 전송 방식이 포함되어 있지만, Laravel이 기본적으로 지원하지 않는 다른 서비스를 통해 이메일을 전달하기 위해 자체 전송 방식을 작성하고 싶을 수 있습니다. 시작하려면, `Symfony\Component\Mailer\Transport\AbstractTransport` 클래스를 확장하는 클래스를 정의합니다. 그런 다음, 전송 방식에 `doSend` 및 `__toString()` 메소드를 구현합니다:
+Laravel에는 다양한 메일 전송 방식이 포함되어 있지만, Laravel이 기본적으로 지원하지 않는 다른 서비스를 통해 이메일을 전달하기 위해 자체 전송 방식을 작성하고 싶을 수 있습니다. 시작하려면, `Symfony\Component\Mailer\Transport\AbstractTransport` 클래스를 확장하는 클래스를 정의합니다. 그런 다음, 전송 방식에 `doSend` 및 `__toString` 메소드를 구현합니다:
 
 ```php
+<?php
+
+namespace App\Mail;
+
 use MailchimpTransactional\ApiClient;
 use Symfony\Component\Mailer\SentMessage;
 use Symfony\Component\Mailer\Transport\AbstractTransport;
@@ -1474,11 +1501,12 @@ class MailchimpTransport extends AbstractTransport
 }
 ```
 
-커스텀 전송 방식을 정의한 후, `Mail` 파사드에서 제공하는 `extend` 메소드를 통해 등록할 수 있습니다. 일반적으로 이는 애플리케이션의 `AppServiceProvider` 서비스 프로바이더의 `boot` 메소드 내에서 수행해야 합니다. `$config` 인수가 `extend` 메소드에 제공된 클로저에 전달됩니다. 이 인수는 애플리케이션의 `config/mail.php` 설정 파일에서 메일러에 대해 정의된 설정 배열을 포함합니다:
+커스텀 전송 방식을 정의한 후, `Mail` 파사드에서 제공하는 `extend` 메소드를 통해 등록할 수 있습니다. 일반적으로 이는 애플리케이션의 `AppServiceProvider`의 `boot` 메소드 내에서 수행해야 합니다. `$config` 인수가 `extend` 메소드에 제공된 클로저에 전달됩니다. 이 인수는 애플리케이션의 `config/mail.php` 설정 파일에서 메일러에 대해 정의된 설정 배열을 포함합니다:
 
 ```php
 use App\Mail\MailchimpTransport;
 use Illuminate\Support\Facades\Mail;
+use MailchimpTransactional\ApiClient;
 
 /**
  * 애플리케이션 서비스를 부트스트랩합니다.
@@ -1486,7 +1514,11 @@ use Illuminate\Support\Facades\Mail;
 public function boot(): void
 {
     Mail::extend('mailchimp', function (array $config = []) {
-        return new MailchimpTransport(/* ... */);
+        $client = new ApiClient;
+
+        $client->setApiKey($config['key']);
+
+        return new MailchimpTransport($client);
     });
 }
 ```
@@ -1496,6 +1528,7 @@ public function boot(): void
 ```php
 'mailchimp' => [
     'transport' => 'mailchimp',
+    'key' => env('MAILCHIMP_API_KEY'),
     // ...
 ],
 ```
@@ -1513,7 +1546,7 @@ Brevo 메일러 패키지가 설치되면, 애플리케이션의 `services` 설�
 
 ```php
 'brevo' => [
-    'key' => 'your-api-key',
+    'key' => env('BREVO_API_KEY'),
 ],
 ```
 
@@ -1541,7 +1574,7 @@ public function boot(): void
 }
 ```
 
-전송 방식이 등록되면, 새 전송 방식을 활용하는 메일러 정의를 애플리케이션의 config/mail.php 설정 파일에 생성할 수 있습니다:
+전송 방식이 등록되면, 새 전송 방식을 활용하는 메일러 정의를 애플리케이션의 `config/mail.php` 설정 파일에 생성할 수 있습니다:
 
 ```php
 'brevo' => [

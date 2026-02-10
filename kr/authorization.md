@@ -343,6 +343,24 @@ public function boot(): void
 }
 ```
 
+또는, 모델 클래스에 `UsePolicy` 속성(attribute)을 배치하여 Laravel에 해당 모델의 정책을 알려줄 수 있습니다:
+
+```php
+<?php
+
+namespace App\Models;
+
+use App\Policies\OrderPolicy;
+use Illuminate\Database\Eloquent\Attributes\UsePolicy;
+use Illuminate\Database\Eloquent\Model;
+
+#[UsePolicy(OrderPolicy::class)]
+class Order extends Model
+{
+    //
+}
+```
+
 <a name="writing-policies"></a>
 ## 정책 작성하기
 

@@ -10,9 +10,12 @@
     - [Removing Items From the Cache](#removing-items-from-the-cache)
     - [Cache Memoization](#cache-memoization)
     - [The Cache Helper](#the-cache-helper)
+- [Cache Tags](#cache-tags)
 - [Atomic Locks](#atomic-locks)
     - [Managing Locks](#managing-locks)
     - [Managing Locks Across Processes](#managing-locks-across-processes)
+    - [Locks and Function Invocations](#locks-and-function-invocations)
+- [Cache Failover](#cache-failover)
 - [Adding Custom Cache Drivers](#adding-custom-cache-drivers)
     - [Writing the Driver](#writing-the-driver)
     - [Registering the Driver](#registering-the-driver)
@@ -202,7 +205,7 @@ The `increment` and `decrement` methods may be used to adjust the value of integ
 
 ```php
 // Initialize the value if it does not exist...
-Cache::add('key', 0, now()->addHours(4));
+Cache::add('key', 0, now()->plus(hours: 4));
 
 // Increment or decrement the value...
 Cache::increment('key');
@@ -237,7 +240,7 @@ $value = Cache::rememberForever('users', function () {
 
 When using the `Cache::remember` method, some users may experience slow response times if the cached value has expired. For certain types of data, it can be useful to allow partially stale data to be served while the cached value is recalculated in the background, preventing some users from experiencing slow response times while cached values are calculated. This is often referred to as the "stale-while-revalidate" pattern, and the `Cache::flexible` method provides an implementation of this pattern.
 
-The flexible method accepts an array that specifies how long the cached value is considered “fresh” and when it becomes “stale.” The first value in the array represents the number of seconds the cache is considered fresh, while the second value defines how long it can be served as stale data before recalculation is necessary.
+The flexible method accepts an array that specifies how long the cached value is considered "fresh" and when it becomes "stale". The first value in the array represents the number of seconds the cache is considered fresh, while the second value defines how long it can be served as stale data before recalculation is necessary.
 
 If a request is made within the fresh period (before the first value), the cache is returned immediately without recalculation. If a request is made during the stale period (between the two values), the stale value is served to the user, and a [deferred function](/docs/{{version}}/helpers#deferred-functions) is registered to refresh the cached value after the response is sent to the user. If a request is made after the second value, the cache is considered expired, and the value is recalculated immediately, which may result in a slower response for the user:
 
@@ -276,7 +279,7 @@ Cache::put('key', 'value');
 Instead of passing the number of seconds as an integer, you may also pass a `DateTime` instance representing the desired expiration time of the cached item:
 
 ```php
-Cache::put('key', 'value', now()->addMinutes(10));
+Cache::put('key', 'value', now()->plus(minutes: 10));
 ```
 
 <a name="store-if-not-present"></a>
@@ -384,7 +387,7 @@ If you provide an array of key / value pairs and an expiration time to the funct
 ```php
 cache(['key' => 'value'], $seconds);
 
-cache(['key' => 'value'], now()->addMinutes(10));
+cache(['key' => 'value'], now()->plus(minutes: 10));
 ```
 
 When the `cache` function is called without any arguments, it returns an instance of the `Illuminate\Contracts\Cache\Factory` implementation, allowing you to call other caching methods:
@@ -396,7 +399,51 @@ cache()->remember('users', $seconds, function () {
 ```
 
 > [!NOTE]
-> When testing call to the global `cache` function, you may use the `Cache::shouldReceive` method just as if you were [testing the facade](/docs/{{version}}/mocking#mocking-facades).
+> When testing calls to the global `cache` function, you may use the `Cache::shouldReceive` method just as if you were [testing the facade](/docs/{{version}}/mocking#mocking-facades).
+
+<a name="cache-tags"></a>
+## Cache Tags
+
+> [!WARNING]
+> Cache tags are not supported when using the `file`, `dynamodb`, or `database` cache drivers.
+
+<a name="storing-tagged-cache-items"></a>
+### Storing Tagged Cache Items
+
+Cache tags allow you to tag related items in the cache and then flush all cached values that have been assigned a given tag. You may access a tagged cache by passing in an ordered array of tag names. For example, let's access a tagged cache and `put` a value into the cache:
+
+```php
+use Illuminate\Support\Facades\Cache;
+
+Cache::tags(['people', 'artists'])->put('John', $john, $seconds);
+Cache::tags(['people', 'authors'])->put('Anne', $anne, $seconds);
+```
+
+<a name="accessing-tagged-cache-items"></a>
+### Accessing Tagged Cache Items
+
+Items stored via tags may not be accessed without also providing the tags that were used to store the value. To retrieve a tagged cache item, pass the same ordered list of tags to the `tags` method, then call the `get` method with the key you wish to retrieve:
+
+```php
+$john = Cache::tags(['people', 'artists'])->get('John');
+
+$anne = Cache::tags(['people', 'authors'])->get('Anne');
+```
+
+<a name="removing-tagged-cache-items"></a>
+### Removing Tagged Cache Items
+
+You may flush all items that are assigned a tag or list of tags. For example, the following code would remove all caches tagged with either `people`, `authors`, or both. So, both `Anne` and `John` would be removed from the cache:
+
+```php
+Cache::tags(['people', 'authors'])->flush();
+```
+
+In contrast, the code below would remove only cached values tagged with `authors`, so `Anne` would be removed, but not `John`:
+
+```php
+Cache::tags('authors')->flush();
+```
 
 <a name="atomic-locks"></a>
 ## Atomic Locks
@@ -483,6 +530,52 @@ If you would like to release a lock without respecting its current owner, you ma
 ```php
 Cache::lock('processing')->forceRelease();
 ```
+
+<a name="locks-and-function-invocations"></a>
+### Locks and Function Invocations
+
+The `withoutOverlapping` method provides a simple syntax for executing a given closure while holding an atomic lock, allowing you to ensure only one instance of the closure is running at a given time across your entire infrastructure:
+
+```php
+Cache::withoutOverlapping('foo', function () {
+    // Lock acquired after waiting a maximum of 10 seconds...
+});
+```
+
+By default, the lock will not be released until the closure finishes executing, and the method will wait up to 10 seconds to acquire the lock. You may customize these values by passing additional arguments to the method:
+
+```php
+Cache::withoutOverlapping('foo', function () {
+    // Lock acquired for 120 seconds after waiting a maximum of 5 seconds...
+}, lockFor: 120, waitFor: 5);
+```
+
+If the lock cannot be acquired within the specified wait time, an `Illuminate\Contracts\Cache\LockTimeoutException` will be thrown.
+
+<a name="cache-failover"></a>
+## Cache Failover
+
+The `failover` cache driver provides automatic failover functionality when interacting with the cache. If the primary cache store of the `failover` store fails for any reason, Laravel will automatically attempt to use the next configured store in the list. This is particularly useful for ensuring high availability in production environments where cache reliability is critical.
+
+To configure a failover cache store, specify the `failover` driver and provide an array of store names to attempt in order. By default, Laravel includes an example failover configuration in your application's `config/cache.php` configuration file:
+
+```php
+'failover' => [
+    'driver' => 'failover',
+    'stores' => [
+        'database',
+        'array',
+    ],
+],
+```
+
+Once you have configured a store that uses the `failover` driver, you will need to set the failover store as your default cache store in your application's `.env` file to make use of the failover functionality:
+
+```ini
+CACHE_STORE=failover
+```
+
+When a cache store operation fails and failover is activated, Laravel will dispatch the `Illuminate\Cache\Events\CacheFailedOver` event, allowing you to report or log that a cache store has failed.
 
 <a name="adding-custom-cache-drivers"></a>
 ## Adding Custom Cache Drivers

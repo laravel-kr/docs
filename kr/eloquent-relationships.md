@@ -1674,7 +1674,7 @@ $posts = Post::whereRelation('comments', 'is_approved', false)->get();
 
 ```php
 $posts = Post::whereRelation(
-    'comments', 'created_at', '>=', now()->subHour()
+    'comments', 'created_at', '>=', now()->minus(hours: 1)
 )->get();
 ```
 
@@ -1699,13 +1699,13 @@ $posts = Post::whereDoesntHave('comments', function (Builder $query) {
 })->get();
 ```
 
-"점" 표기법을 사용하여 중첩된 관계에 대한 쿼리를 실행할 수 있습니다. 예를 들어, 다음 쿼리는 댓글이 없는 모든 게시물을 조회합니다. 그러나 차단되지 않은 작성자의 댓글이 있는 게시물은 결과에 포함됩니다.
+"점" 표기법을 사용하여 중첩된 관계에 대한 쿼리를 실행할 수 있습니다. 예를 들어, 다음 쿼리는 댓글이 없는 모든 게시물과 댓글이 있지만 차단된 사용자의 댓글이 하나도 없는 게시물을 조회합니다.
 
 ```php
 use Illuminate\Database\Eloquent\Builder;
 
 $posts = Post::whereDoesntHave('comments.author', function (Builder $query) {
-    $query->where('banned', 0);
+    $query->where('banned', 1);
 })->get();
 ```
 
@@ -2126,9 +2126,8 @@ $books = Book::withOnly('genre')->get();
 
 ```php
 use App\Models\User;
-use Illuminate\Contracts\Database\Eloquent\Builder;
 
-$users = User::with(['posts' => function (Builder $query) {
+$users = User::with(['posts' => function ($query) {
     $query->where('title', 'like', '%code%');
 }])->get();
 ```
@@ -2136,7 +2135,7 @@ $users = User::with(['posts' => function (Builder $query) {
 이 예제에서 Eloquent는 게시물의 `title` 컬럼에 `code`라는 단어가 포함된 게시물만 즉시 로드합니다. 다른 [쿼리 빌더](/docs/{{version}}/queries) 메소드를 호출하여 즉시 로딩 작업을 추가로 사용자 정의할 수 있습니다.
 
 ```php
-$users = User::with(['posts' => function (Builder $query) {
+$users = User::with(['posts' => function ($query) {
     $query->orderBy('created_at', 'desc');
 }])->get();
 ```
@@ -2186,7 +2185,7 @@ use App\Models\Book;
 
 $books = Book::all();
 
-if ($someCondition) {
+if ($condition) {
     $books->load('author', 'publisher');
 }
 ```
@@ -2194,7 +2193,7 @@ if ($someCondition) {
 즉시 로딩 쿼리에 추가 쿼리 제약 조건을 설정해야 하는 경우, 로드하려는 관계를 키로 하는 배열을 전달할 수 있습니다. 배열 값은 쿼리 인스턴스를 받는 클로저 인스턴스여야 합니다.
 
 ```php
-$author->load(['books' => function (Builder $query) {
+$author->load(['books' => function ($query) {
     $query->orderBy('published_date', 'asc');
 }]);
 ```

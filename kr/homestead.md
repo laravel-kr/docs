@@ -36,6 +36,9 @@
 <a name="introduction"></a>
 ## 소개
 
+> [!WARNING]
+> Laravel Homestead는 더 이상 적극적으로 유지보수되지 않는 레거시 패키지입니다. 현대적인 대안으로 [Laravel Sail](/docs/{{version}}/sail)을 사용할 수 있습니다.
+
 Laravel은 로컬 개발 환경을 포함하여 전체 PHP 개발 경험을 즐겁게 만들기 위해 노력합니다. [Laravel Homestead](https://github.com/laravel/homestead)는 공식적으로 미리 패키징된 Vagrant 박스로, 로컬 머신에 PHP, 웹 서버 또는 기타 서버 소프트웨어를 설치할 필요 없이 훌륭한 개발 환경을 제공합니다.
 
 [Vagrant](https://www.vagrantup.com)는 가상 머신을 관리하고 프로비저닝하는 간단하고 우아한 방법을 제공합니다. Vagrant 박스는 완전히 일회용입니다. 무언가 잘못되면 몇 분 안에 박스를 파괴하고 다시 생성할 수 있습니다!

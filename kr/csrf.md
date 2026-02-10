@@ -77,7 +77,7 @@ Laravel을 API 백엔드로 사용하는 SPA를 구축하는 경우, API 인증 
 일반적으로 이러한 종류의 라우트는 Laravel이 `routes/web.php` 파일의 모든 라우트에 적용하는 `web` 미들웨어 그룹 외부에 배치해야 합니다. 그러나 애플리케이션의 `bootstrap/app.php` 파일에서 `validateCsrfTokens` 메서드에 URI를 제공하여 특정 라우트를 제외할 수도 있습니다:
 
 ```php
-->withMiddleware(function (Middleware $middleware) {
+->withMiddleware(function (Middleware $middleware): void {
     $middleware->validateCsrfTokens(except: [
         'stripe/*',
         'http://example.com/foo/bar',

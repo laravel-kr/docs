@@ -325,8 +325,19 @@ class Flight extends Model
 
 class Flight extends Model
 {
-    const CREATED_AT = 'creation_date';
-    const UPDATED_AT = 'updated_date';
+    /**
+     * "created at" 컬럼의 이름.
+     *
+     * @var string|null
+     */
+    public const CREATED_AT = 'creation_date';
+
+    /**
+     * "updated at" 컬럼의 이름.
+     *
+     * @var string|null
+     */
+    public const UPDATED_AT = 'updated_date';
 }
 ```
 
@@ -431,7 +442,7 @@ Eloquent `all` 메서드는 모델 테이블의 모든 결과를 반환합니다
 ```php
 $flights = Flight::where('active', 1)
     ->orderBy('name')
-    ->take(10)
+    ->limit(10)
     ->get();
 ```
 
@@ -794,6 +805,18 @@ $flight = Flight::updateOrCreate(
 );
 ```
 
+`firstOrCreate`나 `updateOrCreate`와 같은 메서드를 사용할 때, 새 모델이 생성되었는지 기존 모델이 업데이트되었는지 알 수 없을 수 있습니다. `wasRecentlyCreated` 속성은 모델이 현재 라이프사이클 동안 생성되었는지를 나타냅니다.
+
+```php
+$flight = Flight::updateOrCreate(
+    // ...
+);
+
+if ($flight->wasRecentlyCreated) {
+    // 새 항공편 레코드가 삽입되었습니다...
+}
+```
+
 <a name="mass-updates"></a>
 #### 대량 수정
 
@@ -879,7 +902,7 @@ $user->getOriginal('name'); // John
 $user->getOriginal(); // 원래 속성 배열...
 ```
 
-`getChanges` 메서드는 모델이 마지막으로 저장되었을 때 변경된 속성을 포함하는 배열을 반환합니다.
+`getChanges` 메서드는 모델이 마지막으로 저장되었을 때 변경된 속성을 포함하는 배열을 반환하며, `getPrevious` 메서드는 모델이 마지막으로 저장되기 전의 원래 속성 값을 포함하는 배열을 반환합니다.
 
 ```php
 $user = User::find(1);
@@ -898,6 +921,15 @@ $user->getChanges();
     [
         'name' => 'Jack',
         'email' => 'jack@example.com',
+    ]
+*/
+
+$user->getPrevious();
+
+/*
+    [
+        'name' => 'John',
+        'email' => 'john@example.com',
     ]
 */
 ```
@@ -1211,7 +1243,7 @@ class Flight extends Model
      */
     public function prunable(): Builder
     {
-        return static::where('created_at', '<=', now()->subMonth());
+        return static::where('created_at', '<=', now()->minus(months: 1));
     }
 }
 ```
@@ -1284,7 +1316,7 @@ class Flight extends Model
      */
     public function prunable(): Builder
     {
-        return static::where('created_at', '<=', now()->subMonth());
+        return static::where('created_at', '<=', now()->minus(months: 1));
     }
 }
 ```
@@ -1366,7 +1398,7 @@ class AncientScope implements Scope
      */
     public function apply(Builder $builder, Model $model): void
     {
-        $builder->where('created_at', '<', now()->subYears(2000));
+        $builder->where('created_at', '<', now()->minus(years: 2000));
     }
 }
 ```
@@ -1443,7 +1475,7 @@ class User extends Model
     protected static function booted(): void
     {
         static::addGlobalScope('ancient', function (Builder $builder) {
-            $builder->where('created_at', '<', now()->subYears(2000));
+            $builder->where('created_at', '<', now()->minus(years: 2000));
         });
     }
 }
@@ -1464,7 +1496,7 @@ User::withoutGlobalScope(AncientScope::class)->get();
 User::withoutGlobalScope('ancient')->get();
 ```
 
-쿼리의 글로벌 스코프를 여러 개 또는 모두 제거하려면 `withoutGlobalScopes` 메서드를 사용할 수 있습니다.
+쿼리의 글로벌 스코프를 여러 개 또는 모두 제거하려면 `withoutGlobalScopes` 및 `withoutGlobalScopesExcept` 메서드를 사용할 수 있습니다.
 
 ```php
 // 모든 글로벌 스코프 제거...
@@ -1473,6 +1505,11 @@ User::withoutGlobalScopes()->get();
 // 일부 글로벌 스코프 제거...
 User::withoutGlobalScopes([
     FirstScope::class, SecondScope::class
+])->get();
+
+// 주어진 스코프를 제외한 모든 글로벌 스코프 제거...
+User::withoutGlobalScopesExcept([
+    SecondScope::class,
 ])->get();
 ```
 
@@ -1582,7 +1619,7 @@ $users = User::ofType('admin')->get();
 
 namespace App\Models;
 
-use Illuminate\Database\Attributes\Scope;
+use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 

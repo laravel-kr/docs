@@ -36,7 +36,6 @@
 - [SMS 알림](#sms-notifications)
     - [사전 준비사항](#sms-prerequisites)
     - [SMS 알림 포맷팅](#formatting-sms-notifications)
-    - [유니코드 콘텐츠](#unicode-content)
     - ["발신" 번호 커스터마이징](#customizing-the-from-number)
     - [클라이언트 레퍼런스 추가하기](#adding-a-client-reference)
     - [SMS 알림 라우팅](#routing-sms-notifications)
@@ -180,7 +179,7 @@ $user->notify(new InvoicePaid($invoice));
 알림 전송을 지연하고 싶다면 알림 인스턴스화에 `delay` 메서드를 체이닝할 수 있습니다.
 
 ```php
-$delay = now()->addMinutes(10);
+$delay = now()->plus(minutes: 10);
 
 $user->notify((new InvoicePaid($invoice))->delay($delay));
 ```
@@ -189,8 +188,8 @@ $user->notify((new InvoicePaid($invoice))->delay($delay));
 
 ```php
 $user->notify((new InvoicePaid($invoice))->delay([
-    'mail' => now()->addMinutes(5),
-    'sms' => now()->addMinutes(10),
+    'mail' => now()->plus(minutes: 5),
+    'sms' => now()->plus(minutes: 10),
 ]));
 ```
 
@@ -205,8 +204,8 @@ $user->notify((new InvoicePaid($invoice))->delay([
 public function withDelay(object $notifiable): array
 {
     return [
-        'mail' => now()->addMinutes(5),
-        'sms' => now()->addMinutes(10),
+        'mail' => now()->plus(minutes: 5),
+        'sms' => now()->plus(minutes: 10),
     ];
 }
 ```
@@ -275,6 +274,94 @@ public function viaQueues(): array
     ];
 }
 ```
+
+<a name="customizing-queued-notification-job-properties"></a>
+#### 큐에 넣어진 알림 작업 속성 커스터마이징
+
+알림 클래스에 속성을 정의하여 기본 큐 작업의 동작을 커스터마이징할 수 있습니다. 이 속성은 알림을 보내는 큐 작업에 상속됩니다:
+
+```php
+<?php
+
+namespace App\Notifications;
+
+use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Notifications\Notification;
+
+class InvoicePaid extends Notification implements ShouldQueue
+{
+    use Queueable;
+
+    /**
+     * 알림 시도 횟수입니다.
+     *
+     * @var int
+     */
+    public $tries = 5;
+
+    /**
+     * 알림이 타임아웃되기 전까지 실행될 수 있는 초 단위 시간입니다.
+     *
+     * @var int
+     */
+    public $timeout = 120;
+
+    /**
+     * 실패하기 전에 허용되는 처리되지 않은 예외의 최대 수입니다.
+     *
+     * @var int
+     */
+    public $maxExceptions = 3;
+
+    // ...
+}
+```
+
+큐에 넣어진 알림 데이터의 프라이버시와 무결성을 [암호화](/docs/{{version}}/encryption)를 통해 보장하려면 알림 클래스에 `ShouldBeEncrypted` 인터페이스를 추가하세요:
+
+```php
+<?php
+
+namespace App\Notifications;
+
+use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldBeEncrypted;
+use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Notifications\Notification;
+
+class InvoicePaid extends Notification implements ShouldQueue, ShouldBeEncrypted
+{
+    use Queueable;
+
+    // ...
+}
+```
+
+알림 클래스에 직접 이 속성들을 정의하는 것 외에도, 큐에 넣어진 알림 작업의 백오프 전략과 재시도 타임아웃을 지정하기 위해 `backoff`와 `retryUntil` 메서드를 정의할 수도 있습니다:
+
+```php
+use DateTime;
+
+/**
+ * 알림을 재시도하기 전에 대기할 초 수를 계산합니다.
+ */
+public function backoff(): int
+{
+    return 3;
+}
+
+/**
+ * 알림이 타임아웃되어야 하는 시간을 결정합니다.
+ */
+public function retryUntil(): DateTime
+{
+    return now()->plus(minutes: 5);
+}
+```
+
+> [!NOTE]
+> 이러한 작업 속성과 메서드에 대한 자세한 정보는 [큐 작업](/docs/{{version}}/queues#max-job-attempts-and-timeout)에 관한 문서를 참조하세요.
 
 <a name="queued-notification-middleware"></a>
 #### 큐에 넣어진 알림 미들웨어
@@ -354,6 +441,21 @@ class InvoicePaid extends Notification implements ShouldQueue
 public function shouldSend(object $notifiable, string $channel): bool
 {
     return $this->invoice->isPaid();
+}
+```
+
+<a name="after-sending-notifications"></a>
+#### 알림 전송 후 처리
+
+알림이 전송된 후 코드를 실행하려면 알림 클래스에 `afterSending` 메서드를 정의할 수 있습니다. 이 메서드는 알림 가능 엔티티, 채널 이름, 채널의 응답을 받습니다:
+
+```php
+/**
+ * 알림이 전송된 후 처리합니다.
+ */
+public function afterSending(object $notifiable, string $channel, mixed $response): void
+{
+    // ...
 }
 ```
 
@@ -695,7 +797,7 @@ public function toMail(object $notifiable): MailMessage
 }
 ```
 
-애플리케이션이 Mailgun 드라이버를 사용하는 경우 [태그](https://documentation.mailgun.com/en/latest/user_manual.html#tagging-1)와 [메타데이터](https://documentation.mailgun.com/en/latest/user_manual.html#attaching-data-to-messages)에 대한 자세한 정보는 Mailgun 문서를 참조하세요. 마찬가지로 [태그](https://postmarkapp.com/blog/tags-support-for-smtp)와 [메타데이터](https://postmarkapp.com/support/article/1125-custom-metadata-faq)에 대한 지원에 대해서는 Postmark 문서를 참조할 수 있습니다.
+애플리케이션이 Mailgun 드라이버를 사용하는 경우 [태그](https://documentation.mailgun.com/docs/mailgun/user-manual/tracking-messages/#tags)와 [메타데이터](https://documentation.mailgun.com/docs/mailgun/user-manual/sending-messages/#attaching-metadata-to-messages)에 대한 자세한 정보는 Mailgun 문서를 참조하세요. 마찬가지로 [태그](https://postmarkapp.com/blog/tags-support-for-smtp)와 [메타데이터](https://postmarkapp.com/support/article/1125-custom-metadata-faq)에 대한 지원에 대해서는 Postmark 문서를 참조할 수 있습니다.
 
 애플리케이션이 Amazon SES를 사용하여 이메일을 보내는 경우 `metadata` 메서드를 사용하여 메시지에 [SES "태그"](https://docs.aws.amazon.com/ses/latest/APIReference/API_MessageTag.html)를 첨부해야 합니다.
 
@@ -944,9 +1046,9 @@ public function toArray(object $notifiable): array
 
 알림이 애플리케이션의 데이터베이스에 저장되면 기본적으로 `type` 열은 알림의 클래스 이름으로 설정되고 `read_at` 열은 `null`이 됩니다. 그러나 알림 클래스에 `databaseType`과 `initialDatabaseReadAtValue` 메서드를 정의하여 이 동작을 커스터마이징할 수 있습니다.
 
-    use Illuminate\Support\Carbon;
-
 ```php
+use Illuminate\Support\Carbon;
+
 /**
  * 알림의 데이터베이스 유형을 가져옵니다.
  */
@@ -988,6 +1090,16 @@ foreach ($user->notifications as $notification) {
 $user = App\Models\User::find(1);
 
 foreach ($user->unreadNotifications as $notification) {
+    echo $notification->type;
+}
+```
+
+"읽은" 알림만 검색하려면 `readNotifications` 관계를 사용할 수 있습니다:
+
+```php
+$user = App\Models\User::find(1);
+
+foreach ($user->readNotifications as $notification) {
     echo $notification->type;
 }
 ```
@@ -1092,6 +1204,82 @@ Echo.private('App.Models.User.' + userId)
     .notification((notification) => {
         console.log(notification.type);
     });
+```
+
+<a name="using-react-or-vue"></a>
+#### React 또는 Vue 사용하기
+
+Laravel Echo에는 알림을 쉽게 수신할 수 있는 React 및 Vue 훅이 포함되어 있습니다. 시작하려면 알림을 수신하는 데 사용되는 `useEchoNotification` 훅을 호출하세요. `useEchoNotification` 훅은 소비 컴포넌트가 언마운트될 때 자동으로 채널을 떠납니다:
+
+```js tab=React
+import { useEchoNotification } from "@laravel/echo-react";
+
+useEchoNotification(
+    `App.Models.User.${userId}`,
+    (notification) => {
+        console.log(notification.type);
+    },
+);
+```
+
+```vue tab=Vue
+<script setup lang="ts">
+import { useEchoNotification } from "@laravel/echo-vue";
+
+useEchoNotification(
+    `App.Models.User.${userId}`,
+    (notification) => {
+        console.log(notification.type);
+    },
+);
+</script>
+```
+
+기본적으로 훅은 모든 알림을 수신합니다. 수신하려는 알림 유형을 지정하려면 `useEchoNotification`에 문자열 또는 유형 배열을 제공할 수 있습니다:
+
+```js tab=React
+import { useEchoNotification } from "@laravel/echo-react";
+
+useEchoNotification(
+    `App.Models.User.${userId}`,
+    (notification) => {
+        console.log(notification.type);
+    },
+    'App.Notifications.InvoicePaid',
+);
+```
+
+```vue tab=Vue
+<script setup lang="ts">
+import { useEchoNotification } from "@laravel/echo-vue";
+
+useEchoNotification(
+    `App.Models.User.${userId}`,
+    (notification) => {
+        console.log(notification.type);
+    },
+    'App.Notifications.InvoicePaid',
+);
+</script>
+```
+
+알림 페이로드 데이터의 형태를 지정하여 더 나은 타입 안정성과 편의성을 제공할 수도 있습니다:
+
+```ts
+type InvoicePaidNotification = {
+    invoice_id: number;
+    created_at: string;
+};
+
+useEchoNotification<InvoicePaidNotification>(
+    `App.Models.User.${userId}`,
+    (notification) => {
+        console.log(notification.invoice_id);
+        console.log(notification.created_at);
+        console.log(notification.type);
+    },
+    'App.Notifications.InvoicePaid',
+);
 ```
 
 <a name="customizing-the-notification-channel"></a>
@@ -1285,7 +1473,6 @@ composer require laravel/slack-notification-channel
 ```php
 use Illuminate\Notifications\Slack\BlockKit\Blocks\ContextBlock;
 use Illuminate\Notifications\Slack\BlockKit\Blocks\SectionBlock;
-use Illuminate\Notifications\Slack\BlockKit\Composites\ConfirmObject;
 use Illuminate\Notifications\Slack\SlackMessage;
 
 /**
@@ -1397,7 +1584,6 @@ public function toSlack(object $notifiable): SlackMessage
 use Illuminate\Notifications\Slack\BlockKit\Blocks\ActionsBlock;
 use Illuminate\Notifications\Slack\BlockKit\Blocks\ContextBlock;
 use Illuminate\Notifications\Slack\BlockKit\Blocks\SectionBlock;
-use Illuminate\Notifications\Slack\BlockKit\Composites\ConfirmObject;
 use Illuminate\Notifications\Slack\SlackMessage;
 
 /**
@@ -1528,7 +1714,7 @@ Notification::locale('es')->send(
 ```
 
 <a name="user-preferred-locales"></a>
-### 사용자 선호 로케일
+#### 사용자 선호 로케일
 
 때때로 애플리케이션은 각 사용자의 선호 로케일을 저장합니다. 알림 가능 모델에 `HasLocalePreference` 계약을 구현하면 Laravel에 알림을 보낼 때 이 저장된 로케일을 사용하도록 지시할 수 있습니다.
 
@@ -1584,6 +1770,9 @@ test('orders can be shipped', function () {
         [$user], AnotherNotification::class
     );
 
+    // 알림이 두 번 전송되었음을 어설션...
+    Notification::assertSentTimes(WeeklyReminder::class, 2);
+
     // 주어진 수의 알림이 전송되었음을 어설션...
     Notification::assertCount(3);
 });
@@ -1618,6 +1807,9 @@ class ExampleTest extends TestCase
         Notification::assertNotSentTo(
             [$user], AnotherNotification::class
         );
+
+        // 알림이 두 번 전송되었음을 어설션...
+        Notification::assertSentTimes(WeeklyReminder::class, 2);
 
         // 주어진 수의 알림이 전송되었음을 어설션...
         Notification::assertCount(3);
@@ -1670,7 +1862,7 @@ use Illuminate\Notifications\Events\NotificationSending;
 class CheckNotificationStatus
 {
     /**
-     * 주어진 이벤트를 처리합니다.
+     * 이벤트를 처리합니다.
      */
     public function handle(NotificationSending $event): void
     {
@@ -1716,7 +1908,7 @@ use Illuminate\Notifications\Events\NotificationSent;
 class LogNotification
 {
     /**
-     * 주어진 이벤트를 처리합니다.
+     * 이벤트를 처리합니다.
      */
     public function handle(NotificationSent $event): void
     {

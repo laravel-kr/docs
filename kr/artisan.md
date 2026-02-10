@@ -81,7 +81,7 @@ php artisan vendor:publish --provider="Laravel\Tinker\TinkerServiceProvider"
 ```
 
 > [!WARNING]
-> `dispatch` 헬퍼 함수와 `Dispatchable` 클래스의 `dispatch` 메서드는 잡을 큐에 넣기 위해 가비지 컬렉션에 의존합니다. 따라서 tinker를 사용할 때는 잡을 디스패치하기 위해 `Bus::dispatch` 또는 `Queue::push`를 사용해야 합니다.
+> `dispatch` 헬퍼 함수와 `Dispatchable` 클래스의 `dispatch` 메서드는 잡을 큐에 넣기 위해 가비지 컬렉션(garbage collection)에 의존합니다. 따라서 Tinker를 사용할 때는 잡을 디스패치하기 위해 `Bus::dispatch` 또는 `Queue::push`를 사용해야 합니다.
 
 <a name="command-allow-list"></a>
 #### 명령어 허용 목록
@@ -108,7 +108,7 @@ Tinker는 셸 내에서 실행할 수 있는 아티즌 명령어를 결정하기
 <a name="writing-commands"></a>
 ## 명령어 작성하기
 
-아티즌과 함께 제공되는 명령어 외에도 사용자 정의 명령어를 직접 만들 수 있습니다. 명령어는 일반적으로 `app/Console/Commands` 디렉토리에 저장됩니다. 그러나 명령어가 Composer에 의해 로드될 수 있는 한 자신만의 저장 위치를 자유롭게 선택할 수 있습니다.
+아티즌과 함께 제공되는 명령어 외에도 사용자 정의 명령어를 직접 만들 수 있습니다. 명령어는 일반적으로 `app/Console/Commands` 디렉토리에 저장됩니다. 그러나 Laravel이 [다른 디렉토리에서 아티즌 명령어를 스캔](#registering-commands)하도록 지정하면 자신만의 저장 위치를 자유롭게 선택할 수 있습니다.
 
 <a name="generating-commands"></a>
 ### 명령어 생성하기
@@ -204,6 +204,7 @@ Artisan::command('mail:send {user}', function (string $user) {
 ```php
 use App\Models\User;
 use App\Support\DripEmailer;
+use Illuminate\Support\Facades\Artisan;
 
 Artisan::command('mail:send {user}', function (DripEmailer $drip, string $user) {
     $drip->send(User::find($user));
@@ -243,7 +244,7 @@ class SendEmails extends Command implements Isolatable
 }
 ```
 
-명령어가 `Isolatable`로 표시되면 Laravel은 자동으로 명령어에 `--isolated` 옵션을 추가합니다. 해당 옵션으로 명령어가 호출되면 Laravel은 해당 명령어의 다른 인스턴스가 이미 실행 중이지 않은지 확인합니다. Laravel은 애플리케이션의 기본 캐시 드라이버를 사용하여 원자적 잠금을 획득하려고 시도하여 이를 달성합니다. 명령어의 다른 인스턴스가 실행 중인 경우 명령어가 실행되지 않습니다. 그러나 명령어는 여전히 성공적인 종료 상태 코드로 종료됩니다:
+명령어를 `Isolatable`로 표시하면 Laravel은 명령어의 옵션에 명시적으로 정의하지 않아도 자동으로 `--isolated` 옵션을 사용할 수 있게 합니다. 해당 옵션으로 명령어가 호출되면 Laravel은 해당 명령어의 다른 인스턴스가 이미 실행 중이지 않은지 확인합니다. Laravel은 애플리케이션의 기본 캐시 드라이버를 사용하여 원자적 잠금을 획득하려고 시도하여 이를 달성합니다. 명령어의 다른 인스턴스가 실행 중인 경우 명령어가 실행되지 않습니다. 그러나 명령어는 여전히 성공적인 종료 상태 코드로 종료됩니다:
 
 ```shell
 php artisan mail:send 1 --isolated
@@ -284,7 +285,7 @@ use DateInterval;
  */
 public function isolationLockExpiresAt(): DateTimeInterface|DateInterval
 {
-    return now()->addMinutes(5);
+    return now()->plus(minutes: 5);
 }
 ```
 
@@ -369,7 +370,7 @@ php artisan mail:send 1 --queue=default
 옵션을 정의할 때 단축키를 지정하려면 옵션 이름 앞에 단축키를 지정하고 `|` 문자를 구분자로 사용하여 단축키와 전체 옵션 이름을 구분하세요:
 
 ```php
-'mail:send {user} {--Q|queue}'
+'mail:send {user} {--Q|queue=}'
 ```
 
 터미널에서 명령어를 호출할 때 옵션 단축키는 단일 하이픈으로 접두사가 붙어야 하며 옵션 값을 지정할 때 `=` 문자를 포함하지 않아야 합니다:
@@ -387,7 +388,7 @@ php artisan mail:send 1 -Qdefault
 'mail:send {user*}'
 ```
 
-이 메서드를 호출할 때 `user` 인수가 커맨드 라인에 순서대로 전달될 수 있습니다. 예를 들어 다음 명령어는 `user` 값을 `1`과 `2`를 값으로 가진 배열로 설정합니다:
+이 명령어를 실행할 때 `user` 인수가 커맨드 라인에 순서대로 전달될 수 있습니다. 예를 들어 다음 명령어는 `user` 값을 `1`과 `2`를 값으로 가진 배열로 설정합니다:
 
 ```shell
 php artisan mail:send 1 2
@@ -493,7 +494,7 @@ return [
         label: 'Search for a user:',
         placeholder: 'E.g. Taylor Otwell',
         options: fn ($value) => strlen($value) > 0
-            ? User::where('name', 'like', "%{$value}%")->pluck('name', 'id')->all()
+            ? User::whereLike('name', "%{$value}%")->pluck('name', 'id')->all()
             : []
     ),
 ];
@@ -658,7 +659,7 @@ $name = $this->choice(
 <a name="writing-output"></a>
 ### 출력 작성하기
 
-콘솔에 출력을 보내려면 `line`, `info`, `comment`, `question`, `warn`, `error` 메서드를 사용할 수 있습니다. 각 메서드는 목적에 맞는 적절한 ANSI 색상을 사용합니다. 예를 들어 사용자에게 일반 정보를 표시해 보겠습니다. 일반적으로 `info` 메서드는 콘솔에 녹색 텍스트로 표시됩니다:
+콘솔에 출력을 보내려면 `line`, `newLine`, `info`, `comment`, `question`, `warn`, `alert`, `error` 메서드를 사용할 수 있습니다. 각 메서드는 목적에 맞는 적절한 ANSI 색상을 사용합니다. 예를 들어 사용자에게 일반 정보를 표시해 보겠습니다. 일반적으로 `info` 메서드는 콘솔에 녹색 텍스트로 표시됩니다:
 
 ```php
 /**
@@ -772,6 +773,7 @@ use App\Domain\Orders\Commands\SendEmails;
 
 ```php
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Route;
 
 Route::post('/user/{user}/mail', function (string $user) {
     $exitCode = Artisan::call('mail:send', [
@@ -795,6 +797,7 @@ Artisan::call('mail:send 1 --queue=default');
 
 ```php
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Route;
 
 Route::post('/mail', function () {
     $exitCode = Artisan::call('mail:send', [
@@ -821,6 +824,7 @@ $exitCode = Artisan::call('migrate:refresh', [
 
 ```php
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Route;
 
 Route::post('/user/{user}/mail', function (string $user) {
     Artisan::queue('mail:send', [
