@@ -34,6 +34,14 @@
             <span class="header-version">12.x</span>
         </div>
         <div class="header-right">
+            <button class="btn-search" id="btn-search" aria-label="검색">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="11" cy="11" r="8"/>
+                    <path d="m21 21-4.35-4.35"/>
+                </svg>
+                <span class="label">검색</span>
+                <kbd class="search-kbd">Ctrl K</kbd>
+            </button>
             <button class="btn-side-by-side" id="btn-side-by-side">
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
                     <rect x="1" y="2" width="6" height="12" rx="1"/>
@@ -58,6 +66,28 @@
         <main class="content-wrapper" id="content-wrapper">
             <div class="content loading">문서를 불러오는 중...</div>
         </main>
+    </div>
+
+    <!-- Search Modal -->
+    <div class="search-overlay" id="search-overlay">
+        <div class="search-modal" id="search-modal">
+            <div class="search-input-wrapper">
+                <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="11" cy="11" r="8"/>
+                    <path d="m21 21-4.35-4.35"/>
+                </svg>
+                <input type="text" class="search-input" id="search-input" placeholder="문서 검색..." autocomplete="off" />
+                <kbd class="search-esc">Esc</kbd>
+            </div>
+            <div class="search-results" id="search-results">
+                <div class="search-empty">검색어를 입력하세요</div>
+            </div>
+            <div class="search-footer">
+                <span><kbd>&uarr;</kbd><kbd>&darr;</kbd> 탐색</span>
+                <span><kbd>Enter</kbd> 이동</span>
+                <span><kbd>Esc</kbd> 닫기</span>
+            </div>
+        </div>
     </div>
 
     <!-- Marked.js -->

@@ -5,6 +5,8 @@
     let sideBySide = false;
     let currentPage = '';
     let sidebarData = [];
+    let searchIndex = null;
+    let searchLoading = false;
 
     // ===== Highlight.js Aliases =====
     hljs.registerAliases('shell', { languageName: 'bash' });
@@ -31,6 +33,7 @@
         setupRouting();
         setupMobileMenu();
         setupSideBySideToggle();
+        setupSearch();
         navigateFromHash();
     }
 
@@ -340,6 +343,197 @@
     function closeMobileSidebar() {
         document.getElementById('sidebar').classList.remove('open');
         document.getElementById('sidebar-overlay').classList.remove('active');
+    }
+
+    // ===== Search =====
+    function setupSearch() {
+        const btn = document.getElementById('btn-search');
+        const overlay = document.getElementById('search-overlay');
+        const input = document.getElementById('search-input');
+        const results = document.getElementById('search-results');
+
+        btn.addEventListener('click', openSearch);
+
+        overlay.addEventListener('click', (e) => {
+            if (e.target === overlay) closeSearch();
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+                e.preventDefault();
+                openSearch();
+            }
+            if (e.key === '/' && !isInputFocused()) {
+                e.preventDefault();
+                openSearch();
+            }
+            if (e.key === 'Escape') {
+                closeSearch();
+            }
+        });
+
+        let debounceTimer;
+        input.addEventListener('input', () => {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(() => performSearch(input.value), 150);
+        });
+
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                moveSelection(1);
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                moveSelection(-1);
+            } else if (e.key === 'Enter') {
+                e.preventDefault();
+                const selected = results.querySelector('.search-result-item.selected');
+                if (selected) selected.click();
+            }
+        });
+    }
+
+    function isInputFocused() {
+        const el = document.activeElement;
+        return el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable);
+    }
+
+    async function openSearch() {
+        const overlay = document.getElementById('search-overlay');
+        const input = document.getElementById('search-input');
+        overlay.classList.add('active');
+        input.value = '';
+        input.focus();
+        document.getElementById('search-results').innerHTML =
+            '<div class="search-empty">검색어를 입력하세요</div>';
+
+        if (!searchIndex && !searchLoading) {
+            searchLoading = true;
+            try {
+                const res = await fetch('search-index.json');
+                searchIndex = await res.json();
+            } catch (e) {
+                console.error('Failed to load search index:', e);
+            }
+            searchLoading = false;
+        }
+    }
+
+    function closeSearch() {
+        document.getElementById('search-overlay').classList.remove('active');
+    }
+
+    function performSearch(query) {
+        const results = document.getElementById('search-results');
+        query = query.trim().toLowerCase();
+
+        if (!query || query.length < 2) {
+            results.innerHTML = '<div class="search-empty">검색어를 입력하세요</div>';
+            return;
+        }
+
+        if (!searchIndex) {
+            results.innerHTML = '<div class="search-empty">검색 인덱스를 불러오는 중...</div>';
+            return;
+        }
+
+        const scored = [];
+        for (const entry of searchIndex) {
+            let score = 0;
+            const headingLower = (entry.h || '').toLowerCase();
+            const bodyLower = (entry.b || '').toLowerCase();
+            const titleLower = (entry.t || '').toLowerCase();
+
+            if (headingLower.includes(query)) score += 10;
+            if (titleLower.includes(query)) score += 5;
+            if (bodyLower.includes(query)) score += 3;
+            if (headingLower.startsWith(query)) score += 5;
+
+            if (score > 0) {
+                scored.push({ entry, score });
+            }
+        }
+
+        scored.sort((a, b) => b.score - a.score);
+        const top = scored.slice(0, 20);
+
+        if (top.length === 0) {
+            results.innerHTML = '<div class="search-empty">"' + escapeHtml(query) + '"에 대한 검색 결과가 없습니다</div>';
+            return;
+        }
+
+        results.innerHTML = top.map((item, i) => {
+            const entry = item.entry;
+            const snippet = highlightMatch(entry.b || '', query, 120);
+            const heading = highlightMatch(entry.h || entry.t, query);
+            return '<a class="search-result-item' + (i === 0 ? ' selected' : '') + '" ' +
+                'href="#/' + entry.p + (entry.a ? '#' + entry.a : '') + '" ' +
+                'data-page="' + entry.p + '">' +
+                '<div class="search-result-title">' + heading + '</div>' +
+                '<div class="search-result-page">' + escapeHtml(entry.t) + '</div>' +
+                (snippet ? '<div class="search-result-snippet">' + snippet + '</div>' : '') +
+                '</a>';
+        }).join('');
+
+        results.querySelectorAll('.search-result-item').forEach(item => {
+            item.addEventListener('click', (e) => {
+                e.preventDefault();
+                const href = item.getAttribute('href');
+                closeSearch();
+                const page = item.dataset.page;
+                if (page === currentPage) {
+                    const parts = href.split('#');
+                    const anchor = parts.length > 2 ? parts[2] : '';
+                    if (anchor) setTimeout(() => scrollToAnchor(anchor), 100);
+                } else {
+                    window.location.hash = href;
+                }
+            });
+        });
+    }
+
+    function moveSelection(direction) {
+        const results = document.getElementById('search-results');
+        const items = results.querySelectorAll('.search-result-item');
+        if (!items.length) return;
+
+        let currentIdx = -1;
+        items.forEach((item, i) => {
+            if (item.classList.contains('selected')) currentIdx = i;
+        });
+
+        const nextIdx = Math.max(0, Math.min(items.length - 1, currentIdx + direction));
+        items.forEach(item => item.classList.remove('selected'));
+        items[nextIdx].classList.add('selected');
+        items[nextIdx].scrollIntoView({ block: 'nearest' });
+    }
+
+    function highlightMatch(text, query, maxLen) {
+        if (!text) return '';
+
+        if (maxLen) {
+            const idx = text.toLowerCase().indexOf(query.toLowerCase());
+            if (idx > -1 && text.length > maxLen) {
+                const start = Math.max(0, idx - Math.floor(maxLen / 3));
+                const end = Math.min(text.length, start + maxLen);
+                text = (start > 0 ? '...' : '') + text.substring(start, end) + (end < text.length ? '...' : '');
+            } else {
+                text = text.substring(0, maxLen) + (text.length > maxLen ? '...' : '');
+            }
+        }
+
+        text = escapeHtml(text);
+        const escaped = escapeRegex(escapeHtml(query));
+        const regex = new RegExp('(' + escaped + ')', 'gi');
+        return text.replace(regex, '<mark>$1</mark>');
+    }
+
+    function escapeHtml(str) {
+        return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    function escapeRegex(str) {
+        return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     }
 
     // ===== Scroll to Anchor =====
