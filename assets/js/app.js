@@ -1,7 +1,8 @@
 (function () {
     'use strict';
 
-    const VERSION = '12.x';
+    const VERSIONS_WITH_KOREAN = ['12.x'];
+    let currentVersion = localStorage.getItem('doc-version') || '12.x';
     let sideBySide = false;
     let currentPage = '';
     let sidebarData = [];
@@ -27,8 +28,18 @@
         gfm: true,
     });
 
+    // ===== Helpers =====
+    function hasKorean() {
+        return VERSIONS_WITH_KOREAN.includes(currentVersion);
+    }
+
+    function versionPath(file) {
+        return currentVersion + '/' + file;
+    }
+
     // ===== Init =====
     async function init() {
+        setupVersionSelect();
         await buildSidebar();
         setupRouting();
         setupMobileMenu();
@@ -37,9 +48,51 @@
         navigateFromHash();
     }
 
+    // ===== Version Select =====
+    function setupVersionSelect() {
+        const select = document.getElementById('version-select');
+        select.value = currentVersion;
+
+        select.addEventListener('change', async () => {
+            currentVersion = select.value;
+            localStorage.setItem('doc-version', currentVersion);
+
+            // Reset search index for new version
+            searchIndex = null;
+
+            // Update side-by-side state
+            updateSideBySideVisibility();
+
+            // Rebuild sidebar and reload page
+            await buildSidebar();
+            currentPage = ''; // Force reload
+            navigateFromHash();
+        });
+
+        updateSideBySideVisibility();
+    }
+
+    function updateSideBySideVisibility() {
+        const btn = document.getElementById('btn-side-by-side');
+        if (hasKorean()) {
+            btn.style.display = '';
+        } else {
+            btn.style.display = 'none';
+            if (sideBySide) {
+                sideBySide = false;
+                btn.classList.remove('active');
+                btn.querySelector('.label').textContent = '원본 비교';
+            }
+        }
+    }
+
     // ===== Sidebar =====
     async function buildSidebar() {
-        const res = await fetch('kr/documentation.md');
+        const docPath = hasKorean()
+            ? versionPath('kr/documentation.md')
+            : versionPath('documentation.md');
+
+        const res = await fetch(docPath);
         const text = await res.text();
         const sidebar = document.getElementById('sidebar-nav');
         sidebarData = parseSidebarMarkdown(text);
@@ -121,7 +174,7 @@
     async function loadPage(page, anchor) {
         const wrapper = document.getElementById('content-wrapper');
 
-        if (sideBySide) {
+        if (sideBySide && hasKorean()) {
             wrapper.className = 'content-wrapper side-by-side';
             wrapper.innerHTML = `
                 <div class="mobile-tab-bar">
@@ -141,8 +194,8 @@
             setupSyncScroll();
 
             const [krHtml, enHtml] = await Promise.all([
-                fetchAndRender('kr/' + page + '.md'),
-                fetchAndRender(page + '.md'),
+                fetchAndRender(versionPath('kr/' + page + '.md')),
+                fetchAndRender(versionPath(page + '.md')),
             ]);
 
             document.querySelector('#panel-kr .content').innerHTML = krHtml;
@@ -156,7 +209,11 @@
             wrapper.className = 'content-wrapper';
             wrapper.innerHTML = `<div class="content loading">문서를 불러오는 중...</div>`;
 
-            const html = await fetchAndRender('kr/' + page + '.md');
+            const mdPath = hasKorean()
+                ? versionPath('kr/' + page + '.md')
+                : versionPath(page + '.md');
+
+            const html = await fetchAndRender(mdPath);
             const contentEl = document.querySelector('.content');
             contentEl.innerHTML = html;
             contentEl.classList.remove('loading');
@@ -410,7 +467,7 @@
         if (!searchIndex && !searchLoading) {
             searchLoading = true;
             try {
-                const res = await fetch('search-index.json');
+                const res = await fetch('search-index-' + currentVersion + '.json');
                 searchIndex = await res.json();
             } catch (e) {
                 console.error('Failed to load search index:', e);

@@ -1,8 +1,8 @@
 const fs = require('fs');
 const path = require('path');
 
-const KR_DIR = path.join(__dirname, '..', 'kr');
-const OUTPUT = path.join(__dirname, '..', 'search-index.json');
+const ROOT = path.join(__dirname, '..');
+const VERSIONS_WITH_KOREAN = ['12.x'];
 
 function stripMarkdown(text) {
     return text
@@ -22,15 +22,15 @@ function stripMarkdown(text) {
         .trim();
 }
 
-function buildIndex() {
-    const files = fs.readdirSync(KR_DIR)
+function buildIndexForDir(dir) {
+    const files = fs.readdirSync(dir)
         .filter(f => f.endsWith('.md') && f !== 'documentation.md');
 
     const index = [];
 
     for (const file of files) {
         const slug = file.replace('.md', '');
-        const content = fs.readFileSync(path.join(KR_DIR, file), 'utf-8');
+        const content = fs.readFileSync(path.join(dir, file), 'utf-8');
         const lines = content.split('\n');
 
         // Extract H1 title
@@ -104,8 +104,37 @@ function buildIndex() {
         }
     }
 
-    fs.writeFileSync(OUTPUT, JSON.stringify(index));
-    console.log(`Search index built: ${index.length} sections from ${files.length} files`);
+    return index;
 }
 
-buildIndex();
+function buildAllIndexes() {
+    // Auto-detect version directories (e.g. 10.x, 11.x, 12.x)
+    const versionDirs = fs.readdirSync(ROOT)
+        .filter(d => /^\d+\.x$/.test(d) && fs.statSync(path.join(ROOT, d)).isDirectory());
+
+    let totalSections = 0;
+
+    for (const version of versionDirs) {
+        // For versions with Korean translations, index the kr/ subdirectory
+        // For others, index the English md files directly
+        const hasKorean = VERSIONS_WITH_KOREAN.includes(version);
+        const sourceDir = hasKorean
+            ? path.join(ROOT, version, 'kr')
+            : path.join(ROOT, version);
+
+        if (!fs.existsSync(sourceDir)) {
+            console.log(`Skipping ${version}: directory not found`);
+            continue;
+        }
+
+        const index = buildIndexForDir(sourceDir);
+        const outputFile = path.join(ROOT, `search-index-${version}.json`);
+        fs.writeFileSync(outputFile, JSON.stringify(index));
+        totalSections += index.length;
+        console.log(`  ${version}: ${index.length} sections (${hasKorean ? 'Korean' : 'English'})`);
+    }
+
+    console.log(`Search indexes built: ${totalSections} total sections from ${versionDirs.length} versions`);
+}
+
+buildAllIndexes();
