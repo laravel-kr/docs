@@ -131,7 +131,7 @@
                 continue;
             }
 
-            const linkMatch = line.match(/^\s+-\s+\[(.+?)\]\(\/docs\/\{\{version\}\}\/(.+?)\)/);
+            const linkMatch = line.match(/^\s+-\s+\[(.+?)\]\(\/docs\/(?:\{\{version\}\}|[^/]+)\/(.+?)\)/);
             if (linkMatch && current) {
                 current.links.push({ title: linkMatch[1], slug: linkMatch[2] });
             }
