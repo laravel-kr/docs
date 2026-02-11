@@ -31,6 +31,13 @@ jobs:
       - name: Build search index
         run: node scripts/build-search-index.js
 
+      - name: Cache busting
+        run: |
+          CSS_HASH=$(md5sum assets/css/app.css | cut -c1-8)
+          JS_HASH=$(md5sum assets/js/app.js | cut -c1-8)
+          sed -i "s|assets/css/app.css|assets/css/app.css?v=${CSS_HASH}|" index.html
+          sed -i "s|assets/js/app.js|assets/js/app.js?v=${JS_HASH}|" index.html
+
       - name: Setup Pages
         uses: actions/configure-pages@v5
 
