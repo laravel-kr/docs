@@ -124,7 +124,7 @@
         let current = null;
 
         for (const line of md.split('\n')) {
-            const sectionMatch = line.match(/^-\s+##\s+(.+)/);
+            const sectionMatch = line.match(/^-\s+(?:##\s+)?(.+)/);
             if (sectionMatch) {
                 current = { title: sectionMatch[1], links: [] };
                 sections.push(current);
