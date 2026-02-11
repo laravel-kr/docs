@@ -198,9 +198,14 @@
                 fetchAndRender(versionPath(page + '.md')),
             ]);
 
-            document.querySelector('#panel-kr .content').innerHTML = krHtml;
+            if (krHtml === null && page !== 'installation') {
+                window.location.hash = '#/installation';
+                return;
+            }
+
+            document.querySelector('#panel-kr .content').innerHTML = krHtml || '';
             document.querySelector('#panel-kr .content').classList.remove('loading');
-            document.querySelector('#panel-en .content').innerHTML = enHtml;
+            document.querySelector('#panel-en .content').innerHTML = enHtml || '';
             document.querySelector('#panel-en .content').classList.remove('loading');
 
             postProcess(document.querySelector('#panel-kr .content'));
@@ -214,8 +219,14 @@
                 : versionPath(page + '.md');
 
             const html = await fetchAndRender(mdPath);
+
+            if (html === null && page !== 'installation') {
+                window.location.hash = '#/installation';
+                return;
+            }
+
             const contentEl = document.querySelector('.content');
-            contentEl.innerHTML = html;
+            contentEl.innerHTML = html || '';
             contentEl.classList.remove('loading');
             postProcess(contentEl);
         }
@@ -233,14 +244,10 @@
     }
 
     async function fetchAndRender(path) {
-        try {
-            const res = await fetch(path);
-            if (!res.ok) throw new Error(res.status);
-            let md = await res.text();
-            return renderMarkdown(md);
-        } catch (e) {
-            return `<h1>문서를 찾을 수 없습니다</h1><p>"${path}" 파일을 불러올 수 없습니다.</p>`;
-        }
+        const res = await fetch(path);
+        if (!res.ok) return null;
+        let md = await res.text();
+        return renderMarkdown(md);
     }
 
     // ===== Markdown Rendering =====
