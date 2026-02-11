@@ -1,7 +1,7 @@
 (function () {
     'use strict';
 
-    const VERSIONS_WITH_KOREAN = ['12.x', '11.x', '9.x', '8.x', '7.x', '6.x', '5.8', '5.7', '5.6', '5.5', '5.4', '5.3', '5.2', '5.1', '5.0'];
+    const VERSIONS_WITH_KOREAN = ['12.x', '11.x', '10.x', '9.x', '8.x', '7.x', '6.x', '5.8', '5.7', '5.6', '5.5', '5.4', '5.3', '5.2', '5.1', '5.0'];
     let currentVersion = localStorage.getItem('doc-version') || '12.x';
     let sideBySide = false;
     let currentPage = '';
