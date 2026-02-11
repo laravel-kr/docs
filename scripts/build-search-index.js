@@ -108,9 +108,9 @@ function buildIndexForDir(dir) {
 }
 
 function buildAllIndexes() {
-    // Auto-detect version directories (e.g. 10.x, 11.x, 12.x)
+    // Auto-detect version directories (e.g. 5.0, 5.8, 10.x, 12.x)
     const versionDirs = fs.readdirSync(ROOT)
-        .filter(d => /^\d+\.x$/.test(d) && fs.statSync(path.join(ROOT, d)).isDirectory());
+        .filter(d => /^\d+\.\w+$/.test(d) && fs.statSync(path.join(ROOT, d)).isDirectory());
 
     let totalSections = 0;
 
