@@ -440,9 +440,18 @@
     // ===== TOC Toggle =====
     function setupTocToggle() {
         const btn = document.getElementById('btn-toc');
+        const toc = document.getElementById('toc-sidebar');
 
         btn.addEventListener('click', () => {
             document.body.classList.toggle('toc-open');
+        });
+
+        // Click outside to close (only when unpinned)
+        document.addEventListener('click', (e) => {
+            if (!document.body.classList.contains('toc-open')) return;
+            if (document.body.classList.contains('toc-pinned')) return;
+            if (toc.contains(e.target) || btn.contains(e.target)) return;
+            document.body.classList.remove('toc-open');
         });
 
         // Restore pin state
