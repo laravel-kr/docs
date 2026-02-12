@@ -43,6 +43,7 @@
         await buildSidebar();
         setupRouting();
         setupMobileMenu();
+        setupTocToggle();
         setupSideBySideToggle();
         setupSearch();
         navigateFromHash();
@@ -413,15 +414,20 @@
         }, 50);
     }
 
-    // ===== Mobile Menu =====
+    // ===== Sidebar Toggle =====
     function setupMobileMenu() {
         const btn = document.getElementById('btn-menu');
         const sidebar = document.getElementById('sidebar');
         const overlay = document.getElementById('sidebar-overlay');
 
         btn.addEventListener('click', () => {
-            sidebar.classList.toggle('open');
-            overlay.classList.toggle('active');
+            const isMobile = window.innerWidth <= 900;
+            if (isMobile) {
+                sidebar.classList.toggle('open');
+                overlay.classList.toggle('active');
+            } else {
+                document.body.classList.toggle('sidebar-collapsed');
+            }
         });
         overlay.addEventListener('click', closeMobileSidebar);
     }
@@ -429,6 +435,25 @@
     function closeMobileSidebar() {
         document.getElementById('sidebar').classList.remove('open');
         document.getElementById('sidebar-overlay').classList.remove('active');
+    }
+
+    // ===== TOC Toggle =====
+    function setupTocToggle() {
+        const btn = document.getElementById('btn-toc');
+        const toc = document.getElementById('toc-sidebar');
+        const overlay = document.getElementById('toc-overlay');
+
+        btn.addEventListener('click', () => {
+            toc.classList.toggle('toc-open');
+            overlay.classList.toggle('active');
+        });
+
+        overlay.addEventListener('click', closeMobileToc);
+    }
+
+    function closeMobileToc() {
+        document.getElementById('toc-sidebar').classList.remove('toc-open');
+        document.getElementById('toc-overlay').classList.remove('active');
     }
 
     // ===== Search =====
@@ -665,6 +690,7 @@
             a.addEventListener('click', (e) => {
                 e.preventDefault();
                 scrollToAnchor(a.dataset.anchor);
+                closeMobileToc();
             });
         });
 
