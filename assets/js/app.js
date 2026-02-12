@@ -461,8 +461,8 @@
         const savedPin = localStorage.getItem('toc-pinned');
         if (savedPin === 'true') {
             document.body.classList.add('toc-pinned');
+            document.body.classList.add('toc-open');
         } else if (savedPin === null && window.innerWidth >= 1400) {
-            // Default pinned on wide screens
             document.body.classList.add('toc-pinned');
         }
     }
