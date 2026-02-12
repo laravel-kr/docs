@@ -240,6 +240,23 @@ body.sidebar-collapsed .content-wrapper { margin-left: 0; }
 /* ===== TOC Sidebar ===== */
 .toc-sidebar { display: none; }
 
+/* TOC header with pin button */
+.toc-header {
+    display: flex;
+    justify-content: flex-end;
+    padding-bottom: .5rem;
+    margin-bottom: .5rem;
+    border-bottom: 1px solid var(--border-color);
+}
+.btn-pin {
+    background: none; border: none;
+    cursor: pointer; padding: 2px;
+    color: var(--text-muted);
+    transition: color .15s;
+}
+.btn-pin:hover { color: var(--text-color); }
+.btn-pin.active { color: var(--laravel-red); }
+
 /* Desktop: fixed TOC on right side */
 @media (min-width: 1400px) {
     .toc-sidebar {
@@ -249,15 +266,16 @@ body.sidebar-collapsed .content-wrapper { margin-left: 0; }
         right: 0;
         width: 220px;
         height: calc(100vh - var(--header-height));
-        padding: 2rem 1rem 2rem 1.5rem;
+        padding: 1rem 1rem 2rem 1.5rem;
         overflow-y: auto;
         border-left: 1px solid var(--border-color);
         font-size: .8rem;
+        background: var(--content-bg);
+        z-index: 99;
         scrollbar-width: thin;
         scrollbar-color: rgba(0,0,0,.1) transparent;
     }
-    /* Reserve space for fixed TOC so content doesn't go under it */
-    .content-wrapper:not(.side-by-side) {
+    body.toc-pinned .content-wrapper:not(.side-by-side) {
         margin-right: 220px;
     }
 }
@@ -266,7 +284,7 @@ body.sidebar-collapsed .content-wrapper { margin-left: 0; }
 @media (max-width: 1399px) {
     .btn-toc { display: block; }
 
-    .toc-sidebar.toc-open {
+    body.toc-open .toc-sidebar {
         display: block;
         position: fixed;
         top: var(--header-height);
@@ -277,8 +295,11 @@ body.sidebar-collapsed .content-wrapper { margin-left: 0; }
         background: var(--content-bg);
         box-shadow: -4px 0 20px rgba(0,0,0,.15);
         overflow-y: auto;
-        padding: 1.5rem 1rem;
+        padding: 1rem 1rem 2rem;
         font-size: .85rem;
+    }
+    body.toc-open.toc-pinned .content-wrapper {
+        margin-right: 280px;
     }
 }
 
@@ -339,12 +360,12 @@ body.sidebar-collapsed .content-wrapper { margin-left: 0; }
 
 .mobile-tab-bar { display: none; }
 
-/* Overlays */
-.sidebar-overlay, .toc-overlay {
+/* Overlay for mobile sidebar */
+.sidebar-overlay {
     display: none; position: fixed; inset: 0;
     background: rgba(0,0,0,.4); z-index: 998;
 }
-.sidebar-overlay.active, .toc-overlay.active { display: block; }
+.sidebar-overlay.active { display: block; }
 
 /* ===== Loading ===== */
 .loading {

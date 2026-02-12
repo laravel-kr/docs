@@ -440,20 +440,35 @@
     // ===== TOC Toggle =====
     function setupTocToggle() {
         const btn = document.getElementById('btn-toc');
-        const toc = document.getElementById('toc-sidebar');
-        const overlay = document.getElementById('toc-overlay');
 
         btn.addEventListener('click', () => {
-            toc.classList.toggle('toc-open');
-            overlay.classList.toggle('active');
+            document.body.classList.toggle('toc-open');
         });
 
-        overlay.addEventListener('click', closeMobileToc);
+        // Restore pin state
+        const savedPin = localStorage.getItem('toc-pinned');
+        if (savedPin === 'true') {
+            document.body.classList.add('toc-pinned');
+        } else if (savedPin === null && window.innerWidth >= 1400) {
+            // Default pinned on wide screens
+            document.body.classList.add('toc-pinned');
+        }
     }
 
     function closeMobileToc() {
-        document.getElementById('toc-sidebar').classList.remove('toc-open');
-        document.getElementById('toc-overlay').classList.remove('active');
+        document.body.classList.remove('toc-open');
+    }
+
+    function toggleTocPin() {
+        document.body.classList.toggle('toc-pinned');
+        const pinned = document.body.classList.contains('toc-pinned');
+        localStorage.setItem('toc-pinned', pinned);
+        // Update button visual
+        const pinBtn = document.getElementById('btn-pin');
+        if (pinBtn) {
+            pinBtn.classList.toggle('active', pinned);
+            pinBtn.querySelector('svg').setAttribute('fill', pinned ? 'currentColor' : 'none');
+        }
     }
 
     // ===== Search =====
@@ -678,13 +693,17 @@
             return;
         }
 
-        let html = '<ul>';
+        const isPinned = document.body.classList.contains('toc-pinned');
+        let html = `<div class="toc-header"><button class="btn-pin${isPinned ? ' active' : ''}" id="btn-pin" title="고정"><svg width="14" height="14" viewBox="0 0 24 24" fill="${isPinned ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="17" x2="12" y2="22"/><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24Z"/></svg></button></div>`;
+        html += '<ul>';
         items.forEach(item => {
             const cls = item.level === 3 ? ' class="toc-h3"' : '';
             html += `<li${cls}><a href="#/${currentPage}#${item.anchor}" data-anchor="${item.anchor}">${item.text}</a></li>`;
         });
         html += '</ul>';
         toc.innerHTML = html;
+
+        document.getElementById('btn-pin').addEventListener('click', toggleTocPin);
 
         toc.querySelectorAll('a').forEach(a => {
             a.addEventListener('click', (e) => {
