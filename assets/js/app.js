@@ -337,6 +337,15 @@
                 window.location.hash = this.getAttribute('href');
             });
         });
+
+        // In-page anchor links (document top TOC) — scroll instead of changing hash
+        el.querySelectorAll('a[href^="#"]:not([href^="#/"])').forEach(a => {
+            a.addEventListener('click', function (e) {
+                e.preventDefault();
+                const anchor = this.getAttribute('href').substring(1);
+                scrollToAnchor(anchor);
+            });
+        });
     }
 
     // ===== Side-by-Side =====
