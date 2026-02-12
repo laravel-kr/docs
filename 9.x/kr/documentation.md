@@ -93,4 +93,4 @@
     - [Socialite-소셜로그인](/docs/{{version}}/socialite)
     - [Telescope](/docs/{{version}}/telescope)
     - [발렛-Valet](/docs/{{version}}/valet)
-- [API 문서](/api/9.x)
+- [API 문서](https://api.laravel.com/docs/9.x)

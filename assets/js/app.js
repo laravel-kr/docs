@@ -100,7 +100,11 @@
         let html = '';
         for (const section of sidebarData) {
             html += `<div class="sidebar-section">`;
-            html += `<div class="sidebar-section-title">${section.title}</div>`;
+            if (section.externalLink) {
+                html += `<a class="sidebar-section-title sidebar-external-link" href="${section.externalLink}" target="_blank" rel="noopener">${section.title}</a>`;
+            } else {
+                html += `<div class="sidebar-section-title">${section.title}</div>`;
+            }
             html += `<ul class="sidebar-links">`;
             for (const link of section.links) {
                 html += `<li><a href="#/${link.slug}" data-page="${link.slug}">${link.title}</a></li>`;
@@ -109,7 +113,7 @@
         }
         sidebar.innerHTML = html;
 
-        sidebar.querySelectorAll('a').forEach(a => {
+        sidebar.querySelectorAll('a[data-page]').forEach(a => {
             a.addEventListener('click', function (e) {
                 e.preventDefault();
                 const page = this.dataset.page;
@@ -126,7 +130,13 @@
         for (const line of md.split('\n')) {
             const sectionMatch = line.match(/^-\s+(?:##\s+)?(.+)/);
             if (sectionMatch) {
-                current = { title: sectionMatch[1], links: [] };
+                const titleText = sectionMatch[1];
+                const extLinkMatch = titleText.match(/^\[(.+?)\]\((https?:\/\/.+?)\)$/);
+                if (extLinkMatch) {
+                    current = { title: extLinkMatch[1], links: [], externalLink: extLinkMatch[2] };
+                } else {
+                    current = { title: titleText, links: [] };
+                }
                 sections.push(current);
                 continue;
             }
@@ -643,7 +653,7 @@
             return;
         }
 
-        let html = '<div class="toc-title">On this page</div><ul>';
+        let html = '<ul>';
         items.forEach(item => {
             const cls = item.level === 3 ? ' class="toc-h3"' : '';
             html += `<li${cls}><a href="#/${currentPage}#${item.anchor}" data-anchor="${item.anchor}">${item.text}</a></li>`;

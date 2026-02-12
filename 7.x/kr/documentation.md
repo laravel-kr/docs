@@ -2,7 +2,6 @@
     - [릴리즈 노트](/docs/{{version}}/releases)
     - [업그레이드 가이드](/docs/{{version}}/upgrade)
     - [기여 가이드](/docs/{{version}}/contributions)
-    - [API 문서](/api/7.x)
 - 시작하기
     - [설치하기](/docs/{{version}}/installation)
     - [설정하기](/docs/{{version}}/configuration)
@@ -87,3 +86,4 @@
     - [Scout-검색](/docs/{{version}}/scout)
     - [Socialite-소셜로그인](/docs/{{version}}/socialite)
     - [Telescope](/docs/{{version}}/telescope)
+- [API 문서](https://api.laravel.com/docs/7.x)

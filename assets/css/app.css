@@ -17,7 +17,7 @@
     --link-color: #FF2D20;
 }
 
-html { font-size: 15px; scroll-behavior: smooth; }
+html { font-size: 15px; scroll-behavior: smooth; overflow-x: hidden; }
 body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans KR', sans-serif;
     color: var(--text-color);
@@ -103,6 +103,12 @@ body {
     font-size: .7rem; font-weight: 700; text-transform: uppercase;
     letter-spacing: .05em; margin-bottom: .35rem; padding: 0;
 }
+a.sidebar-external-link {
+    display: block;
+    text-decoration: none;
+    cursor: pointer;
+}
+a.sidebar-external-link:hover { color: var(--sidebar-link-active); }
 .sidebar-links { list-style: none; }
 .sidebar-links li { margin: 0; }
 .sidebar-links a {
@@ -251,14 +257,6 @@ body {
     }
 }
 
-.toc-title {
-    font-size: .7rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: .05em;
-    color: var(--text-muted);
-    margin-bottom: .75rem;
-}
 .toc-sidebar ul { list-style: none; }
 .toc-sidebar li { margin-bottom: 2px; }
 .toc-sidebar a {
