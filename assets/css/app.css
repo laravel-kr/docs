@@ -133,8 +133,6 @@ a.sidebar-external-link:hover { color: var(--sidebar-link-active); }
 }
 
 .content {
-    max-width: 900px;
-    margin: 0 auto;
     padding: 2rem 2.5rem 4rem;
 }
 
@@ -237,8 +235,6 @@ a.sidebar-external-link:hover { color: var(--sidebar-link-active); }
     .content-wrapper:not(.side-by-side) .content {
         flex: 1;
         min-width: 0;
-        margin: 0 auto;
-        max-width: 900px;
     }
     .toc-sidebar {
         display: block;
