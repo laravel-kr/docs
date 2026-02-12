@@ -239,6 +239,9 @@ body.sidebar-collapsed .content-wrapper { margin-left: 0; }
 
 /* ===== TOC Sidebar ===== */
 .toc-sidebar { display: none; }
+/* Hide TOC in side-by-side mode */
+body.side-by-side-active .toc-sidebar { display: none !important; }
+body.side-by-side-active .btn-toc { display: none !important; }
 
 /* TOC header with pin button */
 .toc-header {

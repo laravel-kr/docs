@@ -366,6 +366,8 @@
             sideBySide = !sideBySide;
             btn.classList.toggle('active', sideBySide);
             btn.querySelector('.label').textContent = sideBySide ? '번역만 보기' : '원본 비교';
+            document.body.classList.toggle('side-by-side-active', sideBySide);
+            if (sideBySide) document.body.classList.remove('toc-open');
             loadPage(currentPage, '');
         });
     }
