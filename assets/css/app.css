@@ -158,15 +158,12 @@ body {
 .content h3 { font-size: 1.2rem; font-weight: 600; margin: 1.75rem 0 .5rem; color: #2d3748; }
 .content h4 { font-size: 1.05rem; font-weight: 600; margin: 1.5rem 0 .5rem; color: #2d3748; }
 .content .anchor-highlight {
-    background: rgba(255,45,32,.15);
-    border-left: 3px solid #FF2D20;
-    padding-left: .5rem;
-    border-radius: 2px;
-    transition: background 0.8s ease-out, border-color 0.8s ease-out;
+    background: rgba(59,130,246,.15);
+    border-radius: 4px;
+    transition: background 0.8s ease-out;
 }
 .content .anchor-fade {
     background: transparent;
-    border-left-color: transparent;
 }
 .content p { margin-bottom: 1rem; }
 .content a { color: var(--link-color); text-decoration: none; }
