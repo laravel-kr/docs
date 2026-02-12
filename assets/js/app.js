@@ -704,12 +704,28 @@
     const HEADER_OFFSET = 70; // header height + padding
 
     function scrollToAnchor(anchor) {
-        const target = document.querySelector(`a[name="${anchor}"]`) ||
-                       document.getElementById(anchor);
-        if (target) {
-            const y = target.getBoundingClientRect().top + window.pageYOffset - HEADER_OFFSET;
-            window.scrollTo({ top: y, behavior: 'smooth' });
-            highlightHeading(target);
+        // In side-by-side mode, scroll both panels
+        if (sideBySide && hasKorean()) {
+            ['panel-kr', 'panel-en'].forEach(id => {
+                const panel = document.getElementById(id);
+                if (!panel) return;
+                const target = panel.querySelector(`a[name="${anchor}"]`) ||
+                               panel.querySelector(`#${CSS.escape(anchor)}`);
+                if (target) {
+                    const panelRect = panel.getBoundingClientRect();
+                    const targetRect = target.getBoundingClientRect();
+                    panel.scrollTo({ top: panel.scrollTop + targetRect.top - panelRect.top - 16, behavior: 'smooth' });
+                    highlightHeading(target);
+                }
+            });
+        } else {
+            const target = document.querySelector(`a[name="${anchor}"]`) ||
+                           document.getElementById(anchor);
+            if (target) {
+                const y = target.getBoundingClientRect().top + window.pageYOffset - HEADER_OFFSET;
+                window.scrollTo({ top: y, behavior: 'smooth' });
+                highlightHeading(target);
+            }
         }
     }
 
