@@ -446,10 +446,11 @@
             document.body.classList.toggle('toc-open');
         });
 
-        // Click outside to close (only when unpinned)
+        // Click outside to close (only when pin is not effective)
         document.addEventListener('click', (e) => {
             if (!document.body.classList.contains('toc-open')) return;
-            if (document.body.classList.contains('toc-pinned')) return;
+            const pinEffective = document.body.classList.contains('toc-pinned') && window.innerWidth > 900;
+            if (pinEffective) return;
             if (toc.contains(e.target) || btn.contains(e.target)) return;
             document.body.classList.remove('toc-open');
         });

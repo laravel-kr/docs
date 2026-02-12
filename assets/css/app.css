@@ -275,7 +275,8 @@ body.sidebar-collapsed .content-wrapper { margin-left: 0; }
         scrollbar-width: thin;
         scrollbar-color: rgba(0,0,0,.1) transparent;
     }
-    body.toc-pinned .content-wrapper:not(.side-by-side) {
+    .btn-pin { display: none; }
+    .content-wrapper:not(.side-by-side) {
         margin-right: 220px;
     }
 }
