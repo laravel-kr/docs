@@ -223,7 +223,7 @@
             postProcess(document.querySelector('#panel-en .content'));
         } else {
             wrapper.className = 'content-wrapper';
-            wrapper.innerHTML = `<div class="content loading">문서를 불러오는 중...</div><nav class="toc-sidebar" id="toc-sidebar"></nav>`;
+            wrapper.innerHTML = `<div class="content loading">문서를 불러오는 중...</div>`;
 
             const mdPath = hasKorean()
                 ? versionPath('kr/' + page + '.md')

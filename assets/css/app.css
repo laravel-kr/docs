@@ -95,6 +95,7 @@ body {
     position: fixed; top: var(--header-height); left: 0;
     overflow-y: auto; overflow-x: hidden;
     padding: 1.25rem 0;
+    z-index: 999;
     scrollbar-width: thin;
     scrollbar-color: rgba(255,255,255,.15) transparent;
     transition: transform .3s ease;
