@@ -700,12 +700,34 @@
     }
 
     // ===== Scroll to Anchor =====
+    let highlightTimer = null;
+
     function scrollToAnchor(anchor) {
         const target = document.querySelector(`a[name="${anchor}"]`) ||
                        document.getElementById(anchor);
         if (target) {
             target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            highlightHeading(target);
         }
+    }
+
+    function highlightHeading(anchorEl) {
+        // Find the heading right after the anchor
+        let heading = anchorEl.nextElementSibling;
+        if (!heading || !/^H[2-4]$/.test(heading.tagName)) return;
+
+        // Clear any previous highlight
+        if (highlightTimer) clearTimeout(highlightTimer);
+        const prev = document.querySelector('.anchor-highlight, .anchor-fade');
+        if (prev) prev.classList.remove('anchor-highlight', 'anchor-fade');
+
+        heading.classList.add('anchor-highlight');
+        highlightTimer = setTimeout(() => {
+            heading.classList.add('anchor-fade');
+            heading.addEventListener('transitionend', () => {
+                heading.classList.remove('anchor-highlight', 'anchor-fade');
+            }, { once: true });
+        }, 2400);
     }
 
     // ===== Start =====

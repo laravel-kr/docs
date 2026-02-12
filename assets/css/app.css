@@ -157,6 +157,15 @@ body {
 .content h2 { font-size: 1.5rem; font-weight: 600; margin: 2.25rem 0 .75rem; padding-bottom: .4rem; border-bottom: 1px solid var(--border-color); color: #1a202c; }
 .content h3 { font-size: 1.2rem; font-weight: 600; margin: 1.75rem 0 .5rem; color: #2d3748; }
 .content h4 { font-size: 1.05rem; font-weight: 600; margin: 1.5rem 0 .5rem; color: #2d3748; }
+.content h2.anchor-highlight, .content h3.anchor-highlight, .content h4.anchor-highlight {
+    background: linear-gradient(90deg, rgba(255,45,32,.1) 0%, transparent 100%);
+    border-radius: 4px;
+    padding: .1rem .4rem;
+    transition: background 0.6s ease-out;
+}
+.content h2.anchor-fade, .content h3.anchor-fade, .content h4.anchor-fade {
+    background: linear-gradient(90deg, transparent 0%, transparent 100%);
+}
 .content p { margin-bottom: 1rem; }
 .content a { color: var(--link-color); text-decoration: none; }
 .content a:hover { text-decoration: underline; }
