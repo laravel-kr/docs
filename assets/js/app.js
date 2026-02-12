@@ -468,6 +468,8 @@
     }
 
     function closeMobileToc() {
+        const pinEffective = document.body.classList.contains('toc-pinned') && window.innerWidth > 900;
+        if (pinEffective) return;
         document.body.classList.remove('toc-open');
     }
 
