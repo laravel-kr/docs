@@ -228,6 +228,8 @@ body {
     .content { padding: 1.5rem 1rem 3rem; }
     .btn-menu { display: block; }
     .btn-side-by-side span.label { display: none; }
+    .header-logo { font-size: 0; }
+    .header-logo svg { width: 24px; height: 24px; }
 
     /* Side-by-Side on mobile: tabs */
     .content-wrapper.side-by-side { flex-direction: column; }
