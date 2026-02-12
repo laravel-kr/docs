@@ -140,7 +140,7 @@ body.sidebar-collapsed .content-wrapper { margin-left: 0; }
     flex: 1;
     margin-left: var(--sidebar-width);
     min-width: 0;
-    transition: margin-left .3s ease;
+    transition: margin-left .3s ease, margin-right .3s ease;
 }
 
 .content {
@@ -237,37 +237,31 @@ body.sidebar-collapsed .content-wrapper { margin-left: 0; }
 .content h4.collection-method { font-family: monospace; color: var(--laravel-red); }
 
 /* ===== TOC Sidebar ===== */
-.toc-sidebar {
-    display: none;
-    transition: transform .3s ease;
-}
+.toc-sidebar { display: none; }
 
+/* Desktop: fixed TOC on right side */
 @media (min-width: 1400px) {
-    .content-wrapper:not(.side-by-side) {
-        display: flex;
-    }
-    .content-wrapper:not(.side-by-side) .content {
-        flex: 1;
-        min-width: 0;
-    }
     .toc-sidebar {
         display: block;
-        width: 220px;
-        flex-shrink: 0;
-        padding: 2rem 1rem 2rem 1.5rem;
-        position: sticky;
+        position: fixed;
         top: var(--header-height);
-        align-self: flex-start;
-        max-height: calc(100vh - var(--header-height));
+        right: 0;
+        width: 220px;
+        height: calc(100vh - var(--header-height));
+        padding: 2rem 1rem 2rem 1.5rem;
         overflow-y: auto;
         border-left: 1px solid var(--border-color);
         font-size: .8rem;
         scrollbar-width: thin;
         scrollbar-color: rgba(0,0,0,.1) transparent;
     }
+    /* Reserve space for fixed TOC so content doesn't go under it */
+    .content-wrapper:not(.side-by-side) {
+        margin-right: 220px;
+    }
 }
 
-/* TOC button visible when inline TOC is hidden */
+/* Mobile/tablet: TOC slide-in panel */
 @media (max-width: 1399px) {
     .btn-toc { display: block; }
 
@@ -284,7 +278,6 @@ body.sidebar-collapsed .content-wrapper { margin-left: 0; }
         overflow-y: auto;
         padding: 1.5rem 1rem;
         font-size: .85rem;
-        transform: translateX(0);
     }
 }
 
