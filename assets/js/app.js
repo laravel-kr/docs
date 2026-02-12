@@ -212,7 +212,7 @@
             postProcess(document.querySelector('#panel-en .content'));
         } else {
             wrapper.className = 'content-wrapper';
-            wrapper.innerHTML = `<div class="content loading">문서를 불러오는 중...</div>`;
+            wrapper.innerHTML = `<div class="content loading">문서를 불러오는 중...</div><nav class="toc-sidebar" id="toc-sidebar"></nav>`;
 
             const mdPath = hasKorean()
                 ? versionPath('kr/' + page + '.md')
@@ -229,6 +229,7 @@
             contentEl.innerHTML = html || '';
             contentEl.classList.remove('loading');
             postProcess(contentEl);
+            buildToc(contentEl);
         }
 
         if (anchor) {
@@ -598,6 +599,95 @@
 
     function escapeRegex(str) {
         return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    }
+
+    // ===== TOC Sidebar =====
+    let scrollSpyCleanup = null;
+
+    function buildToc(contentEl) {
+        const toc = document.getElementById('toc-sidebar');
+        if (!toc) return;
+
+        const headings = contentEl.querySelectorAll('h2, h3');
+        const items = [];
+
+        headings.forEach(h => {
+            let anchor = '';
+            let prev = h.previousElementSibling;
+            if (prev) {
+                const a = prev.querySelector ? prev.querySelector('a[name]') : null;
+                if (a) anchor = a.getAttribute('name');
+            }
+            if (!anchor) return;
+
+            items.push({
+                level: h.tagName === 'H2' ? 2 : 3,
+                text: h.textContent.trim(),
+                anchor: anchor
+            });
+        });
+
+        if (items.length === 0) {
+            toc.innerHTML = '';
+            return;
+        }
+
+        let html = '<div class="toc-title">On this page</div><ul>';
+        items.forEach(item => {
+            const cls = item.level === 3 ? ' class="toc-h3"' : '';
+            html += `<li${cls}><a href="#/${currentPage}#${item.anchor}" data-anchor="${item.anchor}">${item.text}</a></li>`;
+        });
+        html += '</ul>';
+        toc.innerHTML = html;
+
+        toc.querySelectorAll('a').forEach(a => {
+            a.addEventListener('click', (e) => {
+                e.preventDefault();
+                scrollToAnchor(a.dataset.anchor);
+            });
+        });
+
+        setupScrollSpy();
+    }
+
+    function setupScrollSpy() {
+        if (scrollSpyCleanup) {
+            scrollSpyCleanup();
+            scrollSpyCleanup = null;
+        }
+
+        let raf = null;
+        const onScroll = () => {
+            const anchors = document.querySelectorAll('.content a[name]');
+            const tocLinks = document.querySelectorAll('.toc-sidebar a');
+            if (!anchors.length || !tocLinks.length) return;
+
+            let current = '';
+            const offset = 80;
+
+            anchors.forEach(a => {
+                if (a.getBoundingClientRect().top <= offset) {
+                    current = a.getAttribute('name');
+                }
+            });
+
+            tocLinks.forEach(a => {
+                a.classList.toggle('active', a.dataset.anchor === current);
+            });
+        };
+
+        const handler = () => {
+            if (raf) cancelAnimationFrame(raf);
+            raf = requestAnimationFrame(onScroll);
+        };
+
+        window.addEventListener('scroll', handler);
+        onScroll();
+
+        scrollSpyCleanup = () => {
+            window.removeEventListener('scroll', handler);
+            if (raf) cancelAnimationFrame(raf);
+        };
     }
 
     // ===== Scroll to Anchor =====
