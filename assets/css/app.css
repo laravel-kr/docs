@@ -223,7 +223,8 @@ body {
     .content-wrapper:not(.side-by-side) .content {
         flex: 1;
         min-width: 0;
-        margin: 0;
+        margin: 0 auto;
+        max-width: 900px;
     }
     .toc-sidebar {
         display: block;
