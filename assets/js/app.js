@@ -701,19 +701,26 @@
 
     // ===== Scroll to Anchor =====
     let highlightTimer = null;
+    const HEADER_OFFSET = 70; // header height + padding
 
     function scrollToAnchor(anchor) {
         const target = document.querySelector(`a[name="${anchor}"]`) ||
                        document.getElementById(anchor);
         if (target) {
-            target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            const y = target.getBoundingClientRect().top + window.pageYOffset - HEADER_OFFSET;
+            window.scrollTo({ top: y, behavior: 'smooth' });
             highlightHeading(target);
         }
     }
 
     function highlightHeading(anchorEl) {
-        // Find the heading right after the anchor
+        // Find the heading: could be next sibling, or next sibling of parent if anchor is wrapped in <p>
         let heading = anchorEl.nextElementSibling;
+        if (!heading || !/^H[2-4]$/.test(heading.tagName)) {
+            // anchor may be inside a <p>, try parent's next sibling
+            const parent = anchorEl.parentElement;
+            if (parent) heading = parent.nextElementSibling;
+        }
         if (!heading || !/^H[2-4]$/.test(heading.tagName)) return;
 
         // Clear any previous highlight
