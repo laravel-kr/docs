@@ -340,6 +340,8 @@ body.sidebar-collapsed .content-wrapper { margin-left: 0; }
     }
     .content-wrapper { margin-left: 0; }
     .content { padding: 1.5rem 1rem 3rem; }
+    .btn-pin { display: none; }
+    body.toc-open.toc-pinned .content-wrapper { margin-right: 0; }
     .btn-side-by-side span.label { display: none; }
     .header-logo { font-size: 0; }
     .header-logo svg { width: 24px; height: 24px; }
