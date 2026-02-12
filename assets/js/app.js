@@ -709,17 +709,25 @@
         // In side-by-side mode, scroll kr panel (en follows via syncScroll)
         if (sideBySide && hasKorean()) {
             const krPanel = document.getElementById('panel-kr');
+            const enPanel = document.getElementById('panel-en');
             if (!krPanel) return;
             const krTarget = krPanel.querySelector(`a[name="${anchor}"]`);
             if (krTarget) {
+                syncScrollPaused = true;
                 const panelRect = krPanel.getBoundingClientRect();
                 const targetRect = krTarget.getBoundingClientRect();
-                // Pause syncScroll, scroll kr, then let syncScroll catch up
-                syncScrollPaused = true;
-                krPanel.scrollTo({ top: krPanel.scrollTop + targetRect.top - panelRect.top - 16, behavior: 'smooth' });
-                setTimeout(() => { syncScrollPaused = false; }, 600);
+                krPanel.scrollTo({ top: krPanel.scrollTop + targetRect.top - panelRect.top - 16 });
+                // en 패널도 같은 앵커로 직접 스크롤
+                if (enPanel) {
+                    const enTarget = enPanel.querySelector(`a[name="${anchor}"]`);
+                    if (enTarget) {
+                        const enPanelRect = enPanel.getBoundingClientRect();
+                        const enTargetRect = enTarget.getBoundingClientRect();
+                        enPanel.scrollTo({ top: enPanel.scrollTop + enTargetRect.top - enPanelRect.top - 16 });
+                    }
+                }
+                setTimeout(() => { syncScrollPaused = false; }, 100);
             }
-            // Highlight headings in both panels
             highlightAllHeadings(anchor);
         } else {
             const target = document.querySelector(`a[name="${anchor}"]`) ||
