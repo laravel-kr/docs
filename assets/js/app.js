@@ -359,6 +359,8 @@
         });
     }
 
+    let syncScrollPaused = false;
+
     function setupSyncScroll() {
         setTimeout(() => {
             const kr = document.getElementById('panel-kr');
@@ -367,7 +369,7 @@
 
             let syncing = false;
             function syncScroll(source, target) {
-                if (syncing) return;
+                if (syncing || syncScrollPaused) return;
                 syncing = true;
                 const ratio = source.scrollTop / (source.scrollHeight - source.clientHeight || 1);
                 target.scrollTop = ratio * (target.scrollHeight - target.clientHeight || 1);
@@ -704,52 +706,66 @@
     const HEADER_OFFSET = 70; // header height + padding
 
     function scrollToAnchor(anchor) {
-        // In side-by-side mode, scroll both panels
+        // In side-by-side mode, scroll kr panel (en follows via syncScroll)
         if (sideBySide && hasKorean()) {
-            ['panel-kr', 'panel-en'].forEach(id => {
-                const panel = document.getElementById(id);
-                if (!panel) return;
-                const target = panel.querySelector(`a[name="${anchor}"]`) ||
-                               panel.querySelector(`#${CSS.escape(anchor)}`);
-                if (target) {
-                    const panelRect = panel.getBoundingClientRect();
-                    const targetRect = target.getBoundingClientRect();
-                    panel.scrollTo({ top: panel.scrollTop + targetRect.top - panelRect.top - 16, behavior: 'smooth' });
-                    highlightHeading(target);
-                }
-            });
+            const krPanel = document.getElementById('panel-kr');
+            if (!krPanel) return;
+            const krTarget = krPanel.querySelector(`a[name="${anchor}"]`);
+            if (krTarget) {
+                const panelRect = krPanel.getBoundingClientRect();
+                const targetRect = krTarget.getBoundingClientRect();
+                // Pause syncScroll, scroll kr, then let syncScroll catch up
+                syncScrollPaused = true;
+                krPanel.scrollTo({ top: krPanel.scrollTop + targetRect.top - panelRect.top - 16, behavior: 'smooth' });
+                setTimeout(() => { syncScrollPaused = false; }, 600);
+            }
+            // Highlight headings in both panels
+            highlightAllHeadings(anchor);
         } else {
             const target = document.querySelector(`a[name="${anchor}"]`) ||
                            document.getElementById(anchor);
             if (target) {
                 const y = target.getBoundingClientRect().top + window.pageYOffset - HEADER_OFFSET;
                 window.scrollTo({ top: y, behavior: 'smooth' });
-                highlightHeading(target);
+                highlightAllHeadings(anchor);
             }
         }
     }
 
-    function highlightHeading(anchorEl) {
-        // Find the heading: could be next sibling, or next sibling of parent if anchor is wrapped in <p>
+    function findHeadingAfterAnchor(anchorEl) {
         let heading = anchorEl.nextElementSibling;
         if (!heading || !/^H[2-4]$/.test(heading.tagName)) {
-            // anchor may be inside a <p>, try parent's next sibling
             const parent = anchorEl.parentElement;
             if (parent) heading = parent.nextElementSibling;
         }
-        if (!heading || !/^H[2-4]$/.test(heading.tagName)) return;
+        return (heading && /^H[2-4]$/.test(heading.tagName)) ? heading : null;
+    }
 
-        // Clear any previous highlight
+    function highlightAllHeadings(anchor) {
+        // Clear all previous highlights
         if (highlightTimer) clearTimeout(highlightTimer);
-        const prev = document.querySelector('.anchor-highlight, .anchor-fade');
-        if (prev) prev.classList.remove('anchor-highlight', 'anchor-fade');
+        document.querySelectorAll('.anchor-highlight, .anchor-fade').forEach(el => {
+            el.classList.remove('anchor-highlight', 'anchor-fade');
+        });
 
-        heading.classList.add('anchor-highlight');
+        // Find and highlight all matching headings
+        const anchors = document.querySelectorAll(`a[name="${anchor}"]`);
+        const headings = [];
+        anchors.forEach(a => {
+            const h = findHeadingAfterAnchor(a);
+            if (h) {
+                h.classList.add('anchor-highlight');
+                headings.push(h);
+            }
+        });
+
         highlightTimer = setTimeout(() => {
-            heading.classList.add('anchor-fade');
-            heading.addEventListener('transitionend', () => {
-                heading.classList.remove('anchor-highlight', 'anchor-fade');
-            }, { once: true });
+            headings.forEach(h => {
+                h.classList.add('anchor-fade');
+                h.addEventListener('transitionend', () => {
+                    h.classList.remove('anchor-highlight', 'anchor-fade');
+                }, { once: true });
+            });
         }, 2400);
     }
 
