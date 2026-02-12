@@ -1056,6 +1056,29 @@ If your SMS message will contain unicode characters, you should call the `unicod
                     ->unicode();
     }
 
+<a name="formatting-shortcode-notifications"></a>
+### Formatting Shortcode Notifications
+
+Laravel also supports sending shortcode notifications, which are pre-defined message templates in your Vonage account. To send a shortcode SMS notification, you should define a `toShortcode` method on your notification class. From within this method, you may return an array specifying the type of notification (`alert`, `2fa`, or `marketing`) as well as the custom values that will populate the template:
+
+    /**
+     * Get the Vonage / Shortcode representation of the notification.
+     *
+     * @param  mixed  $notifiable
+     * @return array
+     */
+    public function toShortcode($notifiable)
+    {
+        return [
+            'type' => 'alert',
+            'custom' => [
+                'code' => 'ABC123',
+            ],
+        ];
+    }
+
+> **Note** Like [routing SMS notifications](#routing-sms-notifications), you should implement the `routeNotificationForShortcode` method on your notifiable model.
+
 <a name="customizing-the-from-number"></a>
 ### Customizing The "From" Number
 
