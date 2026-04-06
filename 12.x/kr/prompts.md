@@ -14,12 +14,17 @@
     - [Search](#search)
     - [Multi-search](#multisearch)
     - [Pause](#pause)
+    - [Autocomplete](#autocomplete)
 - [유효성 검사 전 입력 변환](#transforming-input-before-validation)
 - [폼(Forms)](#forms)
 - [정보 메시지](#informational-messages)
 - [테이블(Tables)](#tables)
 - [스핀(Spin)](#spin)
 - [프로그레스 바(Progress Bar)](#progress)
+- [Task](#task)
+- [Stream](#stream)
+- [터미널 타이틀(Terminal Title)](#terminal-title)
+- [알림(Notifications)](#notifications)
 - [터미널 비우기](#clear)
 - [터미널 고려 사항](#terminal-considerations)
 - [지원되지 않는 환경과 폴백](#fallbacks)
@@ -421,6 +426,38 @@ $role = select(
 );
 ```
 
+<a name="select-info"></a>
+#### 보조 정보
+
+`info` 인자를 사용하여 현재 강조 표시된 옵션에 대한 추가 정보를 표시할 수 있습니다. 클로저를 전달하면 현재 강조된 옵션의 값을 받아 문자열 또는 `null`을 반환해야 합니다.
+
+```php
+$role = select(
+    label: 'What role should the user have?',
+    options: [
+        'member' => 'Member',
+        'contributor' => 'Contributor',
+        'owner' => 'Owner',
+    ],
+    info: fn (string $value) => match ($value) {
+        'member' => 'Can view and comment.',
+        'contributor' => 'Can view, comment, and edit.',
+        'owner' => 'Full access to all resources.',
+        default => null,
+    }
+);
+```
+
+강조된 옵션에 따라 정보가 달라지지 않는 경우 `info` 인자에 정적 문자열을 전달할 수도 있습니다.
+
+```php
+$role = select(
+    label: 'What role should the user have?',
+    options: ['Member', 'Contributor', 'Owner'],
+    info: 'The role may be changed at any time.'
+);
+```
+
 <a name="select-validation"></a>
 #### 추가 유효성 검사
 
@@ -492,6 +529,30 @@ $categories = multiselect(
     label: 'What categories should be assigned?',
     options: Category::pluck('name', 'id'),
     scroll: 10
+);
+```
+
+<a name="multiselect-info"></a>
+#### 보조 정보
+
+`info` 인자를 사용하여 현재 강조 표시된 옵션에 대한 추가 정보를 표시할 수 있습니다. 클로저를 전달하면 현재 강조된 옵션의 값을 받아 문자열 또는 `null`을 반환해야 합니다.
+
+```php
+$permissions = multiselect(
+    label: 'What permissions should be assigned?',
+    options: [
+        'read' => 'Read',
+        'create' => 'Create',
+        'update' => 'Update',
+        'delete' => 'Delete',
+    ],
+    info: fn (string $value) => match ($value) {
+        'read' => 'View resources and their properties.',
+        'create' => 'Create new resources.',
+        'update' => 'Modify existing resources.',
+        'delete' => 'Permanently remove resources.',
+        default => null,
+    }
 );
 ```
 
@@ -570,6 +631,23 @@ $name = suggest(
     placeholder: 'E.g. Taylor',
     default: $user?->name,
     hint: 'This will be displayed on your profile.'
+);
+```
+
+<a name="suggest-info"></a>
+#### 보조 정보
+
+`info` 인자를 사용하여 현재 강조 표시된 옵션에 대한 추가 정보를 표시할 수 있습니다. 클로저를 전달하면 현재 강조된 옵션의 값을 받아 문자열 또는 `null`을 반환해야 합니다.
+
+```php
+$name = suggest(
+    label: 'What is your name?',
+    options: ['Taylor', 'Dayle'],
+    info: fn (string $value) => match ($value) {
+        'Taylor' => 'Administrator',
+        'Dayle' => 'Contributor',
+        default => null,
+    }
 );
 ```
 
@@ -682,6 +760,21 @@ $id = search(
 );
 ```
 
+<a name="search-info"></a>
+#### 보조 정보
+
+`info` 인자를 사용하여 현재 강조 표시된 옵션에 대한 추가 정보를 표시할 수 있습니다. 클로저를 전달하면 현재 강조된 옵션의 값을 받아 문자열 또는 `null`을 반환해야 합니다.
+
+```php
+$id = search(
+    label: 'Search for the user that should receive the mail',
+    options: fn (string $value) => strlen($value) > 0
+        ? User::whereLike('name', "%{$value}%")->pluck('name', 'id')->all()
+        : [],
+    info: fn (int $userId) => User::find($userId)?->email
+);
+```
+
 <a name="search-validation"></a>
 #### 추가 유효성 검사
 
@@ -762,6 +855,21 @@ $ids = multisearch(
 );
 ```
 
+<a name="multisearch-info"></a>
+#### 보조 정보
+
+`info` 인자를 사용하여 현재 강조 표시된 옵션에 대한 추가 정보를 표시할 수 있습니다. 클로저를 전달하면 현재 강조된 옵션의 값을 받아 문자열 또는 `null`을 반환해야 합니다.
+
+```php
+$ids = multisearch(
+    label: 'Search for the users that should receive the mail',
+    options: fn (string $value) => strlen($value) > 0
+        ? User::whereLike('name', "%{$value}%")->pluck('name', 'id')->all()
+        : [],
+    info: fn (int $userId) => User::find($userId)?->email
+);
+```
+
 <a name="multisearch-required"></a>
 #### 값 필수 선택
 
@@ -822,6 +930,89 @@ use function Laravel\Prompts\pause;
 
 pause('Press ENTER to continue.');
 ```
+
+<a name="autocomplete"></a>
+### Autocomplete
+
+`autocomplete` 함수는 가능한 선택지에 대한 인라인 자동 완성을 제공하는 데 사용할 수 있습니다. 사용자가 입력하면 입력에 맞는 제안이 고스트 텍스트로 표시되며, `Tab` 키 또는 오른쪽 화살표 키를 눌러 수락할 수 있습니다.
+
+```php
+use function Laravel\Prompts\autocomplete;
+
+$name = autocomplete(
+    label: 'What is your name?',
+    options: ['Taylor', 'Dayle', 'Jess', 'Nuno', 'Tim']
+);
+```
+
+플레이스홀더 텍스트, 기본값, 정보 힌트를 포함할 수도 있습니다.
+
+```php
+$name = autocomplete(
+    label: 'What is your name?',
+    options: ['Taylor', 'Dayle', 'Jess', 'Nuno', 'Tim'],
+    placeholder: 'E.g. Taylor',
+    default: $user?->name,
+    hint: 'Use tab to accept, up/down to cycle.'
+);
+```
+
+<a name="autocomplete-closure"></a>
+#### 동적 옵션
+
+클로저를 전달하여 사용자의 입력에 따라 동적으로 옵션을 생성할 수도 있습니다. 사용자가 문자를 입력할 때마다 클로저가 호출되며, 자동 완성을 위한 옵션 배열을 반환해야 합니다.
+
+```php
+$file = autocomplete(
+    label: 'Which file?',
+    options: fn (string $value) => collect($files)
+        ->filter(fn ($file) => str_starts_with(strtolower($file), strtolower($value)))
+        ->values()
+        ->all(),
+);
+```
+
+<a name="autocomplete-required"></a>
+#### 필수 값
+
+값 입력이 필수인 경우 `required` 인자를 전달할 수 있습니다.
+
+```php
+$name = autocomplete(
+    label: 'What is your name?',
+    options: ['Taylor', 'Dayle', 'Jess', 'Nuno', 'Tim'],
+    required: true
+);
+```
+
+유효성 검사 메시지를 커스터마이즈하려면 문자열을 전달할 수도 있습니다.
+
+```php
+$name = autocomplete(
+    label: 'What is your name?',
+    options: ['Taylor', 'Dayle', 'Jess', 'Nuno', 'Tim'],
+    required: 'Your name is required.'
+);
+```
+
+<a name="autocomplete-validation"></a>
+#### 추가 유효성 검사
+
+추가적인 유효성 검사 로직을 수행하려면 `validate` 인자에 클로저를 전달할 수 있습니다.
+
+```php
+$name = autocomplete(
+    label: 'What is your name?',
+    options: ['Taylor', 'Dayle', 'Jess', 'Nuno', 'Tim'],
+    validate: fn (string $value) => match (true) {
+        strlen($value) < 3 => 'The name must be at least 3 characters.',
+        strlen($value) > 255 => 'The name must not exceed 255 characters.',
+        default => null
+    }
+);
+```
+
+클로저는 입력된 값을 받아 에러 메시지를 반환하거나, 유효성 검사를 통과하면 `null`을 반환해야 합니다.
 
 <a name="transforming-input-before-validation"></a>
 ## 유효성 검사 전 입력 변환
@@ -988,6 +1179,191 @@ foreach ($users as $user) {
 }
 
 $progress->finish();
+```
+
+<a name="task"></a>
+## Task
+
+`task` 함수는 주어진 콜백이 실행되는 동안 레이블이 있는 작업과 스피너, 그리고 스크롤되는 실시간 출력 영역을 표시합니다. 의존성 설치나 배포 스크립트와 같은 장시간 실행되는 프로세스를 래핑하여 실시간으로 진행 상황을 확인하는 데 적합합니다.
+
+```php
+use function Laravel\Prompts\task;
+
+task(
+    label: 'Installing dependencies',
+    callback: function ($logger) {
+        // Long-running process...
+    }
+);
+```
+
+콜백은 `Logger` 인스턴스를 받으며, 이를 사용하여 작업의 출력 영역에 로그 라인, 상태 메시지, 스트리밍 텍스트를 표시할 수 있습니다.
+
+> [!WARNING]
+> `task` 함수는 스피너 애니메이션을 위해 [PCNTL](https://www.php.net/manual/en/book.pcntl.php) PHP 확장이 필요합니다. 이 확장을 사용할 수 없는 경우 정적 버전의 작업이 대신 표시됩니다.
+
+<a name="task-logging"></a>
+#### 로그 라인
+
+`line` 메서드는 작업의 스크롤 출력 영역에 단일 로그 라인을 기록합니다.
+
+```php
+task(
+    label: 'Installing dependencies',
+    callback: function ($logger) {
+        $logger->line('Resolving packages...');
+        // ...
+        $logger->line('Downloading laravel/framework');
+        // ...
+    }
+);
+```
+
+<a name="task-status-messages"></a>
+#### 상태 메시지
+
+`success`, `warning`, `error` 메서드를 사용하여 상태 메시지를 표시할 수 있습니다. 이 메시지들은 스크롤 로그 영역 위에 안정적이고 강조된 메시지로 나타납니다.
+
+```php
+task(
+    label: 'Deploying application',
+    callback: function ($logger) {
+        $logger->line('Pulling latest changes...');
+        // ...
+        $logger->success('Changes pulled!');
+
+        $logger->line('Running migrations...');
+        // ...
+        $logger->warning('No new migrations to run.');
+
+        $logger->line('Clearing cache...');
+        // ...
+        $logger->success('Cache cleared!');
+    }
+);
+```
+
+<a name="task-label"></a>
+#### 레이블 업데이트
+
+`label` 메서드를 사용하면 실행 중에 작업의 레이블을 업데이트할 수 있습니다.
+
+```php
+task(
+    label: 'Starting deployment...',
+    callback: function ($logger) {
+        $logger->label('Pulling latest changes...');
+        // ...
+        $logger->label('Running migrations...');
+        // ...
+        $logger->label('Clearing cache...');
+        // ...
+    }
+);
+```
+
+<a name="task-streaming"></a>
+#### 텍스트 스트리밍
+
+AI 생성 응답과 같이 출력이 점진적으로 생성되는 프로세스의 경우, `partial` 메서드를 사용하여 단어별 또는 청크별로 텍스트를 스트리밍할 수 있습니다. 스트림이 완료되면 `commitPartial`을 호출하여 출력을 확정합니다.
+
+```php
+task(
+    label: 'Generating response...',
+    callback: function ($logger) {
+        foreach ($words as $word) {
+            $logger->partial($word . ' ');
+        }
+
+        $logger->commitPartial();
+    }
+);
+```
+
+<a name="task-limit"></a>
+#### 출력 제한 커스터마이즈
+
+기본적으로 작업은 최대 10줄의 스크롤 출력을 표시합니다. `limit` 인자를 사용하여 이를 커스터마이즈할 수 있습니다.
+
+```php
+task(
+    label: 'Installing dependencies',
+    callback: function ($logger) {
+        // ...
+    },
+    limit: 20
+);
+```
+
+<a name="stream"></a>
+## Stream
+
+`stream` 함수는 터미널에 스트리밍되는 텍스트를 표시하며, AI 생성 콘텐츠나 점진적으로 도착하는 텍스트를 표시하는 데 적합합니다.
+
+```php
+use function Laravel\Prompts\stream;
+
+$stream = stream();
+
+foreach ($words as $word) {
+    $stream->append($word . ' ');
+    usleep(25_000); // Simulate delay between chunks...
+}
+
+$stream->close();
+```
+
+`append` 메서드는 스트림에 텍스트를 추가하며, 점진적인 페이드인 효과로 렌더링합니다. 모든 콘텐츠가 스트리밍되면 `close` 메서드를 호출하여 출력을 확정하고 커서를 복원합니다.
+
+<a name="terminal-title"></a>
+## 터미널 타이틀(Terminal Title)
+
+`title` 함수는 사용자의 터미널 창 또는 탭의 제목을 업데이트합니다.
+
+```php
+use function Laravel\Prompts\title;
+
+title('Installing Dependencies');
+```
+
+터미널 제목을 기본값으로 되돌리려면 빈 문자열을 전달합니다.
+
+```php
+title('');
+```
+
+<a name="notifications"></a>
+## 알림(Notifications)
+
+`notify` 함수는 터미널에서 네이티브 데스크톱 알림을 전송합니다.
+
+```php
+use function Laravel\Prompts\notify;
+
+notify('Build Complete', 'Deployed to production');
+```
+
+알림은 macOS(`osascript` 사용)와 Linux(`notify-send` 및 `kdialog` 폴백 사용)에서 지원됩니다.
+
+macOS에서는 `subtitle`과 `sound`도 포함할 수 있습니다.
+
+```php
+notify(
+    title: 'Build Complete',
+    body: 'Deployed to production',
+    subtitle: 'staging-server',
+    sound: 'Glass',
+);
+```
+
+Linux에서는 커스텀 `icon`을 제공할 수 있습니다.
+
+```php
+notify(
+    title: 'Build Complete',
+    body: 'Deployed to production',
+    icon: '/path/to/icon.png',
+);
 ```
 
 <a name="clear"></a>

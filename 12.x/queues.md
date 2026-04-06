@@ -587,8 +587,25 @@ public function middleware(): array
 }
 ```
 
-> [!NOTE]
-> If you are using Redis, you may use the `Illuminate\Queue\Middleware\RateLimitedWithRedis` middleware, which is fine-tuned for Redis and more efficient than the basic rate limiting middleware.
+<a name="rate-limiting-with-redis"></a>
+#### Rate Limiting With Redis
+
+If you are using Redis, you may use the `Illuminate\Queue\Middleware\RateLimitedWithRedis` middleware, which is fine-tuned for Redis and more efficient than the basic rate limiting middleware:
+
+```php
+use Illuminate\Queue\Middleware\RateLimitedWithRedis;
+
+public function middleware(): array
+{
+    return [new RateLimitedWithRedis('backups')];
+}
+```
+
+The `connection` method may be used to specify which Redis connection the middleware should use:
+
+```php
+return [(new RateLimitedWithRedis('backups'))->connection('limiter')];
+```
 
 <a name="preventing-job-overlaps"></a>
 ### Preventing Job Overlaps
@@ -810,8 +827,25 @@ public function middleware(): array
 }
 ```
 
-> [!NOTE]
-> If you are using Redis, you may use the `Illuminate\Queue\Middleware\ThrottlesExceptionsWithRedis` middleware, which is fine-tuned for Redis and more efficient than the basic exception throttling middleware.
+<a name="throttling-exceptions-with-redis"></a>
+#### Throttling Exceptions With Redis
+
+If you are using Redis, you may use the `Illuminate\Queue\Middleware\ThrottlesExceptionsWithRedis` middleware, which is fine-tuned for Redis and more efficient than the basic exception throttling middleware:
+
+```php
+use Illuminate\Queue\Middleware\ThrottlesExceptionsWithRedis;
+
+public function middleware(): array
+{
+    return [new ThrottlesExceptionsWithRedis(10, 10 * 60)];
+}
+```
+
+The `connection` method may be used to specify which Redis connection the middleware should use:
+
+```php
+return [(new ThrottlesExceptionsWithRedis(10, 10 * 60))->connection('limiter')];
+```
 
 <a name="skipping-jobs"></a>
 ### Skipping Jobs
@@ -1172,6 +1206,9 @@ class ProcessPodcast implements ShouldQueue
     }
 }
 ```
+
+> [!WARNING]
+> Constructor-based queue assignment via `onQueue` only works for job classes. For [queued event listeners](/docs/{{version}}/events#customizing-the-queue-connection-queue-name), define a `viaQueue` method or a `$queue` property on the listener class instead.
 
 <a name="dispatching-to-a-particular-connection"></a>
 #### Dispatching to a Particular Connection
@@ -1682,7 +1719,9 @@ class SyncChatHistory implements ShouldQueue
 <a name="job-batching"></a>
 ## Job Batching
 
-Laravel's job batching feature allows you to easily execute a batch of jobs and then perform some action when the batch of jobs has completed executing. Before getting started, you should create a database migration to build a table which will contain meta information about your job batches, such as their completion percentage. This migration may be generated using the `make:queue-batches-table` Artisan command:
+Laravel's job batching feature allows you to easily execute a group of jobs in parallel and then perform some action when the batch of jobs has completed executing.
+
+Before getting started, you should create a database migration to build a table which will contain meta information about your job batches, such as their completion percentage. This migration may be generated using the `make:queue-batches-table` Artisan command:
 
 ```shell
 php artisan make:queue-batches-table
@@ -2022,7 +2061,7 @@ use Illuminate\Support\Facades\Schedule;
 Schedule::command('queue:prune-batches --hours=48')->daily();
 ```
 
-Sometimes, your `jobs_batches` table may accumulate batch records for batches that never completed successfully, such as batches where a job failed and that job was never retried successfully. You may instruct the `queue:prune-batches` command to prune these unfinished batch records using the `unfinished` option:
+Sometimes, your `job_batches` table may accumulate batch records for batches that never completed successfully, such as batches where a job failed and that job was never retried successfully. You may instruct the `queue:prune-batches` command to prune these unfinished batch records using the `unfinished` option:
 
 ```php
 use Illuminate\Support\Facades\Schedule;
@@ -2030,7 +2069,7 @@ use Illuminate\Support\Facades\Schedule;
 Schedule::command('queue:prune-batches --hours=48 --unfinished=72')->daily();
 ```
 
-Likewise, your `jobs_batches` table may also accumulate batch records for cancelled batches. You may instruct the `queue:prune-batches` command to prune these cancelled batch records using the `cancelled` option:
+Likewise, your `job_batches` table may also accumulate batch records for cancelled batches. You may instruct the `queue:prune-batches` command to prune these cancelled batch records using the `cancelled` option:
 
 ```php
 use Illuminate\Support\Facades\Schedule;
@@ -2377,7 +2416,7 @@ Supervisor configuration files are typically stored in the `/etc/supervisor/conf
 ```ini
 [program:laravel-worker]
 process_name=%(program_name)s_%(process_num)02d
-command=php /home/forge/app.com/artisan queue:work sqs --sleep=3 --tries=3 --max-time=3600
+command=php /home/forge/app.com/artisan queue:work --sleep=3 --tries=3 --max-time=3600
 autostart=true
 autorestart=true
 stopasgroup=true
@@ -2985,6 +3024,30 @@ Bus::fake();
 Bus::assertBatched(function (PendingBatch $batch) {
     return $batch->name == 'Import CSV' &&
            $batch->jobs->count() === 10;
+});
+```
+
+The `hasJobs` method may be used on the pending batch to verify that the batch contains the expected jobs. The method accepts an array of job instances, class names, or closures:
+
+```php
+Bus::assertBatched(function (PendingBatch $batch) {
+    return $batch->hasJobs([
+        new ProcessCsvRow(row: 1),
+        new ProcessCsvRow(row: 2),
+        new ProcessCsvRow(row: 3),
+    ]);
+});
+```
+
+When using closures, the closure will receive the job instance. The expected job type will be inferred from the closure's type hint:
+
+```php
+Bus::assertBatched(function (PendingBatch $batch) {
+    return $batch->hasJobs([
+        fn (ProcessCsvRow $job) => $job->row === 1,
+        fn (ProcessCsvRow $job) => $job->row === 2,
+        fn (ProcessCsvRow $job) => $job->row === 3,
+    ]);
 });
 ```
 

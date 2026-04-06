@@ -531,6 +531,30 @@ $categories = multiselect(
 );
 ```
 
+<a name="multiselect-info"></a>
+#### 보조 정보
+
+`info` 인자는 현재 강조된 옵션에 대한 추가 정보를 표시하는 데 사용할 수 있습니다. 클로저를 전달하면 현재 강조된 옵션의 값을 인자로 받으며, 문자열 또는 `null`을 반환해야 합니다.
+
+```php
+$permissions = multiselect(
+    label: 'What permissions should be assigned?',
+    options: [
+        'read' => 'Read',
+        'create' => 'Create',
+        'update' => 'Update',
+        'delete' => 'Delete',
+    ],
+    info: fn (string $value) => match ($value) {
+        'read' => 'View resources and their properties.',
+        'create' => 'Create new resources.',
+        'update' => 'Modify existing resources.',
+        'delete' => 'Permanently remove resources.',
+        default => null,
+    }
+);
+```
+
 <a name="multiselect-required"></a>
 #### 값 필수 선택
 
@@ -606,6 +630,23 @@ $name = suggest(
     placeholder: 'E.g. Taylor',
     default: $user?->name,
     hint: 'This will be displayed on your profile.'
+);
+```
+
+<a name="suggest-info"></a>
+#### 보조 정보
+
+`info` 인자는 현재 강조된 옵션에 대한 추가 정보를 표시하는 데 사용할 수 있습니다. 클로저를 전달하면 현재 강조된 옵션의 값을 인자로 받으며, 문자열 또는 `null`을 반환해야 합니다.
+
+```php
+$name = suggest(
+    label: 'What is your name?',
+    options: ['Taylor', 'Dayle'],
+    info: fn (string $value) => match ($value) {
+        'Taylor' => 'Administrator',
+        'Dayle' => 'Contributor',
+        default => null,
+    }
 );
 ```
 
@@ -718,6 +759,21 @@ $id = search(
 );
 ```
 
+<a name="search-info"></a>
+#### 보조 정보
+
+`info` 인자는 현재 강조된 옵션에 대한 추가 정보를 표시하는 데 사용할 수 있습니다. 클로저를 전달하면 현재 강조된 옵션의 값을 인자로 받으며, 문자열 또는 `null`을 반환해야 합니다.
+
+```php
+$id = search(
+    label: 'Search for the user that should receive the mail',
+    options: fn (string $value) => strlen($value) > 0
+        ? User::whereLike('name', "%{$value}%")->pluck('name', 'id')->all()
+        : [],
+    info: fn (int $userId) => User::find($userId)?->email
+);
+```
+
 <a name="search-validation"></a>
 #### 추가 유효성 검사
 
@@ -795,6 +851,21 @@ $ids = multisearch(
         ? User::whereLike('name', "%{$value}%")->pluck('name', 'id')->all()
         : [],
     scroll: 10
+);
+```
+
+<a name="multisearch-info"></a>
+#### 보조 정보
+
+`info` 인자는 현재 강조된 옵션에 대한 추가 정보를 표시하는 데 사용할 수 있습니다. 클로저를 전달하면 현재 강조된 옵션의 값을 인자로 받으며, 문자열 또는 `null`을 반환해야 합니다.
+
+```php
+$ids = multisearch(
+    label: 'Search for the users that should receive the mail',
+    options: fn (string $value) => strlen($value) > 0
+        ? User::whereLike('name', "%{$value}%")->pluck('name', 'id')->all()
+        : [],
+    info: fn (int $userId) => User::find($userId)?->email
 );
 ```
 

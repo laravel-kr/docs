@@ -946,12 +946,12 @@ return $this->belongsToMany(Role::class)
 <a name="ordering-queries-via-intermediate-table-columns"></a>
 ### 중간 테이블 컬럼을 통한 쿼리 정렬 (Ordering Queries via Intermediate Table Columns)
 
-`orderByPivot` 메서드를 사용하여 `belongsToMany` 관계 쿼리가 반환하는 결과를 정렬할 수 있습니다. 다음 예제에서는 사용자의 모든 최신 배지를 조회합니다.
+`orderByPivot` 및 `orderByPivotDesc` 메서드를 사용하여 `belongsToMany` 관계 쿼리가 반환하는 결과를 정렬할 수 있습니다. 다음 예제에서는 사용자의 모든 최신 배지를 조회합니다.
 
 ```php
 return $this->belongsToMany(Badge::class)
     ->where('rank', 'gold')
-    ->orderByPivot('created_at', 'desc');
+    ->orderByPivotDesc('created_at');
 ```
 
 <a name="defining-custom-intermediate-table-models"></a>

@@ -82,10 +82,10 @@ php artisan make:mcp-server WeatherServer
 
 namespace App\Mcp\Servers;
 
-use Laravel\Mcp\Server;
 use Laravel\Mcp\Server\Attributes\Instructions;
 use Laravel\Mcp\Server\Attributes\Name;
 use Laravel\Mcp\Server\Attributes\Version;
+use Laravel\Mcp\Server;
 
 #[Name('Weather Server')]
 #[Version('1.0.0')]
@@ -549,6 +549,28 @@ public function handle(Request $request): Response
 return Response::error('Unable to fetch weather data. Please try again.');
 ```
 
+이미지 또는 오디오 콘텐츠를 반환하려면 `image` 및 `audio` 메서드를 사용합니다:
+
+```php
+return Response::image(file_get_contents(storage_path('weather/radar.png')), 'image/png');
+
+return Response::audio(file_get_contents(storage_path('weather/alert.mp3')), 'audio/mp3');
+```
+
+Laravel 파일시스템 디스크에서 직접 이미지 및 오디오 콘텐츠를 로드하려면 `fromStorage` 메서드를 사용할 수도 있습니다. MIME 타입은 파일에서 자동으로 감지됩니다:
+
+```php
+return Response::fromStorage('weather/radar.png');
+```
+
+필요한 경우 특정 디스크를 지정하거나 MIME 타입을 재정의할 수 있습니다:
+
+```php
+return Response::fromStorage('weather/radar.png', disk: 's3');
+
+return Response::fromStorage('weather/radar.png', mimeType: 'image/webp');
+```
+
 <a name="multiple-content-responses"></a>
 #### 다중 콘텐츠 응답
 
@@ -596,28 +618,6 @@ return Response::make(
     'temperature' => 22.5,
     'conditions' => 'Sunny',
 ]);
-```
-
-이미지 또는 오디오 콘텐츠를 반환하려면 `image` 및 `audio` 메서드를 사용합니다:
-
-```php
-return Response::image(file_get_contents(storage_path('weather/radar.png')), 'image/png');
-
-return Response::audio(file_get_contents(storage_path('weather/alert.mp3')), 'audio/mp3');
-```
-
-Laravel 파일시스템 디스크에서 직접 이미지 및 오디오 콘텐츠를 로드하려면 `fromStorage` 메서드를 사용할 수도 있습니다. MIME 타입은 파일에서 자동으로 감지됩니다:
-
-```php
-return Response::fromStorage('weather/radar.png');
-```
-
-필요한 경우 특정 디스크를 지정하거나 MIME 타입을 재정의할 수 있습니다:
-
-```php
-return Response::fromStorage('weather/radar.png', disk: 's3');
-
-return Response::fromStorage('weather/radar.png', mimeType: 'image/webp');
 ```
 
 <a name="streaming-responses"></a>
@@ -1361,14 +1361,12 @@ public function handle(Request $request): ResponseFactory
 도구, 리소스 또는 프롬프트 자체에 메타데이터를 첨부하려면 클래스에 `$meta` 속성을 정의하세요.
 
 ```php
-use Laravel\Mcp\Server\Tool;
-
 use Laravel\Mcp\Server\Attributes\Description;
+use Laravel\Mcp\Server\Tool;
 
 #[Description('Fetches the current weather forecast.')]
 class CurrentWeatherTool extends Tool
 {
-
     protected ?array $meta = [
         'version' => '2.0',
         'author' => 'Weather Team',

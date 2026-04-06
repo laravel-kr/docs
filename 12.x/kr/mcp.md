@@ -75,32 +75,23 @@ php artisan vendor:publish --tag=ai-routes
 php artisan make:mcp-server WeatherServer
 ```
 
-이 명령어는 `app/Mcp/Servers` 디렉터리에 새로운 서버 클래스를 생성합니다. 생성된 서버 클래스는 Laravel MCP의 기본 `Laravel\Mcp\Server` 클래스를 확장하며, 도구, 리소스, 프롬프트를 등록하기 위한 속성을 제공합니다.
+이 명령어는 `app/Mcp/Servers` 디렉터리에 새로운 서버 클래스를 생성합니다. 생성된 서버 클래스는 Laravel MCP의 기본 `Laravel\Mcp\Server` 클래스를 확장하며, 서버를 구성하고 도구, 리소스, 프롬프트를 등록하기 위한 속성과 프로퍼티를 제공합니다.
 
 ```php
 <?php
 
 namespace App\Mcp\Servers;
 
+use Laravel\Mcp\Server\Attributes\Instructions;
+use Laravel\Mcp\Server\Attributes\Name;
+use Laravel\Mcp\Server\Attributes\Version;
 use Laravel\Mcp\Server;
 
+#[Name('Weather Server')]
+#[Version('1.0.0')]
+#[Instructions('This server provides weather information and forecasts.')]
 class WeatherServer extends Server
 {
-    /**
-     * The MCP server's name.
-     */
-    protected string $name = 'Weather Server';
-
-    /**
-     * The MCP server's version.
-     */
-    protected string $version = '1.0.0';
-
-    /**
-     * The MCP server's instructions for the LLM.
-     */
-    protected string $instructions = 'This server provides weather information and forecasts.';
-
     /**
      * The tools registered with this MCP server.
      *
@@ -181,15 +172,12 @@ namespace App\Mcp\Tools;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Laravel\Mcp\Request;
 use Laravel\Mcp\Response;
+use Laravel\Mcp\Server\Attributes\Description;
 use Laravel\Mcp\Server\Tool;
 
+#[Description('Fetches the current weather forecast for a specified location.')]
 class CurrentWeatherTool extends Tool
 {
-    /**
-     * The tool's description.
-     */
-    protected string $description = 'Fetches the current weather forecast for a specified location.';
-
     /**
      * Handle the tool request.
      */
@@ -253,35 +241,28 @@ class WeatherServer extends Server
 <a name="tool-name-title-description"></a>
 #### 도구 이름, 제목, 설명
 
-기본적으로 도구의 이름과 제목은 클래스 이름에서 자동으로 생성됩니다. 예를 들어, `CurrentWeatherTool`의 이름은 `current-weather`이고 제목은 `Current Weather Tool`이 됩니다. 도구의 `$name`과 `$title` 속성을 정의하여 이 값들을 커스터마이즈할 수 있습니다.
+기본적으로 도구의 이름과 제목은 클래스 이름에서 자동으로 생성됩니다. 예를 들어, `CurrentWeatherTool`의 이름은 `current-weather`이고 제목은 `Current Weather Tool`이 됩니다. `Name`과 `Title` 속성을 사용하여 이 값들을 커스터마이즈할 수 있습니다.
 
 ```php
+use Laravel\Mcp\Server\Attributes\Name;
+use Laravel\Mcp\Server\Attributes\Title;
+
+#[Name('get-optimistic-weather')]
+#[Title('Get Optimistic Weather Forecast')]
 class CurrentWeatherTool extends Tool
 {
-    /**
-     * The tool's name.
-     */
-    protected string $name = 'get-optimistic-weather';
-
-    /**
-     * The tool's title.
-     */
-    protected string $title = 'Get Optimistic Weather Forecast';
-
     // ...
 }
 ```
 
-도구 설명은 자동으로 생성되지 않습니다. 항상 도구에 `$description` 속성을 정의하여 의미 있는 설명을 제공해야 합니다.
+도구 설명은 자동으로 생성되지 않습니다. 항상 `Description` 속성을 사용하여 의미 있는 설명을 제공해야 합니다.
 
 ```php
+use Laravel\Mcp\Server\Attributes\Description;
+
+#[Description('Fetches the current weather forecast for a specified location.')]
 class CurrentWeatherTool extends Tool
 {
-    /**
-     * The tool's description.
-     */
-    protected string $description = 'Fetches the current weather forecast for a specified location.';
-
     //
 }
 ```
@@ -568,6 +549,28 @@ public function handle(Request $request): Response
 return Response::error('Unable to fetch weather data. Please try again.');
 ```
 
+이미지나 오디오 콘텐츠를 반환하려면 `image`와 `audio` 메서드를 사용하세요.
+
+```php
+return Response::image(file_get_contents(storage_path('weather/radar.png')), 'image/png');
+
+return Response::audio(file_get_contents(storage_path('weather/alert.mp3')), 'audio/mp3');
+```
+
+`fromStorage` 메서드를 사용하여 Laravel 파일시스템 디스크에서 직접 이미지 및 오디오 콘텐츠를 로드할 수도 있습니다. MIME 타입은 파일에서 자동으로 감지됩니다.
+
+```php
+return Response::fromStorage('weather/radar.png');
+```
+
+필요한 경우 특정 디스크를 지정하거나 MIME 타입을 재정의할 수 있습니다.
+
+```php
+return Response::fromStorage('weather/radar.png', disk: 's3');
+
+return Response::fromStorage('weather/radar.png', mimeType: 'image/webp');
+```
+
 <a name="multiple-content-responses"></a>
 #### 다중 콘텐츠 응답
 
@@ -698,35 +701,28 @@ class WeatherServer extends Server
 <a name="prompt-name-title-and-description"></a>
 #### 프롬프트 이름, 제목, 설명
 
-기본적으로 프롬프트의 이름과 제목은 클래스 이름에서 자동으로 생성됩니다. 예를 들어, `DescribeWeatherPrompt`의 이름은 `describe-weather`이고 제목은 `Describe Weather Prompt`이 됩니다. 프롬프트에 `$name`과 `$title` 속성을 정의하여 이 값들을 커스터마이즈할 수 있습니다.
+기본적으로 프롬프트의 이름과 제목은 클래스 이름에서 자동으로 생성됩니다. 예를 들어, `DescribeWeatherPrompt`의 이름은 `describe-weather`이고 제목은 `Describe Weather Prompt`이 됩니다. `Name`과 `Title` 속성을 사용하여 이 값들을 커스터마이즈할 수 있습니다.
 
 ```php
+use Laravel\Mcp\Server\Attributes\Name;
+use Laravel\Mcp\Server\Attributes\Title;
+
+#[Name('weather-assistant')]
+#[Title('Weather Assistant Prompt')]
 class DescribeWeatherPrompt extends Prompt
 {
-    /**
-     * The prompt's name.
-     */
-    protected string $name = 'weather-assistant';
-
-    /**
-     * The prompt's title.
-     */
-    protected string $title = 'Weather Assistant Prompt';
-
     // ...
 }
 ```
 
-프롬프트 설명은 자동으로 생성되지 않습니다. 항상 프롬프트에 `$description` 속성을 정의하여 의미 있는 설명을 제공해야 합니다.
+프롬프트 설명은 자동으로 생성되지 않습니다. 항상 `Description` 속성을 사용하여 의미 있는 설명을 제공해야 합니다.
 
 ```php
+use Laravel\Mcp\Server\Attributes\Description;
+
+#[Description('Generates a natural-language explanation of the weather for a given location.')]
 class DescribeWeatherPrompt extends Prompt
 {
-    /**
-     * The prompt's description.
-     */
-    protected string $description = 'Generates a natural-language explanation of the weather for a given location.';
-
     //
 }
 ```
@@ -969,35 +965,28 @@ class WeatherServer extends Server
 <a name="resource-name-title-and-description"></a>
 #### 리소스 이름, 제목, 설명
 
-기본적으로 리소스의 이름과 제목은 클래스 이름에서 자동으로 생성됩니다. 예를 들어, `WeatherGuidelinesResource`의 이름은 `weather-guidelines`이고 제목은 `Weather Guidelines Resource`가 됩니다. 리소스에 `$name`과 `$title` 속성을 정의하여 이 값들을 커스터마이즈할 수 있습니다.
+기본적으로 리소스의 이름과 제목은 클래스 이름에서 자동으로 생성됩니다. 예를 들어, `WeatherGuidelinesResource`의 이름은 `weather-guidelines`이고 제목은 `Weather Guidelines Resource`가 됩니다. `Name`과 `Title` 속성을 사용하여 이 값들을 커스터마이즈할 수 있습니다.
 
 ```php
+use Laravel\Mcp\Server\Attributes\Name;
+use Laravel\Mcp\Server\Attributes\Title;
+
+#[Name('weather-api-docs')]
+#[Title('Weather API Documentation')]
 class WeatherGuidelinesResource extends Resource
 {
-    /**
-     * The resource's name.
-     */
-    protected string $name = 'weather-api-docs';
-
-    /**
-     * The resource's title.
-     */
-    protected string $title = 'Weather API Documentation';
-
     // ...
 }
 ```
 
-리소스 설명은 자동으로 생성되지 않습니다. 항상 리소스에 `$description` 속성을 정의하여 의미 있는 설명을 제공해야 합니다.
+리소스 설명은 자동으로 생성되지 않습니다. 항상 `Description` 속성을 사용하여 의미 있는 설명을 제공해야 합니다.
 
 ```php
+use Laravel\Mcp\Server\Attributes\Description;
+
+#[Description('Comprehensive guidelines for using the Weather API.')]
 class WeatherGuidelinesResource extends Resource
 {
-    /**
-     * The resource's description.
-     */
-    protected string $description = 'Comprehensive guidelines for using the Weather API.';
-
     //
 }
 ```
@@ -1022,21 +1011,16 @@ namespace App\Mcp\Resources;
 
 use Laravel\Mcp\Request;
 use Laravel\Mcp\Response;
+use Laravel\Mcp\Server\Attributes\Description;
+use Laravel\Mcp\Server\Attributes\MimeType;
 use Laravel\Mcp\Server\Contracts\HasUriTemplate;
 use Laravel\Mcp\Server\Resource;
 use Laravel\Mcp\Support\UriTemplate;
 
+#[Description('Access user files by ID')]
+#[MimeType('text/plain')]
 class UserFileResource extends Resource implements HasUriTemplate
 {
-    /**
-     * The resource's description.
-     */
-    protected string $description = 'Access user files by ID';
-
-    /**
-     * The resource's MIME type.
-     */
-    protected string $mimeType = 'text/plain';
 
     /**
      * Get the URI template for this resource.
@@ -1121,26 +1105,21 @@ class UserProfileResource extends Resource implements HasUriTemplate
 
 기본적으로 리소스의 URI는 리소스 이름을 기반으로 생성되므로, `WeatherGuidelinesResource`의 URI는 `weather://resources/weather-guidelines`가 됩니다. 기본 MIME 타입은 `text/plain`입니다.
 
-리소스에 `$uri` 및 `$mimeType` 속성을 정의하여 이 값들을 커스터마이즈할 수 있습니다.
+`Uri` 및 `MimeType` 속성을 사용하여 이 값들을 커스터마이즈할 수 있습니다.
 
 ```php
 <?php
 
 namespace App\Mcp\Resources;
 
+use Laravel\Mcp\Server\Attributes\MimeType;
+use Laravel\Mcp\Server\Attributes\Uri;
 use Laravel\Mcp\Server\Resource;
 
+#[Uri('weather://resources/guidelines')]
+#[MimeType('application/pdf')]
 class WeatherGuidelinesResource extends Resource
 {
-    /**
-     * The resource's URI.
-     */
-    protected string $uri = 'weather://resources/guidelines';
-
-    /**
-     * The resource's MIME type.
-     */
-    protected string $mimeType = 'application/pdf';
 }
 ```
 
@@ -1315,22 +1294,19 @@ blob 콘텐츠를 반환하려면 blob 콘텐츠를 제공하여 `blob` 메서�
 return Response::blob(file_get_contents(storage_path('weather/radar.png')));
 ```
 
-blob 콘텐츠를 반환할 때 MIME 타입은 리소스 클래스의 `$mimeType` 속성 값에 의해 결정됩니다.
+blob 콘텐츠를 반환할 때 MIME 타입은 리소스에 설정된 MIME 타입에 의해 결정됩니다.
 
 ```php
 <?php
 
 namespace App\Mcp\Resources;
 
+use Laravel\Mcp\Server\Attributes\MimeType;
 use Laravel\Mcp\Server\Resource;
 
+#[MimeType('image/png')]
 class WeatherGuidelinesResource extends Resource
 {
-    /**
-     * The resource's MIME type.
-     */
-    protected string $mimeType = 'image/png';
-
     //
 }
 ```
@@ -1386,12 +1362,12 @@ public function handle(Request $request): ResponseFactory
 도구, 리소스 또는 프롬프트 자체에 메타데이터를 첨부하려면 클래스에 `$meta` 속성을 정의하세요.
 
 ```php
+use Laravel\Mcp\Server\Attributes\Description;
 use Laravel\Mcp\Server\Tool;
 
+#[Description('Fetches the current weather forecast.')]
 class CurrentWeatherTool extends Tool
 {
-    protected string $description = 'Fetches the current weather forecast.';
-
     protected ?array $meta = [
         'version' => '2.0',
         'author' => 'Weather Team',

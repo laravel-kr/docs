@@ -1499,6 +1499,7 @@ Order::resolveRelationUsing('customer', function (Order $orderModel) {
     return $orderModel->belongsTo(Customer::class, 'customer_id');
 });
 ```
+
 > [!WARNING]
 > 동적 관계를 정의할 때는 항상 Eloquent 관계 메서드에 명시적인 키 이름 인수를 제공해야 합니다.
 

@@ -287,10 +287,10 @@ $response = Http::retry([100, 200])->post(/* ... */);
 필요한 경우 `retry` 메서드에 세 번째 인자를 전달할 수 있습니다. 세 번째 인자는 재시도를 실제로 시도할지 여부를 결정하는 콜러블이어야 합니다. 예를 들어, 초기 요청이 `ConnectionException`을 만났을 때만 요청을 재시도할 수 있습니다.
 
 ```php
-use Exception;
 use Illuminate\Http\Client\PendingRequest;
+use Throwable;
 
-$response = Http::retry(3, 100, function (Exception $exception, PendingRequest $request) {
+$response = Http::retry(3, 100, function (Throwable $exception, PendingRequest $request) {
     return $exception instanceof ConnectionException;
 })->post(/* ... */);
 ```
@@ -298,11 +298,11 @@ $response = Http::retry(3, 100, function (Exception $exception, PendingRequest $
 요청 시도가 실패하면 새 시도를 하기 전에 요청을 변경하고 싶을 수 있습니다. `retry` 메서드에 제공한 콜러블에 제공된 요청 인자를 수정하여 이를 달성할 수 있습니다. 예를 들어, 첫 번째 시도가 인증 에러를 반환하면 새 인증 토큰으로 요청을 재시도할 수 있습니다.
 
 ```php
-use Exception;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\RequestException;
+use Throwable;
 
-$response = Http::withToken($this->getToken())->retry(2, 0, function (Exception $exception, PendingRequest $request) {
+$response = Http::withToken($this->getToken())->retry(2, 0, function (Throwable $exception, PendingRequest $request) {
     if (! $exception instanceof RequestException || $exception->response->status() !== 401) {
         return false;
     }

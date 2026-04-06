@@ -49,6 +49,7 @@
     - [프로세스](/docs/{{version}}/processes)
     - [Queues-큐](/docs/{{version}}/queues)
     - [속도 제한](/docs/{{version}}/rate-limiting)
+    - [검색](/docs/{{version}}/search)
     - [문자열](/docs/{{version}}/strings)
     - [작업 스케줄링](/docs/{{version}}/scheduling)
 - ## Security

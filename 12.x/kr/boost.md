@@ -121,23 +121,17 @@ Laravel Boost는 AI 에이전트가 여러분의 라라벨 애플리케이션과
 <a name="available-mcp-tools"></a>
 ### 사용 가능한 MCP 도구
 
-| 이름                       | 설명                                                                                                       |
-| -------------------------- | ----------------------------------------------------------------------------------------------------------- |
-| Application Info           | PHP 및 라라벨 버전, 데이터베이스 엔진, 버전이 포함된 에코시스템 패키지 목록, Eloquent 모델을 읽습니다 |
-| Browser Logs               | 브라우저에서 로그와 오류를 읽습니다                                                                       |
-| Database Connections       | 기본 연결을 포함한 사용 가능한 데이터베이스 연결을 검사합니다                                    |
-| Database Query             | 데이터베이스에 대해 쿼리를 실행합니다                                                                        |
-| Database Schema            | 데이터베이스 스키마를 읽습니다                                                                                    |
-| Get Absolute URL           | 에이전트가 유효한 URL을 생성할 수 있도록 상대 경로 URI를 절대 경로로 변환합니다                                        |
-| Get Config                 | "점(dot)" 표기법을 사용하여 설정 파일에서 값을 가져옵니다                                               |
-| Last Error                 | 애플리케이션의 로그 파일에서 마지막 오류를 읽습니다                                                        |
-| List Artisan Commands      | 사용 가능한 Artisan 명령을 검사합니다                                                                      |
-| List Available Config Keys | 사용 가능한 설정 키를 검사합니다                                                                    |
-| List Available Env Vars    | 사용 가능한 환경 변수 키를 검사합니다                                                             |
-| List Routes                | 애플리케이션의 라우트를 검사합니다                                                            |
-| Read Log Entries           | 마지막 N개의 로그 항목을 읽습니다                                                                 |
-| Search Docs                | 설치된 패키지를 기반으로 문서를 검색하기 위해 라라벨 호스팅 문서 API 서비스를 쿼리합니다    |
-| Tinker                     | 애플리케이션의 컨텍스트 내에서 임의의 코드를 실행합니다                                                |
+| 이름                 | 설명                                                                                                       |
+| -------------------- | ----------------------------------------------------------------------------------------------------------- |
+| Application Info     | PHP 및 라라벨 버전, 데이터베이스 엔진, 버전이 포함된 에코시스템 패키지 목록, Eloquent 모델을 읽습니다 |
+| Browser Logs         | 브라우저에서 로그와 오류를 읽습니다                                                                       |
+| Database Connections | 기본 연결을 포함한 사용 가능한 데이터베이스 연결을 검사합니다                                    |
+| Database Query       | 데이터베이스에 대해 쿼리를 실행합니다                                                                        |
+| Database Schema      | 데이터베이스 스키마를 읽습니다                                                                                    |
+| Get Absolute URL     | 에이전트가 유효한 URL을 생성할 수 있도록 상대 경로 URI를 절대 경로로 변환합니다                                        |
+| Last Error           | 애플리케이션의 로그 파일에서 마지막 오류를 읽습니다                                                        |
+| Read Log Entries     | 마지막 N개의 로그 항목을 읽습니다                                                                 |
+| Search Docs          | 설치된 패키지를 기반으로 문서를 검색하기 위해 라라벨 호스팅 문서 API 서비스를 쿼리합니다    |
 
 <a name="manually-registering-the-mcp-server"></a>
 ### MCP 서버 수동 등록
@@ -180,10 +174,10 @@ Laravel Boost는 다음 패키지와 프레임워크에 대한 AI 가이드라�
 | Flux UI           | core, free, pro        |
 | Folio             | core                   |
 | Herd              | core                   |
-| Inertia Laravel   | core, 1.x, 2.x         |
-| Inertia React     | core, 1.x, 2.x         |
-| Inertia Vue       | core, 1.x, 2.x         |
-| Inertia Svelte    | core, 1.x, 2.x         |
+| Inertia Laravel   | core, 1.x, 2.x, 3.x    |
+| Inertia React     | core, 1.x, 2.x, 3.x    |
+| Inertia Vue       | core, 1.x, 2.x, 3.x    |
+| Inertia Svelte    | core, 1.x, 2.x, 3.x    |
 | MCP               | core                   |
 | Pennant           | core                   |
 | Pest              | core, 3.x, 4.x         |

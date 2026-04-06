@@ -79,7 +79,7 @@
 <a name="upgrading-cashier"></a>
 ## Cashier 업그레이드
 
-Cashier의 새 버전으로 업그레이드할 때는 [업그레이드 가이드](https://github.com/laravel/cashier-stripe/blob/master/UPGRADE.md)를 주의 깊게 검토하는 것이 중요합니다.
+Cashier의 새 버전으로 업그레이드할 때는 [업그레이드 가이드](https://github.com/laravel/cashier-stripe/blob/16.x/UPGRADE.md)를 주의 깊게 검토하는 것이 중요합니다.
 
 > [!WARNING]
 > 호환성이 깨지는 변경을 방지하기 위해 Cashier는 고정된 Stripe API 버전을 사용합니다. Cashier 16은 Stripe API 버전 `2025-06-30.basil`을 사용합니다. Stripe API 버전은 새로운 Stripe 기능과 개선 사항을 활용하기 위해 마이너 릴리스에서 업데이트됩니다.

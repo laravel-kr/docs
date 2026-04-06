@@ -261,6 +261,12 @@ public function __construct(
 }
 ```
 
+나머지를 유지하면서 특정 관계만 제거해야 하는 경우, `withoutRelation` 메서드를 사용할 수 있습니다:
+
+```php
+$this->podcast = $podcast->withoutRelation('comments');
+```
+
 [PHP 생성자 속성 프로모션(constructor property promotion)](https://www.php.net/manual/en/language.oop5.decon.php#language.oop5.decon.constructor.promotion)을 사용하고 Eloquent 모델이 관계를 직렬화하지 않아야 함을 나타내려면 `WithoutRelations` 속성을 사용할 수 있습니다.
 
 ```php
@@ -330,7 +336,7 @@ class UpdateSearchIndex implements ShouldQueue, ShouldBeUnique
 
 위 예제에서 `UpdateSearchIndex` 잡은 고유합니다. 따라서 잡의 다른 인스턴스가 이미 큐에 있고 처리가 완료되지 않은 경우 잡이 디스패치되지 않습니다.
 
-특정 경우에 잡을 고유하게 만드는 특정 "키"를 정의하거나 잡이 더 이상 고유하지 않게 되는 타임아웃을 지정하고 싶을 수 있습니다. 이를 수행하려면 잡 클래스에 `uniqueId` 및 `uniqueFor` 속성 또는 메서드를 정의할 수 있습니다.
+특정 경우에 잡을 고유하게 만드는 특정 "키"를 정의하거나 잡이 더 이상 고유하지 않게 되는 타임아웃을 지정하고 싶을 수 있습니다. 이를 수행하려면 잡 클래스에 `UniqueFor` 속성을 사용하고 `uniqueId` 메서드를 정의할 수 있습니다.
 
 ```php
 <?php
@@ -339,7 +345,9 @@ namespace App\Jobs;
 
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
+use Illuminate\Queue\Attributes\UniqueFor;
 
+#[UniqueFor(3600)]
 class UpdateSearchIndex implements ShouldQueue, ShouldBeUnique
 {
     /**
@@ -348,13 +356,6 @@ class UpdateSearchIndex implements ShouldQueue, ShouldBeUnique
      * @var \App\Models\Product
      */
     public $product;
-
-    /**
-     * The number of seconds after which the job's unique lock will be released.
-     *
-     * @var int
-     */
-    public $uniqueFor = 3600;
 
     /**
      * Get the unique ID for the job.
@@ -587,8 +588,25 @@ public function middleware(): array
 }
 ```
 
-> [!NOTE]
-> Redis를 사용하는 경우 Redis에 맞게 미세 조정되고 기본 속도 제한 미들웨어보다 더 효율적인 `Illuminate\Queue\Middleware\RateLimitedWithRedis` 미들웨어를 사용할 수 있습니다.
+<a name="rate-limiting-with-redis"></a>
+#### Redis를 사용한 속도 제한
+
+Redis를 사용하는 경우, Redis에 맞게 미세 조정되고 기본 속도 제한 미들웨어보다 더 효율적인 `Illuminate\Queue\Middleware\RateLimitedWithRedis` 미들웨어를 사용할 수 있습니다:
+
+```php
+use Illuminate\Queue\Middleware\RateLimitedWithRedis;
+
+public function middleware(): array
+{
+    return [new RateLimitedWithRedis('backups')];
+}
+```
+
+`connection` 메서드를 사용하여 미들웨어가 사용해야 하는 Redis 연결을 지정할 수 있습니다:
+
+```php
+return [(new RateLimitedWithRedis('backups'))->connection('limiter')];
+```
 
 <a name="preventing-job-overlaps"></a>
 ### 잡 중복 실행 방지
@@ -810,8 +828,25 @@ public function middleware(): array
 }
 ```
 
-> [!NOTE]
-> Redis를 사용하는 경우 Redis에 맞게 미세 조정되고 기본 예외 스로틀링 미들웨어보다 더 효율적인 `Illuminate\Queue\Middleware\ThrottlesExceptionsWithRedis` 미들웨어를 사용할 수 있습니다.
+<a name="throttling-exceptions-with-redis"></a>
+#### Redis를 사용한 예외 스로틀링
+
+Redis를 사용하는 경우, Redis에 맞게 미세 조정되고 기본 예외 스로틀링 미들웨어보다 더 효율적인 `Illuminate\Queue\Middleware\ThrottlesExceptionsWithRedis` 미들웨어를 사용할 수 있습니다:
+
+```php
+use Illuminate\Queue\Middleware\ThrottlesExceptionsWithRedis;
+
+public function middleware(): array
+{
+    return [new ThrottlesExceptionsWithRedis(10, 10 * 60)];
+}
+```
+
+`connection` 메서드를 사용하여 미들웨어가 사용해야 하는 Redis 연결을 지정할 수 있습니다:
+
+```php
+return [(new ThrottlesExceptionsWithRedis(10, 10 * 60))->connection('limiter')];
+```
 
 <a name="skipping-jobs"></a>
 ### 잡 건너뛰기
@@ -1369,7 +1404,7 @@ public function retryUntil(): DateTime
 <a name="max-exceptions"></a>
 #### 최대 예외
 
-때때로 잡이 여러 번 시도될 수 있지만 주어진 수의 처리되지 않은 예외에 의해 재시도가 트리거되면(`release` 메서드에 의해 직접 릴리스되는 것과 반대로) 실패해야 한다고 지정할 수 있습니다. 이를 수행하려면 잡 클래스에 `maxExceptions` 속성을 정의할 수 있습니다.
+때때로 잡이 여러 번 시도될 수 있지만 주어진 수의 처리되지 않은 예외에 의해 재시도가 트리거되면(`release` 메서드에 의해 직접 릴리스되는 것과 반대로) 실패해야 한다고 지정할 수 있습니다. 이를 수행하려면 잡 클래스에 `Tries` 및 `MaxExceptions` 속성을 사용할 수 있습니다.
 
 ```php
 <?php
@@ -1378,25 +1413,15 @@ namespace App\Jobs;
 
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
+use Illuminate\Queue\Attributes\MaxExceptions;
+use Illuminate\Queue\Attributes\Tries;
 use Illuminate\Support\Facades\Redis;
 
+#[Tries(25)]
+#[MaxExceptions(3)]
 class ProcessPodcast implements ShouldQueue
 {
     use Queueable;
-
-    /**
-     * The number of times the job may be attempted.
-     *
-     * @var int
-     */
-    public $tries = 25;
-
-    /**
-     * The maximum number of unhandled exceptions to allow before failing.
-     *
-     * @var int
-     */
-    public $maxExceptions = 3;
 
     /**
      * Execute the job.
@@ -1428,21 +1453,19 @@ php artisan queue:work --timeout=30
 
 잡이 계속 타임아웃되어 최대 시도 횟수를 초과하면 실패로 표시됩니다.
 
-잡 클래스 자체에서 잡이 실행되도록 허용되어야 하는 최대 시간(초)을 정의할 수도 있습니다. 잡에 타임아웃이 지정된 경우 명령줄에 지정된 타임아웃보다 우선합니다.
+잡 클래스에 `Timeout` 속성을 사용하여 잡이 실행되도록 허용되어야 하는 최대 시간(초)을 정의할 수도 있습니다. 잡에 타임아웃이 지정된 경우 명령줄에 지정된 타임아웃보다 우선합니다.
 
 ```php
 <?php
 
 namespace App\Jobs;
 
+use Illuminate\Queue\Attributes\Timeout;
+
+#[Timeout(120)]
 class ProcessPodcast implements ShouldQueue
 {
-    /**
-     * The number of seconds the job can run before timing out.
-     *
-     * @var int
-     */
-    public $timeout = 120;
+    // ...
 }
 ```
 
@@ -1454,15 +1477,20 @@ class ProcessPodcast implements ShouldQueue
 <a name="failing-on-timeout"></a>
 #### 타임아웃 시 실패
 
-타임아웃 시 잡이 [실패](#dealing-with-failed-jobs)로 표시되어야 함을 나타내려면 잡 클래스에 `$failOnTimeout` 속성을 정의할 수 있습니다.
+타임아웃 시 잡이 [실패](#dealing-with-failed-jobs)로 표시되어야 함을 나타내려면 잡 클래스에 `FailOnTimeout` 속성을 사용할 수 있습니다.
 
 ```php
-/**
- * Indicate if the job should be marked as failed on timeout.
- *
- * @var bool
- */
-public $failOnTimeout = true;
+<?php
+
+namespace App\Jobs;
+
+use Illuminate\Queue\Attributes\FailOnTimeout;
+
+#[FailOnTimeout]
+class ProcessPodcast implements ShouldQueue
+{
+    // ...
+}
 ```
 
 > [!NOTE]
@@ -2463,7 +2491,7 @@ php artisan make:queue-failed-table
 php artisan migrate
 ```
 
-[큐 워커](#running-the-queue-worker) 프로세스를 실행할 때 `queue:work` 명령의 `--tries` 스위치를 사용하여 잡을 시도해야 하는 최대 횟수를 지정할 수 있습니다. `--tries` 옵션의 값을 지정하지 않으면 잡은 한 번만 시도되거나 잡 클래스의 `$tries` 속성에 지정된 횟수만큼 시도됩니다.
+[큐 워커](#running-the-queue-worker) 프로세스를 실행할 때 `queue:work` 명령의 `--tries` 스위치를 사용하여 잡을 시도해야 하는 최대 횟수를 지정할 수 있습니다. `--tries` 옵션의 값을 지정하지 않으면 잡은 한 번만 시도되거나 잡 클래스의 `Tries` 속성에 지정된 횟수만큼 시도됩니다.
 
 ```shell
 php artisan queue:work redis --tries=3
@@ -2475,15 +2503,20 @@ php artisan queue:work redis --tries=3
 php artisan queue:work redis --tries=3 --backoff=3
 ```
 
-잡별로 예외가 발생한 잡을 재시도하기 전에 Laravel이 대기해야 하는 시간(초)을 설정하려면 잡 클래스에 `backoff` 속성을 정의하면 됩니다.
+잡별로 예외가 발생한 잡을 재시도하기 전에 Laravel이 대기해야 하는 시간(초)을 설정하려면 잡 클래스에 `Backoff` 속성을 사용할 수 있습니다.
 
 ```php
-/**
- * The number of seconds to wait before retrying the job.
- *
- * @var int
- */
-public $backoff = 3;
+<?php
+
+namespace App\Jobs;
+
+use Illuminate\Queue\Attributes\Backoff;
+
+#[Backoff(3)]
+class ProcessPodcast implements ShouldQueue
+{
+    // ...
+}
 ```
 
 잡의 백오프 시간을 결정하기 위해 더 복잡한 로직이 필요한 경우 잡 클래스에 `backoff` 메서드를 정의할 수 있습니다.
@@ -2498,17 +2531,19 @@ public function backoff(): int
 }
 ```
 
-`backoff` 메서드에서 백오프 값의 배열을 반환하여 "지수적" 백오프를 쉽게 설정할 수 있습니다. 이 예제에서 재시도 지연은 첫 번째 재시도에 1초, 두 번째 재시도에 5초, 세 번째 재시도에 10초, 그리고 남은 시도가 더 있으면 이후 모든 재시도에 10초가 됩니다.
+백오프 값의 배열을 정의하여 "지수적" 백오프를 쉽게 설정할 수 있습니다. 이 예제에서 재시도 지연은 첫 번째 재시도에 1초, 두 번째 재시도에 5초, 세 번째 재시도에 10초, 그리고 남은 시도가 더 있으면 이후 모든 재시도에 10초가 됩니다.
 
 ```php
-/**
- * Calculate the number of seconds to wait before retrying the job.
- *
- * @return array<int, int>
- */
-public function backoff(): array
+<?php
+
+namespace App\Jobs;
+
+use Illuminate\Queue\Attributes\Backoff;
+
+#[Backoff([1, 5, 10])]
+class ProcessPodcast implements ShouldQueue
 {
-    return [1, 5, 10];
+    // ...
 }
 ```
 
@@ -2631,15 +2666,20 @@ php artisan queue:flush --hours=48
 
 Eloquent 모델을 잡에 주입할 때 모델은 큐에 배치되기 전에 자동으로 직렬화되고 잡이 처리될 때 데이터베이스에서 다시 검색됩니다. 그러나 잡이 워커에 의해 처리되기를 기다리는 동안 모델이 삭제된 경우 잡이 `ModelNotFoundException`으로 실패할 수 있습니다.
 
-편의를 위해 잡의 `deleteWhenMissingModels` 속성을 `true`로 설정하여 누락된 모델이 있는 잡을 자동으로 삭제하도록 선택할 수 있습니다. 이 속성이 `true`로 설정되면 Laravel은 예외를 발생시키지 않고 잡을 조용히 삭제합니다.
+편의를 위해 잡 클래스에 `DeleteWhenMissingModels` 속성을 사용하여 누락된 모델이 있는 잡을 자동으로 삭제하도록 선택할 수 있습니다. 이 속성이 있으면 Laravel은 예외를 발생시키지 않고 잡을 조용히 삭제합니다.
 
 ```php
-/**
- * Delete the job if its models no longer exist.
- *
- * @var bool
- */
-public $deleteWhenMissingModels = true;
+<?php
+
+namespace App\Jobs;
+
+use Illuminate\Queue\Attributes\DeleteWhenMissingModels;
+
+#[DeleteWhenMissingModels]
+class ProcessPodcast implements ShouldQueue
+{
+    // ...
+}
 ```
 
 <a name="pruning-failed-jobs"></a>
@@ -3026,6 +3066,30 @@ Bus::fake();
 Bus::assertBatched(function (PendingBatch $batch) {
     return $batch->name == 'Import CSV' &&
            $batch->jobs->count() === 10;
+});
+```
+
+`hasJobs` 메서드를 대기 중인 배치에서 사용하여 배치에 예상되는 잡이 포함되어 있는지 확인할 수 있습니다. 이 메서드는 잡 인스턴스, 클래스 이름 또는 클로저의 배열을 받습니다:
+
+```php
+Bus::assertBatched(function (PendingBatch $batch) {
+    return $batch->hasJobs([
+        new ProcessCsvRow(row: 1),
+        new ProcessCsvRow(row: 2),
+        new ProcessCsvRow(row: 3),
+    ]);
+});
+```
+
+클로저를 사용할 때 클로저는 잡 인스턴스를 받습니다. 예상되는 잡 타입은 클로저의 타입 힌트에서 추론됩니다:
+
+```php
+Bus::assertBatched(function (PendingBatch $batch) {
+    return $batch->hasJobs([
+        fn (ProcessCsvRow $job) => $job->row === 1,
+        fn (ProcessCsvRow $job) => $job->row === 2,
+        fn (ProcessCsvRow $job) => $job->row === 3,
+    ]);
 });
 ```
 

@@ -409,7 +409,7 @@ class AppServiceProvider extends ServiceProvider
 #### 임시 업로드 URL
 
 > [!WARNING]
-> 임시 업로드 URL을 생성하는 기능은 `s3` 드라이버에서만 지원됩니다.
+> 임시 업로드 URL을 생성하는 기능은 `s3` 및 `local` 드라이버에서만 지원됩니다.
 
 클라이언트 측 애플리케이션에서 직접 파일을 업로드하는 데 사용할 수 있는 임시 URL을 생성해야 하는 경우 `temporaryUploadUrl` 메서드를 사용할 수 있습니다. 이 메서드는 경로와 URL이 만료되어야 하는 시점을 지정하는 `DateTime` 인스턴스를 받습니다. `temporaryUploadUrl` 메서드는 업로드 URL과 업로드 요청에 포함되어야 하는 헤더로 분해될 수 있는 연관 배열을 반환합니다.
 

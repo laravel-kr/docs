@@ -228,10 +228,10 @@ class Article extends Model
 
 $article = Article::create(['title' => 'Traveling to Europe']);
 
-$article->id; // "8f8e8478-9035-4d23-b9a7-62f4d2612ce5"
+$article->id; // "018f2b5c-6a7f-7b12-9d6f-2f8a4e0c9c11"
 ```
 
-기본적으로 `HasUuids` 트레이트는 모델에 대해 ["정렬된" UUID](/docs/{{version}}/strings#method-str-ordered-uuid)를 생성합니다. 이러한 UUID는 사전순으로 정렬할 수 있기 때문에 인덱싱된 데이터베이스 저장에 더 효율적입니다.
+기본적으로 `HasUuids` 트레이트는 모델에 대해 [UUIDv7](/docs/{{version}}/strings#method-str-uuid7) 식별자를 생성합니다. 이러한 UUID는 사전순으로 정렬할 수 있기 때문에 인덱싱된 데이터베이스 저장에 더 효율적입니다.
 
 모델에 `newUniqueId` 메서드를 정의하여 특정 모델의 UUID 생성 프로세스를 재정의할 수 있습니다. 또한 모델에 `uniqueIds` 메서드를 정의하여 UUID를 받아야 하는 컬럼을 지정할 수 있습니다.
 
@@ -1008,7 +1008,7 @@ protected $fillable = [
 /**
  * 대량 할당 불가능한 속성.
  *
- * @var array<string>|bool
+ * @var array<string>
  */
 protected $guarded = [];
 ```

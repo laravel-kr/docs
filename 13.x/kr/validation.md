@@ -1573,6 +1573,7 @@ Distinct는 기본적으로 느슨한 변수 비교를 사용합니다. 엄격�
 
 <a name="rule-email"></a>
 #### email
+
 유효성 검사 대상 필드는 이메일 주소 형식이어야 합니다. 이 유효성 검사 규칙은 이메일 주소 유효성 검사를 위해 [egulias/email-validator](https://github.com/egulias/EmailValidator) 패키지를 사용합니다. 기본적으로 `RFCValidation` 유효성 검사기가 적용되지만, 다른 유효성 검사 스타일도 적용할 수 있습니다.
 
 ```php
@@ -2128,8 +2129,7 @@ _anotherfield_ 필드가 _value_ 중 하나와 같으면 유효성 검사 대상
 ```php
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
-```
-```php
+
 Validator::make($request->all(), [
     'role_id' => Rule::prohibitedIf($request->user()->is_admin),
 ]);
@@ -2669,15 +2669,6 @@ $validator = Validator::make($request->all(), [
 ```php
 use Illuminate\Support\Facades\Validator;
 
-$input = [
-    'photos' => [
-        [
-            'name' => 'BeachVacation.jpg',
-            'description' => 'A photo of my beach vacation!',
-        ],
-        [
-```
-```php
 $input = [
     'photos' => [
         [

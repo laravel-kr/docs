@@ -8,7 +8,7 @@
      - [AI 가이드라인](#ai-guidelines)
      - [에이전트 스킬](#agent-skills)
      - [문서 검색](#documentation-search)
-     - [에이전트 통합](#agents-integration)
+     - [에이전트 통합](#agent-integration)
 
 <a name="introduction"></a>
 ## 소개
@@ -77,7 +77,7 @@ Boost는 Laravel 생태계에 특화된 포괄적인 AI 가이드라인 세트�
 <div class="content-list" markdown="1">
 
 - Livewire (2.x, 3.x, 4.x)
-- Inertia.js (React 및 Vue 변형)
+- Inertia.js (React, Svelte 및 Vue 변형)
 - Tailwind CSS (3.x 및 4.x)
 - Filament (3.x 및 4.x)
 - PHPUnit

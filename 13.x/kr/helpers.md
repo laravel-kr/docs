@@ -1246,7 +1246,6 @@ $sorted = array_values(Arr::sortDesc($array, function (array $value) {
         ['name' => 'Desk'],
         ['name' => 'Chair'],
     ]
-    ]
 */
 ```
 

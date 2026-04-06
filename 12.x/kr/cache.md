@@ -14,7 +14,7 @@
 - [원자적 잠금(Atomic Locks)](#atomic-locks)
     - [잠금 관리하기](#managing-locks)
     - [프로세스 간 잠금 관리하기](#managing-locks-across-processes)
-    - [잠금과 함수 호출](#locks-and-function-invocations)
+    - [동시성 제한](#concurrency-limiting)
 - [캐시 장애 조치(Cache Failover)](#cache-failover)
 - [커스텀 캐시 드라이버 추가하기](#adding-custom-cache-drivers)
     - [드라이버 작성하기](#writing-the-driver)
@@ -531,10 +531,10 @@ Cache::restoreLock('processing', $this->owner)->release();
 Cache::lock('processing')->forceRelease();
 ```
 
-<a name="locks-and-function-invocations"></a>
-### 잠금과 함수 호출
+<a name="concurrency-limiting"></a>
+### 동시성 제한
 
-`withoutOverlapping` 메서드는 원자적 잠금을 유지하면서 주어진 클로저를 실행하기 위한 간단한 구문을 제공하며, 전체 인프라에서 한 번에 하나의 클로저 인스턴스만 실행되도록 보장합니다.
+Laravel의 원자적 잠금 기능은 클로저의 동시 실행을 제한하는 몇 가지 방법도 제공합니다. 전체 인프라에서 하나의 실행 인스턴스만 허용하려면 `withoutOverlapping`을 사용하세요.
 
 ```php
 Cache::withoutOverlapping('foo', function () {
@@ -542,7 +542,7 @@ Cache::withoutOverlapping('foo', function () {
 });
 ```
 
-기본적으로 잠금은 클로저가 실행을 완료할 때까지 해제되지 않으며, 메서드는 잠금을 획득하기 위해 최대 10초까지 대기합니다. 추가 인수를 메서드에 전달하여 이 값들을 커스터마이즈할 수 있습니다.
+기본적으로 잠금은 클로저가 실행을 완료할 때까지 유지되며, 메서드는 잠금을 획득하기 위해 최대 10초까지 대기합니다. 추가 인수를 사용하여 이 값들을 커스터마이즈할 수 있습니다.
 
 ```php
 Cache::withoutOverlapping('foo', function () {
@@ -551,6 +551,54 @@ Cache::withoutOverlapping('foo', function () {
 ```
 
 지정된 대기 시간 내에 잠금을 획득할 수 없으면 `Illuminate\Contracts\Cache\LockTimeoutException`이 발생합니다.
+
+제어된 병렬 처리가 필요한 경우, `funnel` 메서드를 사용하여 최대 동시 실행 수를 설정합니다. `funnel` 메서드는 잠금을 지원하는 모든 캐시 드라이버에서 작동합니다.
+
+```php
+Cache::funnel('foo')
+    ->limit(3)
+    ->releaseAfter(60)
+    ->block(10)
+    ->then(function () {
+        // 동시성 잠금 획득...
+    }, function () {
+        // 동시성 잠금을 획득할 수 없음...
+    });
+```
+
+`funnel` 키는 제한되는 리소스를 식별합니다. `limit` 메서드는 최대 동시 실행 수를 정의합니다. `releaseAfter` 메서드는 획득한 슬롯이 자동으로 해제되기 전의 안전 타임아웃을 초 단위로 설정합니다. `block` 메서드는 사용 가능한 슬롯을 기다리는 시간(초)을 설정합니다.
+
+실패 클로저 대신 예외를 통해 타임아웃을 처리하려면 두 번째 클로저를 생략할 수 있습니다. 지정된 대기 시간 내에 잠금을 획득할 수 없으면 `Illuminate\Cache\Limiters\LimiterTimeoutException`이 발생합니다.
+
+```php
+use Illuminate\Cache\Limiters\LimiterTimeoutException;
+
+try {
+    Cache::funnel('foo')
+        ->limit(3)
+        ->releaseAfter(60)
+        ->block(10)
+        ->then(function () {
+            // 동시성 잠금 획득...
+        });
+} catch (LimiterTimeoutException $e) {
+    // 동시성 잠금을 획득할 수 없음...
+}
+```
+
+동시성 제한기에 특정 캐시 저장소를 사용하려면 원하는 저장소에서 `funnel` 메서드를 호출할 수 있습니다.
+
+```php
+Cache::store('redis')->funnel('foo')
+    ->limit(3)
+    ->block(10)
+    ->then(function () {
+        // "redis" 저장소를 사용하여 동시성 잠금 획득...
+    });
+```
+
+> [!NOTE]
+> `funnel` 메서드는 캐시 저장소가 `Illuminate\Contracts\Cache\LockProvider` 인터페이스를 구현해야 합니다. 잠금을 지원하지 않는 캐시 저장소로 `funnel`을 사용하면 `BadMethodCallException`이 발생합니다.
 
 <a name="cache-failover"></a>
 ## 캐시 장애 조치(Cache Failover)

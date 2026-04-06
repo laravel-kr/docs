@@ -1596,6 +1596,7 @@ public function toSlack(object $notifiable): SlackMessage
 use Illuminate\Notifications\Slack\BlockKit\Blocks\ActionsBlock;
 use Illuminate\Notifications\Slack\BlockKit\Blocks\ContextBlock;
 use Illuminate\Notifications\Slack\BlockKit\Blocks\SectionBlock;
+use Illuminate\Notifications\Slack\BlockKit\Composites\ConfirmObject;
 use Illuminate\Notifications\Slack\SlackMessage;
 
 /**

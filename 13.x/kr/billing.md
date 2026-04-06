@@ -499,7 +499,6 @@ $stripeCustomer = $user->asStripeCustomer();
 ```php
 $stripeCustomer = $user->createOrGetStripeCustomer();
 ```
-```
 
 <a name="updating-customers"></a>
 ### 고객 정보 업데이트
@@ -1999,7 +1998,6 @@ $user->charge(100, $paymentMethod, [
 
 ```php
 use App\Models\User;
-```
 
 $stripeCharge = (new User)->charge(100, $paymentMethod);
 ```
@@ -2499,8 +2497,6 @@ if ($user->hasIncompletePayment('default')) {
     // ...
 }
 
-if ($user->subscription('default')->hasIncompletePayment()) {
-```php
 if ($user->subscription('default')->hasIncompletePayment()) {
     // ...
 }

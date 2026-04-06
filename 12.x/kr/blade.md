@@ -62,7 +62,7 @@ Route::get('/', function () {
 <a name="supercharging-blade-with-livewire"></a>
 ### Livewire로 블레이드 강화하기
 
-블레이드 템플릿을 한 단계 더 발전시켜 동적 인터페이스를 쉽게 구축하고 싶으신가요? [Laravel Livewire](https://livewire.laravel.com)를 확인해 보세요. Livewire를 사용하면 일반적으로 React나 Vue와 같은 프론트엔드 프레임워크를 통해서만 가능한 동적 기능이 추가된 블레이드 컴포넌트를 작성할 수 있으며, 많은 자바스크립트 프레임워크의 복잡성, 클라이언트 측 렌더링, 빌드 단계 없이 현대적이고 반응형 프론트엔드를 구축할 수 있는 훌륭한 접근 방식을 제공합니다.
+블레이드 템플릿을 한 단계 더 발전시켜 동적 인터페이스를 쉽게 구축하고 싶으신가요? [Laravel Livewire](https://livewire.laravel.com)를 확인해 보세요. Livewire를 사용하면 일반적으로 React, Svelte 또는 Vue와 같은 프론트엔드 프레임워크를 통해서만 가능한 동적 기능이 추가된 블레이드 컴포넌트를 작성할 수 있으며, 많은 자바스크립트 프레임워크의 복잡성, 클라이언트 측 렌더링, 빌드 단계 없이 현대적이고 반응형 프론트엔드를 구축할 수 있는 훌륭한 접근 방식을 제공합니다.
 
 <a name="displaying-data"></a>
 ## 데이터 표시

@@ -21,6 +21,7 @@
     - [Where Exists Clauses](#where-exists-clauses)
     - [Subquery Where Clauses](#subquery-where-clauses)
     - [Full Text Where Clauses](#full-text-where-clauses)
+    - [Vector Similarity Clauses](#vector-similarity-clauses)
 - [Ordering, Grouping, Limit and Offset](#ordering-grouping-limit-and-offset)
     - [Ordering](#ordering)
     - [Grouping](#grouping)
@@ -488,12 +489,12 @@ The query builder also provides a convenient method to "union" two or more queri
 ```php
 use Illuminate\Support\Facades\DB;
 
-$first = DB::table('users')
+$usersWithoutFirstName = DB::table('users')
     ->whereNull('first_name');
 
 $users = DB::table('users')
     ->whereNull('last_name')
-    ->union($first)
+    ->union($usersWithoutFirstName)
     ->get();
 ```
 
@@ -884,7 +885,7 @@ $patients = DB::table('patients')
 The `whereValueBetween` method verifies that a given value is between the values of two columns of the same type in the same table row:
 
 ```php
-$patients = DB::table('products')
+$products = DB::table('products')
     ->whereValueBetween(100, ['min_price', 'max_price'])
     ->get();
 ```
@@ -892,7 +893,7 @@ $patients = DB::table('products')
 The `whereValueNotBetween` method verifies that a value lies outside the values of two columns in the same table row:
 
 ```php
-$patients = DB::table('products')
+$products = DB::table('products')
     ->whereValueNotBetween(100, ['min_price', 'max_price'])
     ->get();
 ```
@@ -1145,6 +1146,58 @@ The `whereFullText` and `orWhereFullText` methods may be used to add full text "
 $users = DB::table('users')
     ->whereFullText('bio', 'web developer')
     ->get();
+```
+
+<a name="vector-similarity-clauses"></a>
+### Vector Similarity Clauses
+
+> [!NOTE]
+> Vector similarity clauses are currently only supported on PostgreSQL connections using the `pgvector` extension. For information on defining vector columns and indexes, consult the [migration documentation](/docs/{{version}}/migrations#available-column-types).
+
+The `whereVectorSimilarTo` method filters results by cosine similarity to a given vector and orders the results by relevance. The `minSimilarity` threshold should be a value between `0.0` and `1.0`, where `1.0` is identical:
+
+```php
+$documents = DB::table('documents')
+    ->whereVectorSimilarTo('embedding', $queryEmbedding, minSimilarity: 0.4)
+    ->limit(10)
+    ->get();
+```
+
+When a plain string is given as the vector argument, Laravel will automatically generate embeddings for it using the [Laravel AI SDK](/docs/{{version}}/ai-sdk#embeddings):
+
+```php
+$documents = DB::table('documents')
+    ->whereVectorSimilarTo('embedding', 'Best wineries in Napa Valley')
+    ->limit(10)
+    ->get();
+```
+
+By default, `whereVectorSimilarTo` also orders results by distance (most similar first). You may disable this ordering by passing `false` as the `order` argument:
+
+```php
+$documents = DB::table('documents')
+    ->whereVectorSimilarTo('embedding', $queryEmbedding, minSimilarity: 0.4, order: false)
+    ->orderBy('created_at', 'desc')
+    ->limit(10)
+    ->get();
+```
+
+If you need more control, you may use the `selectVectorDistance`, `whereVectorDistanceLessThan`, and `orderByVectorDistance` methods independently:
+
+```php
+$documents = DB::table('documents')
+    ->select('*')
+    ->selectVectorDistance('embedding', $queryEmbedding, as: 'distance')
+    ->whereVectorDistanceLessThan('embedding', $queryEmbedding, maxDistance: 0.3)
+    ->orderByVectorDistance('embedding', $queryEmbedding)
+    ->limit(10)
+    ->get();
+```
+
+When utilizing PostgreSQL, the `pgvector` extension must be loaded before `vector` columns can be created:
+
+```php
+Schema::ensureVectorExtensionExists();
 ```
 
 <a name="ordering-grouping-limit-and-offset"></a>

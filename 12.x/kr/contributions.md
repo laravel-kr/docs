@@ -5,6 +5,7 @@
 - [코어 개발 논의](#core-development-discussion)
 - [어떤 브랜치를 사용해야 하나요?](#which-branch)
 - [컴파일된 에셋](#compiled-assets)
+- [AI 생성 기여](#ai-generated-contributions)
 - [보안 취약점](#security-vulnerabilities)
 - [코딩 스타일](#coding-style)
     - [PHPDoc](#phpdoc)
@@ -37,7 +38,6 @@ Laravel 소스 코드는 GitHub에서 관리되며, 각 Laravel 프로젝트에 
 - [Laravel Envoy](https://github.com/laravel/envoy)
 - [Laravel Folio](https://github.com/laravel/folio)
 - [Laravel Framework](https://github.com/laravel/framework)
-- [Laravel Homestead](https://github.com/laravel/homestead) ([Build Scripts](https://github.com/laravel/settler))
 - [Laravel Horizon](https://github.com/laravel/horizon)
 - [Laravel Passport](https://github.com/laravel/passport)
 - [Laravel Pennant](https://github.com/laravel/pennant)
@@ -51,6 +51,7 @@ Laravel 소스 코드는 GitHub에서 관리되며, 각 Laravel 프로젝트에 
 - [Laravel Telescope](https://github.com/laravel/telescope)
 - [Laravel Livewire Starter Kit](https://github.com/laravel/livewire-starter-kit)
 - [Laravel React Starter Kit](https://github.com/laravel/react-starter-kit)
+- [Laravel Svelte Starter Kit](https://github.com/laravel/svelte-starter-kit)
 - [Laravel Vue Starter Kit](https://github.com/laravel/vue-starter-kit)
 
 </div>
@@ -92,6 +93,17 @@ Laravel 프레임워크 저장소의 [GitHub 토론 게시판](https://github.co
 ## 컴파일된 에셋(Compiled Assets)
 
 `laravel/laravel` 저장소의 `resources/css` 또는 `resources/js`에 있는 대부분의 파일과 같이 컴파일된 파일에 영향을 미치는 변경 사항을 제출하는 경우, 컴파일된 파일을 커밋하지 마세요. 파일 크기가 크기 때문에 메인테이너가 현실적으로 검토할 수 없습니다. 이것은 Laravel에 악성 코드를 주입하는 방법으로 악용될 수 있습니다. 이를 방어적으로 방지하기 위해 모든 컴파일된 파일은 Laravel 메인테이너가 생성하고 커밋합니다.
+
+<a name="ai-generated-contributions"></a>
+## AI 생성 기여
+
+Laravel에 제출되는 모든 풀 리퀘스트에 감사드립니다. 그러나 사려 깊은 인간의 검토와 고려 없이 주로 AI가 생성한 기여는 허용되지 않습니다.
+
+AI 도구를 사용하여 기여를 돕는 경우, 제출하기 전에 결과 코드를 철저히 검토하고, 테스트하고, 이해**해야** 합니다.
+
+**전적으로 AI가 생성한 이슈나 풀 리퀘스트를 대량으로 여는 것은 용납되지 않습니다.** 이러한 풀 리퀘스트는 검토 없이 닫히며, 기여하는 사용자는 저장소에서 차단될 수 있습니다.
+
+기여자들은 기존 코드베이스에 익숙해지고, 커뮤니티에 참여하며, 자신이 해결하려는 문제에 대한 이해와 신중한 고려를 반영하는 풀 리퀘스트를 제출할 것을 권장합니다.
 
 <a name="security-vulnerabilities"></a>
 ## 보안 취약점(Security Vulnerabilities)

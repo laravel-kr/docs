@@ -112,41 +112,35 @@ php artisan migrate
 > [!WARNING]
 > `serializer` 및 `compression` Redis 옵션은 `redis` 큐 드라이버에서 지원되지 않습니다.
 
-<a name="redis-cluster"></a>
-##### Redis 클러스터
+**Redis 클러스터**
 
 Redis 큐 커넥션이 Redis 클러스터를 사용하는 경우 큐 이름에 [키 해시 태그](https://redis.io/docs/reference/cluster-spec/#hash-tags)가 포함되어야 합니다. 이것은 주어진 큐의 모든 Redis 키가 동일한 해시 슬롯에 배치되도록 하기 위해 필요합니다.
 
-```php
-'redis' => [
-    'driver' => 'redis',
-    'connection' => env('REDIS_QUEUE_CONNECTION', 'default'),
-    'queue' => env('REDIS_QUEUE', '{default}'),
-    'retry_after' => env('REDIS_QUEUE_RETRY_AFTER', 90),
-    'block_for' => null,
-    'after_commit' => false,
-],
-```
+    'redis' => [
+        'driver' => 'redis',
+        'connection' => env('REDIS_QUEUE_CONNECTION', 'default'),
+        'queue' => env('REDIS_QUEUE', '{default}'),
+        'retry_after' => env('REDIS_QUEUE_RETRY_AFTER', 90),
+        'block_for' => null,
+        'after_commit' => false,
+    ],
 
-<a name="blocking"></a>
-##### 블로킹
+**블로킹**
 
 Redis 큐를 사용할 때 `block_for` 설정 옵션을 사용하여 워커 루프를 반복하고 Redis 데이터베이스를 다시 폴링하기 전에 드라이버가 잡을 사용할 수 있을 때까지 기다려야 하는 시간을 지정할 수 있습니다.
 
 큐 로드에 따라 이 값을 조정하면 새 잡을 위해 Redis 데이터베이스를 지속적으로 폴링하는 것보다 더 효율적일 수 있습니다. 예를 들어, 잡을 사용할 수 있을 때까지 5초 동안 드라이버가 블록해야 함을 나타내도록 값을 `5`로 설정할 수 있습니다.
 
-```php
-'redis' => [
-    'driver' => 'redis',
-    'connection' => env('REDIS_QUEUE_CONNECTION', 'default'),
-    'queue' => env('REDIS_QUEUE', 'default'),
-    'retry_after' => env('REDIS_QUEUE_RETRY_AFTER', 90),
-    'block_for' => 5,
-    'after_commit' => false,
-],
-```
+    'redis' => [
+        'driver' => 'redis',
+        'connection' => env('REDIS_QUEUE_CONNECTION', 'default'),
+        'queue' => env('REDIS_QUEUE', 'default'),
+        'retry_after' => env('REDIS_QUEUE_RETRY_AFTER', 90),
+        'block_for' => 5,
+        'after_commit' => false,
+    ],
 
-> [!WARNING]
+> [!WARNING]  
 > `block_for`를 `0`으로 설정하면 잡을 사용할 수 있을 때까지 큐 워커가 무기한 블록됩니다. 이로 인해 다음 잡이 처리될 때까지 `SIGTERM`과 같은 신호가 처리되지 않습니다.
 
 <a name="other-driver-prerequisites"></a>

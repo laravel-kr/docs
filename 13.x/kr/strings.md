@@ -55,8 +55,8 @@ Laravel은 문자열 값을 조작하기 위한 다양한 함수를 포함하고
 [Str::excerpt](#method-excerpt)
 [Str::finish](#method-str-finish)
 [Str::fromBase64](#method-str-from-base64)
-[Str::initials](#method-str-initials)
 [Str::headline](#method-str-headline)
+[Str::initials](#method-str-initials)
 [Str::inlineMarkdown](#method-str-inline-markdown)
 [Str::is](#method-str-is)
 [Str::isAscii](#method-str-is-ascii)
@@ -1386,8 +1386,6 @@ $string = 'The event will take place between ? and ?';
 
 $replaced = Str::replaceArray('?', ['8:30', '9:00'], $string);
 
-// The event will take place between 8:30 and 9:00
-```
 // The event will take place between 8:30 and 9:00
 ```
 
@@ -2750,6 +2748,7 @@ $result = Str::of('http://example.com')->isUrl();
 // true
 
 $result = Str::of('Taylor')->isUrl();
+
 // false
 ```
 

@@ -395,7 +395,7 @@ sail tinker
 <a name="sail-php-versions"></a>
 ## PHP 버전
 
-Sail은 현재 PHP 8.5, 8.4, 8.3, 8.2, 8.1 또는 PHP 8.0을 통해 애플리케이션을 서빙하는 것을 지원합니다. Sail에서 사용하는 기본 PHP 버전은 현재 PHP 8.4입니다. 애플리케이션을 서빙하는 데 사용되는 PHP 버전을 변경하려면 애플리케이션의 `compose.yaml` 파일에서 `laravel.test` 컨테이너의 `build` 정의를 업데이트해야 합니다.
+Sail은 현재 PHP 8.5, 8.4, 8.3, 8.2, 8.1 또는 PHP 8.0을 통해 애플리케이션을 서빙하는 것을 지원합니다. Sail에서 사용하는 기본 PHP 버전은 현재 PHP 8.5입니다. 애플리케이션을 서빙하는 데 사용되는 PHP 버전을 변경하려면 애플리케이션의 `compose.yaml` 파일에서 `laravel.test` 컨테이너의 `build` 정의를 업데이트해야 합니다.
 
 ```yaml
 # PHP 8.5

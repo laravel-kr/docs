@@ -10,7 +10,6 @@
     - [조건부 속성](#conditional-attributes)
     - [조건부 관계](#conditional-relationships)
     - [메타 데이터 추가하기](#adding-meta-data)
-- [리소스 응답](#resource-responses)
 - [JSON:API 리소스](#jsonapi-resources)
     - [JSON:API 리소스 생성하기](#generating-jsonapi-resources)
     - [속성 정의하기](#defining-jsonapi-attributes)
@@ -18,6 +17,7 @@
     - [리소스 타입 및 ID](#jsonapi-resource-type-and-id)
     - [희소 필드셋 및 포함](#jsonapi-sparse-fieldsets-and-includes)
     - [링크 및 메타](#jsonapi-links-and-meta)
+- [리소스 응답](#resource-responses)
 
 <a name="introduction"></a>
 ## 소개
@@ -896,68 +896,6 @@ return User::all()
     ]]);
 ```
 
-<a name="resource-responses"></a>
-## 리소스 응답(Resource Responses)
-
-이미 읽었듯이 리소스는 라우트와 컨트롤러에서 직접 반환할 수 있습니다.
-
-```php
-use App\Models\User;
-
-Route::get('/user/{id}', function (string $id) {
-    return User::findOrFail($id)->toResource();
-});
-```
-
-그러나 때로는 클라이언트에 전송되기 전에 나가는 HTTP 응답을 사용자 정의해야 할 수 있습니다. 이를 수행하는 두 가지 방법이 있습니다. 첫째, 리소스에 `response` 메서드를 체인할 수 있습니다. 이 메서드는 `Illuminate\Http\JsonResponse` 인스턴스를 반환하여 응답의 헤더를 완전히 제어할 수 있습니다.
-
-```php
-use App\Http\Resources\UserResource;
-use App\Models\User;
-
-Route::get('/user', function () {
-    return User::find(1)
-        ->toResource()
-        ->response()
-        ->header('X-Value', 'True');
-});
-```
-
-또는 리소스 자체 내에서 `withResponse` 메서드를 정의할 수 있습니다. 이 메서드는 리소스가 응답에서 가장 바깥쪽 리소스로 반환될 때 호출됩니다.
-
-```php
-<?php
-
-namespace App\Http\Resources;
-
-use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
-use Illuminate\Http\Resources\Json\JsonResource;
-
-class UserResource extends JsonResource
-{
-    /**
-     * 리소스를 배열로 변환합니다.
-     *
-     * @return array<string, mixed>
-     */
-    public function toArray(Request $request): array
-    {
-        return [
-            'id' => $this->id,
-        ];
-    }
-
-    /**
-     * 리소스에 대한 나가는 응답을 사용자 정의합니다.
-     */
-    public function withResponse(Request $request, JsonResponse $response): void
-    {
-        $response->header('X-Value', 'True');
-    }
-}
-```
-
 <a name="jsonapi-resources"></a>
 ## JSON:API 리소스
 
@@ -1138,6 +1076,52 @@ public function toRelationships(Request $request): array
 GET /api/posts/1?include=author,comments
 ```
 
+이것은 `relationships` 키에 리소스 식별자 객체가 포함되고 최상위 `included` 배열에 전체 리소스 객체가 포함된 응답을 생성합니다:
+
+```json
+{
+    "data": {
+        "id": "1",
+        "type": "posts",
+        "attributes": {
+            "title": "Hello World"
+        },
+        "relationships": {
+            "author": {
+                "data": {
+                    "id": "1",
+                    "type": "users"
+                }
+            },
+            "comments": {
+                "data": [
+                    {
+                        "id": "1",
+                        "type": "comments"
+                    }
+                ]
+            }
+        }
+    },
+    "included": [
+        {
+            "id": "1",
+            "type": "users",
+            "attributes": {
+                "name": "Taylor Otwell"
+            }
+        },
+        {
+            "id": "1",
+            "type": "comments",
+            "attributes": {
+                "body": "Great post!"
+            }
+        }
+    ]
+}
+```
+
 중첩된 관계는 점 표기법을 사용하여 포함할 수 있습니다:
 
 ```
@@ -1257,6 +1241,68 @@ public function toMeta(Request $request): array
         "meta": {
             "readable_created_at": "2 hours ago"
         }
+    }
+}
+```
+
+<a name="resource-responses"></a>
+## 리소스 응답(Resource Responses)
+
+이미 읽었듯이 리소스는 라우트와 컨트롤러에서 직접 반환할 수 있습니다.
+
+```php
+use App\Models\User;
+
+Route::get('/user/{id}', function (string $id) {
+    return User::findOrFail($id)->toResource();
+});
+```
+
+그러나 때로는 클라이언트에 전송되기 전에 나가는 HTTP 응답을 사용자 정의해야 할 수 있습니다. 이를 수행하는 두 가지 방법이 있습니다. 첫째, 리소스에 `response` 메서드를 체인할 수 있습니다. 이 메서드는 `Illuminate\Http\JsonResponse` 인스턴스를 반환하여 응답의 헤더를 완전히 제어할 수 있습니다.
+
+```php
+use App\Http\Resources\UserResource;
+use App\Models\User;
+
+Route::get('/user', function () {
+    return User::find(1)
+        ->toResource()
+        ->response()
+        ->header('X-Value', 'True');
+});
+```
+
+또는 리소스 자체 내에서 `withResponse` 메서드를 정의할 수 있습니다. 이 메서드는 리소스가 응답에서 가장 바깥쪽 리소스로 반환될 때 호출됩니다.
+
+```php
+<?php
+
+namespace App\Http\Resources;
+
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\JsonResource;
+
+class UserResource extends JsonResource
+{
+    /**
+     * 리소스를 배열로 변환합니다.
+     *
+     * @return array<string, mixed>
+     */
+    public function toArray(Request $request): array
+    {
+        return [
+            'id' => $this->id,
+        ];
+    }
+
+    /**
+     * 리소스에 대한 나가는 응답을 사용자 정의합니다.
+     */
+    public function withResponse(Request $request, JsonResponse $response): void
+    {
+        $response->header('X-Value', 'True');
     }
 }
 ```

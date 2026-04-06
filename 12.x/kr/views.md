@@ -1,7 +1,7 @@
 # 뷰(Views)
 
 - [소개](#introduction)
-    - [React / Vue로 뷰 작성하기](#writing-views-in-react-or-vue)
+    - [React / Svelte / Vue로 뷰 작성하기](#writing-views-in-react-svelte-or-vue)
 - [뷰 생성 및 렌더링](#creating-and-rendering-views)
     - [중첩된 뷰 디렉토리](#nested-view-directories)
     - [사용 가능한 첫 번째 뷰 생성하기](#creating-the-first-available-view)
@@ -40,12 +40,12 @@ Route::get('/', function () {
 > [!NOTE]
 > Blade 템플릿 작성 방법에 대한 더 많은 정보를 찾고 계신가요? 시작하려면 전체 [Blade 문서](/docs/{{version}}/blade)를 확인하세요.
 
-<a name="writing-views-in-react-or-vue"></a>
-### React / Vue로 뷰 작성하기
+<a name="writing-views-in-react-svelte-or-vue"></a>
+### React / Svelte / Vue로 뷰 작성하기
 
-Blade를 통해 PHP로 프론트엔드 템플릿을 작성하는 대신, 많은 개발자들이 React 또는 Vue를 사용하여 템플릿을 작성하는 것을 선호하기 시작했습니다. Laravel은 [Inertia](https://inertiajs.com/) 덕분에 이를 쉽게 만들어 줍니다. Inertia는 일반적인 SPA 구축의 복잡성 없이 React / Vue 프론트엔드를 Laravel 백엔드에 연결하는 것을 아주 쉽게 해주는 라이브러리입니다.
+Blade를 통해 PHP로 프론트엔드 템플릿을 작성하는 대신, 많은 개발자들이 React, Svelte 또는 Vue를 사용하여 템플릿을 작성하는 것을 선호하기 시작했습니다. Laravel은 [Inertia](https://inertiajs.com/) 덕분에 이를 쉽게 만들어 줍니다. Inertia는 일반적인 SPA 구축의 복잡성 없이 React / Svelte / Vue 프론트엔드를 Laravel 백엔드에 연결하는 것을 아주 쉽게 해주는 라이브러리입니다.
 
-[React 및 Vue 애플리케이션 스타터 킷](/docs/{{version}}/starter-kits)은 Inertia로 구동되는 다음 Laravel 애플리케이션을 위한 훌륭한 시작점을 제공합니다.
+[React, Svelte 및 Vue 애플리케이션 스타터 킷](/docs/{{version}}/starter-kits)은 Inertia로 구동되는 다음 Laravel 애플리케이션을 위한 훌륭한 시작점을 제공합니다.
 
 <a name="creating-and-rendering-views"></a>
 ## 뷰 생성 및 렌더링

@@ -18,6 +18,7 @@
     - [미들웨어](#middleware)
     - [익명 에이전트](#anonymous-agents)
     - [에이전트 설정](#agent-configuration)
+    - [프로바이더 옵션](#provider-options)
 - [이미지](#images)
 - [오디오 (TTS)](#audio)
 - [음성 변환 (STT)](#transcription)
@@ -120,13 +121,24 @@ AI SDK는 다양한 기능에 걸쳐 여러 프로바이더를 지원합니다. 
 
 | 기능 | 프로바이더 |
 |---|---|
-| 텍스트 | OpenAI, Anthropic, Gemini, Groq, xAI, DeepSeek, Mistral, Ollama |
+| 텍스트 | OpenAI, Anthropic, Gemini, Azure, Groq, xAI, DeepSeek, Mistral, Ollama |
 | 이미지 | OpenAI, Gemini, xAI |
 | TTS | OpenAI, ElevenLabs |
 | STT | OpenAI, ElevenLabs, Mistral |
-| 임베딩 | OpenAI, Gemini, Cohere, Mistral, Jina, VoyageAI |
+| 임베딩 | OpenAI, Gemini, Azure, Cohere, Mistral, Jina, VoyageAI |
 | 리랭킹 | Cohere, Jina |
 | 파일 | OpenAI, Anthropic, Gemini |
+
+`Laravel\Ai\Enums\Lab` enum을 사용하면 코드 전체에서 문자열 대신 프로바이더를 참조할 수 있습니다.
+
+```php
+use Laravel\Ai\Enums\Lab;
+
+Lab::Anthropic;
+Lab::OpenAI;
+Lab::Gemini;
+// ...
+```
 
 <a name="agents"></a>
 ## 에이전트
@@ -156,6 +168,7 @@ use Laravel\Ai\Contracts\Agent;
 use Laravel\Ai\Contracts\Conversational;
 use Laravel\Ai\Contracts\HasStructuredOutput;
 use Laravel\Ai\Contracts\HasTools;
+use Laravel\Ai\Messages\Message;
 use Laravel\Ai\Promptable;
 use Stringable;
 
@@ -222,9 +235,6 @@ class SalesCoach implements Agent, Conversational, HasTools, HasStructuredOutput
 $response = (new SalesCoach)
     ->prompt('Analyze this sales transcript...');
 
-$response = SalesCoach::make()
-    ->prompt('Analyze this sales transcript...');
-
 return (string) $response;
 ```
 
@@ -239,7 +249,7 @@ $agent = SalesCoach::make(user: $user);
 ```php
 $response = (new SalesCoach)->prompt(
     'Analyze this sales transcript...',
-    provider: 'anthropic',
+    provider: Lab::Anthropic,
     model: 'claude-haiku-4-5-20251001',
     timeout: 120,
 );
@@ -742,13 +752,20 @@ new FileSearch(stores: ['store_id'], where: fn (FileSearchQuery $query) =>
 <a name="middleware"></a>
 ### 미들웨어
 
-에이전트는 미들웨어를 지원하여, 프롬프트가 프로바이더에 전송되기 전에 가로채서 수정할 수 있습니다. 에이전트에 미들웨어를 추가하려면 `HasMiddleware` 인터페이스를 구현하고 미들웨어 클래스 배열을 반환하는 `middleware` 메서드를 정의합니다.
+에이전트는 미들웨어를 지원하여, 프롬프트가 프로바이더에 전송되기 전에 가로채서 수정할 수 있습니다. 미들웨어는 `make:agent-middleware` Artisan 명령어를 사용하여 생성할 수 있습니다.
+
+```shell
+php artisan make:agent-middleware LogPrompts
+```
+
+생성된 미들웨어는 애플리케이션의 `app/Ai/Middleware` 디렉터리에 배치됩니다. 에이전트에 미들웨어를 추가하려면 `HasMiddleware` 인터페이스를 구현하고 미들웨어 클래스 배열을 반환하는 `middleware` 메서드를 정의합니다.
 
 ```php
 <?php
 
 namespace App\Ai\Agents;
 
+use App\Ai\Middleware\LogPrompts;
 use Laravel\Ai\Contracts\Agent;
 use Laravel\Ai\Contracts\HasMiddleware;
 use Laravel\Ai\Promptable;
@@ -861,9 +878,10 @@ use Laravel\Ai\Attributes\Provider;
 use Laravel\Ai\Attributes\Temperature;
 use Laravel\Ai\Attributes\Timeout;
 use Laravel\Ai\Contracts\Agent;
+use Laravel\Ai\Enums\Lab;
 use Laravel\Ai\Promptable;
 
-#[Provider('anthropic')]
+#[Provider(Lab::Anthropic)]
 #[Model('claude-haiku-4-5-20251001')]
 #[MaxSteps(10)]
 #[MaxTokens(4096)]
@@ -901,6 +919,49 @@ class ComplexReasoner implements Agent
     // 가장 뛰어난 모델을 사용합니다 (예: Opus)...
 }
 ```
+
+<a name="provider-options"></a>
+### 프로바이더 옵션
+
+에이전트가 프로바이더별 옵션(예: OpenAI 추론 노력 또는 페널티 설정)을 전달해야 하는 경우, `HasProviderOptions` 계약을 구현하고 `providerOptions` 메서드를 정의하세요.
+
+```php
+<?php
+
+namespace App\Ai\Agents;
+
+use Laravel\Ai\Contracts\Agent;
+use Laravel\Ai\Contracts\HasProviderOptions;
+use Laravel\Ai\Enums\Lab;
+use Laravel\Ai\Promptable;
+
+class SalesCoach implements Agent, HasProviderOptions
+{
+    use Promptable;
+
+    // ...
+
+    /**
+     * Get provider-specific generation options.
+     */
+    public function providerOptions(Lab|string $provider): array
+    {
+        return match ($provider) {
+            Lab::OpenAI => [
+                'reasoning' => ['effort' => 'low'],
+                'frequency_penalty' => 0.5,
+                'presence_penalty' => 0.3,
+            ],
+            Lab::Anthropic => [
+                'thinking' => ['budget_tokens' => 1024],
+            ],
+            default => [],
+        };
+    }
+}
+```
+
+`providerOptions` 메서드는 현재 사용 중인 프로바이더(`Lab` enum 또는 문자열)를 받아 프로바이더별로 다른 옵션을 반환할 수 있습니다. 이는 [페일오버](#failover)를 사용할 때 특히 유용합니다. 각 폴백 프로바이더가 고유한 설정을 받을 수 있기 때문입니다.
 
 <a name="images"></a>
 ## 이미지
@@ -1096,7 +1157,7 @@ $response->embeddings; // [[0.123, 0.456, ...], [0.789, 0.012, ...]]
 ```php
 $response = Embeddings::for(['Napa Valley has great wine.'])
     ->dimensions(1536)
-    ->generate('openai', 'text-embedding-3-small');
+    ->generate(Lab::OpenAI, 'text-embedding-3-small');
 ```
 
 <a name="querying-embeddings"></a>
@@ -1270,7 +1331,7 @@ $reranked = $posts->rerank(
     by: 'content',
     query: 'Laravel tutorials',
     limit: 10,
-    provider: 'cohere'
+    provider: Lab::Cohere
 );
 ```
 
@@ -1347,7 +1408,7 @@ Document::fromId('file-id')->delete();
 ```php
 $response = Document::fromPath(
     '/home/laravel/document.pdf'
-)->put(provider: 'anthropic');
+)->put(provider: Lab::Anthropic);
 ```
 
 <a name="using-stored-files-in-conversations"></a>
@@ -1493,11 +1554,11 @@ use Laravel\Ai\Image;
 
 $response = (new SalesCoach)->prompt(
     'Analyze this sales transcript...',
-    provider: ['openai', 'anthropic'],
+    provider: [Lab::OpenAI, Lab::Anthropic],
 );
 
 $image = Image::of('A donut sitting on the kitchen counter')
-    ->generate(provider: ['gemini', 'xai']);
+    ->generate(provider: [Lab::Gemini, Lab::xAI]);
 ```
 
 <a name="testing"></a>
@@ -1852,7 +1913,7 @@ use Laravel\Ai\Contracts\Files\StorableFile;
 use Laravel\Ai\Files\Document;
 
 // 파일 저장...
-Document::fromString('Hello, Laravel!', mime: 'text/plain')
+Document::fromString('Hello, Laravel!', mimeType: 'text/plain')
     ->as('hello.txt')
     ->put();
 

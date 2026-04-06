@@ -1193,7 +1193,20 @@ MCP 서버, 도구, 리소스, 프롬프트에 대한 유닛 테스트를 작성
 
 시작하려면 새 테스트 케이스를 생성하고 해당 프리미티브를 등록하는 서버에서 원하는 프리미티브를 호출하세요. 예를 들어, `WeatherServer`에서 도구를 테스트하려면 다음과 같이 합니다.
 
-```php
+```php tab=Pest
+test('tool', function () {
+    $response = WeatherServer::tool(CurrentWeatherTool::class, [
+        'location' => 'New York City',
+        'units' => 'fahrenheit',
+    ]);
+
+    $response
+        ->assertOk()
+        ->assertSee('The current weather in New York City is 72°F and sunny.');
+});
+```
+
+```php tab=PHPUnit
 /**
  * Test a tool.
  */

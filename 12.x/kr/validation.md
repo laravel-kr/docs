@@ -1910,7 +1910,9 @@ Validator::make($input, [
 유효성 검사 대상 파일은 주어진 MIME 타입 중 하나와 일치해야 합니다.
 
 ```php
-'video' => 'mimetypes:video/avi,video/mpeg,video/quicktime'
+'video' => 'mimetypes:video/avi,video/mpeg,video/quicktime',
+
+'media' => 'mimetypes:image/*,video/*',
 ```
 
 업로드된 파일의 MIME 타입을 결정하기 위해, 파일의 내용을 읽고 프레임워크가 MIME 타입을 추측합니다. 이는 클라이언트가 제공한 MIME 타입과 다를 수 있습니다.

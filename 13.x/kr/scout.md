@@ -892,6 +892,22 @@ $orders = Order::search('Star Trek')->onlyTrashed()->get();
 > [!NOTE]
 > 소프트 삭제된 모델이 `forceDelete`를 사용하여 영구적으로 삭제되면 Scout는 자동으로 검색 인덱스에서 제거합니다.
 
+<a name="customizing-the-eloquent-results-query"></a>
+#### Eloquent 결과 쿼리 커스터마이징
+
+Scout가 애플리케이션의 검색 엔진에서 일치하는 Eloquent 모델 목록을 검색한 후 Eloquent는 기본 키로 일치하는 모든 모델을 검색하는 데 사용됩니다. `query` 메서드를 호출하여 이 쿼리를 커스터마이징할 수 있습니다. `query` 메서드는 Eloquent 쿼리 빌더 인스턴스를 인수로 받는 클로저를 받습니다.
+
+```php
+use App\Models\Order;
+use Illuminate\Database\Eloquent\Builder;
+
+$orders = Order::search('Star Trek')
+    ->query(fn (Builder $query) => $query->with('invoices'))
+    ->get();
+```
+
+이 콜백은 관련 모델이 이미 애플리케이션의 검색 엔진에서 검색된 후에 호출되므로 `query` 메서드를 결과를 "필터링"하는 데 사용해서는 안 됩니다. 대신 [Scout where 절](#where-clauses)을 사용해야 합니다.
+
 <a name="customizing-engine-searches"></a>
 ### 엔진 검색 커스터마이징
 
@@ -913,22 +929,6 @@ Order::search(
     }
 )->get();
 ```
-
-<a name="customizing-the-eloquent-results-query"></a>
-#### Eloquent 결과 쿼리 커스터마이징
-
-Scout가 애플리케이션의 검색 엔진에서 일치하는 Eloquent 모델 목록을 검색한 후 Eloquent는 기본 키로 일치하는 모든 모델을 검색하는 데 사용됩니다. `query` 메서드를 호출하여 이 쿼리를 커스터마이징할 수 있습니다. `query` 메서드는 Eloquent 쿼리 빌더 인스턴스를 인수로 받는 클로저를 받습니다.
-
-```php
-use App\Models\Order;
-use Illuminate\Database\Eloquent\Builder;
-
-$orders = Order::search('Star Trek')
-    ->query(fn (Builder $query) => $query->with('invoices'))
-    ->get();
-```
-
-이 콜백은 관련 모델이 이미 애플리케이션의 검색 엔진에서 검색된 후에 호출되므로 `query` 메서드를 결과를 "필터링"하는 데 사용해서는 안 됩니다. 대신 [Scout where 절](#where-clauses)을 사용해야 합니다.
 
 <a name="custom-engines"></a>
 ## 커스텀 엔진

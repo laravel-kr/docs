@@ -3253,7 +3253,7 @@ Benchmark::dd(fn () => User::count(), iterations: 10); // 0.5 ms
 <a name="dates"></a>
 ### 날짜와 시간(Dates and Time)
 
-Laravel은 강력한 날짜 및 시간 조작 라이브러리인 [Carbon](https://carbon.nesbot.com/docs/)을 포함합니다. 새 `Carbon` 인스턴스를 생성하려면 `now` 함수를 호출할 수 있습니다. 이 함수는 Laravel 애플리케이션 내에서 전역적으로 사용할 수 있습니다.
+Laravel은 강력한 날짜 및 시간 조작 라이브러리인 [Carbon](https://carbon.nesbot.com/guide/getting-started/introduction.html)을 포함합니다. 새 `Carbon` 인스턴스를 생성하려면 `now` 함수를 호출할 수 있습니다. 이 함수는 Laravel 애플리케이션 내에서 전역적으로 사용할 수 있습니다.
 
 ```php
 $now = now();
@@ -3279,7 +3279,7 @@ return now()->minus(hours: 8);
 return now()->minus(weeks: 4);
 ```
 
-Carbon과 그 기능에 대한 자세한 논의는 [공식 Carbon 문서](https://carbon.nesbot.com/docs/)를 참조하세요.
+Carbon과 그 기능에 대한 자세한 논의는 [공식 Carbon 문서](https://carbon.nesbot.com/guide/getting-started/introduction.html)를 참조하세요.
 
 <a name="interval-functions"></a>
 #### 인터벌 함수(Interval Functions)

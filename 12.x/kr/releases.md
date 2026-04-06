@@ -48,7 +48,7 @@ Laravel과 그 외 공식 패키지들은 [시맨틱 버저닝(Semantic Versioni
 <a name="laravel-12"></a>
 ## Laravel 12
 
-Laravel 12는 Laravel 11.x에서 이루어진 개선 사항을 이어받아 업스트림 의존성을 업데이트하고 React, Vue, Livewire를 위한 새로운 스타터 킷(Starter Kit)을 도입했으며, 사용자 인증을 위해 [WorkOS AuthKit](https://authkit.com)을 사용하는 옵션도 포함되어 있습니다. 스타터 킷의 WorkOS 버전은 소셜 인증, 패스키(Passkey), SSO 지원을 제공합니다.
+Laravel 12는 Laravel 11.x에서 이루어진 개선 사항을 이어받아 업스트림 의존성을 업데이트하고 React, Svelte, Vue, Livewire를 위한 새로운 스타터 킷(Starter Kit)을 도입했으며, 사용자 인증을 위해 [WorkOS AuthKit](https://authkit.com)을 사용하는 옵션도 포함되어 있습니다. 스타터 킷의 WorkOS 버전은 소셜 인증, 패스키(Passkey), SSO 지원을 제공합니다.
 
 <a name="minimal-breaking-changes"></a>
 ### 최소한의 하위 호환성 변경(Minimal Breaking Changes)
@@ -60,9 +60,9 @@ Laravel 12는 Laravel 11.x에서 이루어진 개선 사항을 이어받아 업�
 <a name="new-application-starter-kits"></a>
 ### 새로운 애플리케이션 스타터 킷(New Application Starter Kits)
 
-Laravel 12는 React, Vue, Livewire를 위한 새로운 [애플리케이션 스타터 킷](/docs/{{version}}/starter-kits)을 도입합니다. React와 Vue 스타터 킷은 Inertia 2, TypeScript, [shadcn/ui](https://ui.shadcn.com), Tailwind를 활용하며, Livewire 스타터 킷은 Tailwind 기반의 [Flux UI](https://fluxui.dev) 컴포넌트 라이브러리와 Laravel Volt를 활용합니다.
+Laravel 12는 React, Svelte, Vue, Livewire를 위한 새로운 [애플리케이션 스타터 킷](/docs/{{version}}/starter-kits)을 도입합니다. React, Svelte, Vue 스타터 킷은 Inertia 2, TypeScript, [shadcn/ui](https://ui.shadcn.com), Tailwind를 활용하며, Livewire 스타터 킷은 Tailwind 기반의 [Flux UI](https://fluxui.dev) 컴포넌트 라이브러리와 Laravel Volt를 활용합니다.
 
-React, Vue, Livewire 스타터 킷은 모두 Laravel의 내장 인증 시스템을 활용하여 로그인, 회원가입, 비밀번호 재설정, 이메일 인증 등을 제공합니다. 또한 소셜 인증, 패스키, SSO 지원을 제공하는 [WorkOS AuthKit 기반](https://authkit.com) 버전의 각 스타터 킷도 도입하고 있습니다. WorkOS는 월간 활성 사용자 100만 명까지의 애플리케이션에 대해 무료 인증을 제공합니다.
+React, Svelte, Vue, Livewire 스타터 킷은 모두 Laravel의 내장 인증 시스템을 활용하여 로그인, 회원가입, 비밀번호 재설정, 이메일 인증 등을 제공합니다. 또한 소셜 인증, 패스키, SSO 지원을 제공하는 [WorkOS AuthKit 기반](https://authkit.com) 버전의 각 스타터 킷도 도입하고 있습니다. WorkOS는 월간 활성 사용자 100만 명까지의 애플리케이션에 대해 무료 인증을 제공합니다.
 
 새로운 애플리케이션 스타터 킷의 도입으로 Laravel Breeze와 Laravel Jetstream은 더 이상 추가 업데이트를 받지 않습니다.
 

@@ -145,6 +145,7 @@ class Flight extends Model
 }
 ```
 
+
 <a name="primary-keys"></a>
 ### 기본 키
 
@@ -788,6 +789,12 @@ class FlightController extends Controller
 
 이 예제에서는 들어오는 HTTP 요청의 `name` 필드를 `App\Models\Flight` 모델 인스턴스의 `name` 속성에 할당합니다. `save` 메서드를 호출하면 레코드가 데이터베이스에 삽입됩니다. 모델의 `created_at` 및 `updated_at` 타임스탬프는 `save` 메서드가 호출될 때 자동으로 설정되므로 수동으로 설정할 필요가 없습니다.
 
+데이터베이스 트랜잭션 내에서 모델을 저장하려면 `saveOrFail` 메서드를 사용할 수 있습니다. 저장 중에 예외가 발생하면 트랜잭션이 자동으로 롤백됩니다:
+
+```php
+$flight->saveOrFail();
+```
+
 또는 `create` 메서드를 사용하여 단일 PHP 문으로 새 모델을 "저장"할 수 있습니다. 삽입된 모델 인스턴스는 `create` 메서드에 의해 반환됩니다.
 
 ```php
@@ -815,10 +822,10 @@ $flight->name = 'Paris to London';
 $flight->save();
 ```
 
-데이터베이스 트랜잭션 내에서 모델을 저장하려면 `saveOrFail` 메서드를 사용할 수 있습니다. 저장 중 예외가 발생하면 트랜잭션이 자동으로 롤백됩니다:
+데이터베이스 트랜잭션 내에서 모델을 수정하려면 `updateOrFail` 메서드를 사용할 수 있습니다. 수정 중에 예외가 발생하면 트랜잭션이 자동으로 롤백됩니다:
 
 ```php
-$flight->saveOrFail();
+$flight->updateOrFail(['name' => 'Paris to London']);
 ```
 
 때때로 기존 모델을 수정하거나 일치하는 모델이 없으면 새 모델을 생성해야 할 수 있습니다. `firstOrCreate` 메서드처럼 `updateOrCreate` 메서드는 모델을 저장하므로 `save` 메서드를 수동으로 호출할 필요가 없습니다.
@@ -853,12 +860,6 @@ if ($flight->wasRecentlyCreated) {
 Flight::where('active', 1)
     ->where('destination', 'San Diego')
     ->update(['delayed' => 1]);
-```
-
-데이터베이스 트랜잭션 내에서 모델을 수정하려면 `updateOrFail` 메서드를 사용할 수 있습니다. 수정 중 예외가 발생하면 트랜잭션이 자동으로 롤백됩니다:
-
-```php
-$flight->updateOrFail(['name' => 'Paris to London']);
 ```
 
 `update` 메서드는 수정해야 하는 컬럼을 나타내는 컬럼 및 값 쌍의 배열을 예상합니다. `update` 메서드는 영향을 받은 행 수를 반환합니다.
