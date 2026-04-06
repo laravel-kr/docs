@@ -2,7 +2,7 @@ const fs = require('fs');
 const path = require('path');
 
 const ROOT = path.join(__dirname, '..');
-const VERSIONS_WITH_KOREAN = ['12.x', '11.x', '10.x', '9.x', '8.x', '7.x', '6.x', '5.8', '5.7', '5.6', '5.5', '5.4', '5.3', '5.2', '5.1', '5.0'];
+const VERSIONS_WITH_KOREAN = ['13.x', '12.x', '11.x', '10.x', '9.x', '8.x', '7.x', '6.x', '5.8', '5.7', '5.6', '5.5', '5.4', '5.3', '5.2', '5.1', '5.0'];
 
 function stripMarkdown(text) {
     return text

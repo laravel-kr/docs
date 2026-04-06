@@ -6,7 +6,7 @@
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-VERSIONS=("12.x" "11.x" "10.x")
+VERSIONS=("13.x" "12.x" "11.x" "10.x")
 
 # upstream fetch
 git -C "$REPO_ROOT" fetch upstream --quiet
